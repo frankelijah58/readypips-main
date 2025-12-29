@@ -44,17 +44,29 @@ export async function verifyPassword(
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
+export function generateToken(userId: string, email: string): string {
+  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "7d" });
 }
 
-export function verifyToken(token: string): { userId: string } | null {
+// Update return type to include email
+export function verifyToken(token: string): { userId: string; email: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string };
+    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
   } catch {
     return null;
   }
 }
+// export function generateToken(userId: string): string {
+//   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
+// }
+
+// export function verifyToken(token: string): { userId: string } | null {
+//   try {
+//     return jwt.verify(token, JWT_SECRET) as { userId: string };
+//   } catch {
+//     return null;
+//   }
+// }
 
 export async function createUser(
   userData: Omit<User, "_id" | "createdAt" | "updatedAt">
