@@ -45,41 +45,78 @@ export async function POST(req: NextRequest) {
     });
 
     if (provider === "whop") {
-      const whopUrl = new URL(`https://whop.com/checkout/${process.env.NEXT_PUBLIC_WHOP_APP_ID}`);
-      whopUrl.searchParams.append("custom_id", reference);
-      // Pre-fill email so the user doesn't have to type it again
-      if (userEmail) whopUrl.searchParams.append("email", userEmail); 
+      // 1. Fetch the Plan ID from your plan config 
+      // You need to find the plan_XXXX ID from your Whop Dashboard -> Checkout Links
+      const planConfig = PLANS.find(p => p.id === planId);
+      const whopPlanId = '';  //planConfig?.whopPlanId; // Ensure this is in your plans.ts
 
-      return NextResponse.json({ checkoutUrl: whopUrl.toString() });
+      // 2. Request a session from Whop
+      const response = await fetch("https://api.whop.com/api/v2/checkout_sessions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.WHOP_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plan_id: whopPlanId, 
+          email: decoded.email, // Pre-fills for the user
+          metadata: { 
+            custom_id: reference // This comes back in the webhook later
+          },
+          redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?status=success`
+        }),
+      });
+
+      const session = await response.json();
+
+      if (!response.ok) {
+        console.error("Whop Session Error:", session);
+        throw new Error("Could not create Whop session");
+      }
+
+      // 3. Return the specific URL Whop generated for this user
+      return NextResponse.json({ checkoutUrl: session.purchase_url });
     }
+    // if (provider === "whop") {
+    //   const whopUrl = new URL(`https://whop.com/checkout/${process.env.NEXT_PUBLIC_WHOP_APP_ID}`);
+    //   whopUrl.searchParams.append("custom_id", reference);
+    //   // Pre-fill email so the user doesn't have to type it again
+    //   if (userEmail) whopUrl.searchParams.append("email", userEmail); 
+
+    //   return NextResponse.json({ checkoutUrl: whopUrl.toString() });
+    // }
 
      
     if (provider === "binance") {
       const endpoint = "https://bpay.binanceapi.com/binancepay/openapi/v2/order";
-      
+  
+      // Binance requires a 32-character random string for the Nonce
+      const nonce = crypto.randomBytes(16).toString("hex"); // 32 hex chars
+      const timestamp = Date.now().toString();
+
       const orderBody = {
         env: { terminalType: "WEB" },
         merchantTradeNo: reference,
         orderAmount: planConfig?.usd,
         currency: "USDT",
         goods: {
-          goodsType: "01", // Digital goods
-          goodsCategory: "6000", // Financial services
+          goodsType: "02", // Use "02" for Virtual Goods (Subscriptions)
+          goodsCategory: "6000",
           referenceGoodsId: planId,
-          goodsName: `Ready Pips ${planConfig?.name} Subscription`,
-          goodsDetail: `Access for ${planConfig?.duration} days`,
+          goodsName: `Ready Pips ${planConfig?.name}`,
+          goodsDetail: `Subscription for ${planConfig?.duration} days`,
         },
-        // Where to send the user after payment
         returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?payment=success`,
         cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?payment=cancelled`,
       };
 
-      // Binance requires a specific signature format
-      const timestamp = Date.now().toString();
-      const nonce = crypto.randomBytes(16).toString("hex");
-      const payload = timestamp + "\n" + nonce + "\n" + JSON.stringify(orderBody) + "\n";
+      const bodyString = JSON.stringify(orderBody);
+      
+      // Signature Payload format must be exact: timestamp + \n + nonce + \n + body + \n
+      const payload = `${timestamp}\n${nonce}\n${bodyString}\n`;
+      
       const signature = crypto
-        .createHmac("sha512", BINANCE_PAY_SECRET!)
+        .createHmac("sha512", process.env.BINANCE_PAY_SECRET!)
         .update(payload)
         .digest("hex")
         .toUpperCase();
@@ -90,10 +127,10 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
           "BinancePay-Timestamp": timestamp,
           "BinancePay-Nonce": nonce,
-          "BinancePay-Certificate": BINANCE_PAY_CERT!,
+          "BinancePay-Certificate-SN": process.env.BINANCE_PAY_CERT!, // THE FIX
           "BinancePay-Signature": signature,
         },
-        body: JSON.stringify(orderBody),
+        body: bodyString,
       });
 
       const binanceData = await response.json();

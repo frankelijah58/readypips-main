@@ -35,54 +35,54 @@ export default function HomePage() {
   const { toast } = useToast();
 
   const handlePricingPlanSelect = async (plan: any) => {
-  try {
-    setLoading(true);
-    
-    // Get the token from your auth state or cookies
-    // Assuming you are using next-auth or a similar token-based system:
-    const token = localStorage.getItem('token'); 
+    try {
+      setLoading(true);
+      
+      // Get the token from your auth state or cookies
+      // Assuming you are using next-auth or a similar token-based system:
+      const token = localStorage.getItem('token'); 
 
-    const res = await fetch("/api/payments/create", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` 
-      },
-      body: JSON.stringify({
-        planId: plan.planId, // 'weekly', 'monthly', or '3months'
-        provider: plan.provider,
-      }),
-    });
+      const res = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          planId: plan.planId, // 'weekly', 'monthly', or '3months'
+          provider: plan.provider,
+        }),
+      });
 
-    const data = await res.json();
-    
-    if (!res.ok) throw new Error(data.error || "Payment failed");
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || "Payment failed");
 
-    // Smooth redirect to the checkout page
-    if (data.checkoutUrl) {
-      // toast.info(`Redirecting to ${plan.provider}...`);
+      // Smooth redirect to the checkout page
+      if (data.checkoutUrl) {
+        // toast.info(`Redirecting to ${plan.provider}...`);
+        toast({
+            title: 'Redirecting to Payment Provider',
+            description: `You are being redirected to ${plan.provider} to complete your purchase.`,
+            duration: 5000,
+            // variant: 'default',
+          });
+        window.location.href = data.checkoutUrl;
+      }
+    } catch (err: any) {
+      console.error(err);
+      // toast.error(err.message || "Unable to start payment.");
       toast({
-          title: 'Redirecting to Payment Provider',
-          description: `You are being redirected to ${plan.provider} to complete your purchase.`,
-          duration: 5000,
-          // variant: 'default',
-        });
-      window.location.href = data.checkoutUrl;
-    }
-  } catch (err: any) {
-    console.error(err);
-    // toast.error(err.message || "Unable to start payment.");
-    toast({
-      title: "Payment Error",
-      description: err.message || "Unable to start payment. Please try again.",
-      duration: 5000,
-      variant: "destructive",
+        title: "Payment Error",
+        description: err.message || "Unable to start payment. Please try again.",
+        duration: 5000,
+        variant: "destructive",
 
-    })
-  } finally {
-    setLoading(false);
-  }
-};
+      })
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // const handlePricingPlanSelect = async (plan: {
   //   planId: string;
