@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       // Verify admin password
       const isValidPassword = await verifyPassword(password, admin.password);
       if (!isValidPassword) {
+        console.log('Admin login failed for email:', email);
         return NextResponse.json(
           { error: 'Invalid credentials' },
           { status: 401 }
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
     // Find regular user
     const user = await findUser(email);
     if (!user) {
+      console.log('User not found for email:', email);
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -58,6 +60,7 @@ export async function POST(request: NextRequest) {
     // Verify password
     const isValidPassword = await verifyPassword(password, user.password!);
     if (!isValidPassword) {
+      console.log('User login failed for email:', email);
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -65,12 +68,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email is verified
-    // if (!user.emailVerified) {
-    //   return NextResponse.json(
-    //     { error: 'Please verify your email address before logging in. Check your inbox for a verification link.' },
-    //     { status: 401 }
-    //   );
-    // }
+    if (!user.emailVerified) {
+      console.log('Unverified email login attempt for email:', email);
+      return NextResponse.json(
+        { error: 'Please verify your email address before logging in. Check your inbox for a verification link.' },
+        { status: 401 }
+      );
+    }
 
     // Generate token
     const token = generateToken(user._id!);

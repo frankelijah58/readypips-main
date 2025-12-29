@@ -66,7 +66,8 @@ export default function RegisterPage() {
 
       if (response.ok) {
         toast.success('Account created successfully! Please log in.');
-        router.push('/login');
+        // router.push('/login');
+        router.push(`/verify-email-sent?email=${encodeURIComponent(formData.email)}`);
       } else {
         setError(data.error || 'Registration failed');
       }
