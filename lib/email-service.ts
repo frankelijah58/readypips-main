@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-
+//refresh dotenv config
 // Force hardcoded Hostinger settings since .env is not loading properly
 const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || 'smtp.hostinger.com',
