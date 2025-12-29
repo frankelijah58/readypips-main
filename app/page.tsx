@@ -26,9 +26,96 @@ import {
   Target,
 } from "lucide-react";
 import PricingPlans from "@/components/pricing-plans";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function HomePage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handlePricingPlanSelect = async (plan: any) => {
+  try {
+    setLoading(true);
+    
+    // Get the token from your auth state or cookies
+    // Assuming you are using next-auth or a similar token-based system:
+    const token = localStorage.getItem('token'); 
+
+    const res = await fetch("/api/payments/create", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
+      body: JSON.stringify({
+        planId: plan.planId, // 'weekly', 'monthly', or '3months'
+        provider: plan.provider,
+      }),
+    });
+
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.error || "Payment failed");
+
+    // Smooth redirect to the checkout page
+    if (data.checkoutUrl) {
+      // toast.info(`Redirecting to ${plan.provider}...`);
+      toast({
+          title: 'Redirecting to Payment Provider',
+          description: `You are being redirected to ${plan.provider} to complete your purchase.`,
+          duration: 5000,
+          // variant: 'default',
+        });
+      window.location.href = data.checkoutUrl;
+    }
+  } catch (err: any) {
+    console.error(err);
+    // toast.error(err.message || "Unable to start payment.");
+    toast({
+      title: "Payment Error",
+      description: err.message || "Unable to start payment. Please try again.",
+      duration: 5000,
+      variant: "destructive",
+
+    })
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // const handlePricingPlanSelect = async (plan: {
+  //   planId: string;
+  //   name: string;
+  //   price: string;
+  //   duration: number;
+  //   provider?: "whop" | "binance";
+  // }) => {
+  //   try {
+  //     setLoading(true);
+
+  //     const res = await fetch("/api/payments/create", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         planId: plan.planId,
+  //         provider: plan.provider,
+  //         userId: user?._id,
+  //       }),
+  //     });
+
+  //     const data = await res.json();
+  //     if (!res.ok) throw new Error(data.error || "Payment failed");
+
+  //     // Redirect to provider checkout
+  //     window.location.href = data.checkoutUrl;
+  //   } catch (err) {
+  //     console.error(err);
+  //     alert("Unable to start payment. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -72,7 +159,7 @@ export default function HomePage() {
 
           {/* Conditional CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            {!loading && (
+            {!authLoading && (
               <>
                 {user ? (
                   // Logged in user - show dashboard button
@@ -375,7 +462,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <PricingPlans />
+          <PricingPlans showGetStarted={user ? false : true} onPlanSelect={(plan) => handlePricingPlanSelect(plan)} />
         </div>
       </section>
 
@@ -496,12 +583,12 @@ export default function HomePage() {
             <p className="mt-2">
               Developed and maintained by{" "}
               <a
-                href="https://www.maxson.co.ke/"
+                href="https://"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-green-400 hover:text-green-300 font-semibold transition-colors"
               >
-                Maxson Programming Limited
+                Pro Limited
               </a>
             </p>
           </div>

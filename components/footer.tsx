@@ -77,7 +77,7 @@ export function Footer() {
           <p className="mt-2">
             Developed and maintained by{" "}
             <a
-              href="https://www.maxson.co.ke/"
+              href="https://#/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-green-400 hover:text-green-300 font-semibold transition-colors"
