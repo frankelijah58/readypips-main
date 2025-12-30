@@ -170,7 +170,8 @@ export default function HomePage() {
                       className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                     >
                       <Home className="mr-2 w-4 h-4" />
-                      Go to Dashboard
+                      {/* Go to Dashboard */}
+                      Indicator
                       <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                   </Link>
@@ -182,14 +183,15 @@ export default function HomePage() {
                       className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                     >
                       <BarChart3 className="mr-2 w-4 h-4" />
-                      Signals
+                      {/* Signals */}
+                      Indicator
                       <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                   </Link>
                 )}
               </>
             )}
-            <Link href="/copy-trading">
+            {/* <Link href="/copy-trading">
               <Button
                 size="lg"
                 variant="outline"
@@ -198,7 +200,7 @@ export default function HomePage() {
                 Copy Trading
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
-            </Link>
+            </Link> */}
           </div>
 
           {/* Stats */}
@@ -210,7 +212,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-400">50K+</div>
+              <div className="text-3xl font-bold text-green-400">10K+</div>
               <div className="text-sm text-gray-100 font-medium">
                 Active Users
               </div>

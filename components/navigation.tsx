@@ -46,12 +46,12 @@ export function Navigation() {
   };
 
   const navigationItems = [
-    {
-      name: "Live Chart",
-      href: "/chart",
-      icon: Activity,
-      description: "Real-time trading chart",
-    },
+    // {
+    //   name: "Live Chart",
+    //   href: "/chart",
+    //   icon: Activity,
+    //   description: "Real-time trading chart",
+    // },
     {
       name: "Signals",
       href: "/signals",
@@ -64,13 +64,29 @@ export function Navigation() {
       icon: Copy,
       description: "Copy expert traders",
     },
-    {
-      name: "Charts",
-      href: "/charts",
-      icon: BarChart3,
-      description: "Advanced charts",
-    },
+    // {
+    //   name: "Charts",
+    //   href: "/charts",
+    //   icon: BarChart3,
+    //   description: "Advanced charts",
+    // },
   ];
+
+  const gatedItems = [
+    {
+      name: "Partner/Affliate",
+      href: "/partner/onboarding",
+      icon: AreaChart,
+      description: "Partner dashboard",
+    },
+    // {
+    //   name: "Affiliates",
+    //   href: "/affiliates",
+    //   icon: BarChart3,
+    //   description: "Affiliate earnings & links",
+    // },
+  ];
+
 
   const moreItems = [
     {
@@ -101,6 +117,17 @@ export function Navigation() {
   ];
 
   const isActive = (href: string) => pathname === href;
+
+  const handleProtectedNavigation = (href: string) => {
+    if (!user) {
+      toast.info("Please login to continue");
+      router.push("/login");
+      return;
+    }
+
+    router.push(href);
+  };
+
 
   return (
     <>
@@ -147,6 +174,27 @@ export function Navigation() {
               </Link>
             );
           })}
+
+          {gatedItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Button
+                  key={item.name}
+                  variant={isActive(item.href) ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => handleProtectedNavigation(item.href)}
+                  className={`flex items-center space-x-2 ${
+                    isActive(item.href)
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.name}</span>
+                </Button>
+              );
+            })}
+
 
           {/* More Dropdown */}
           <DropdownMenu>

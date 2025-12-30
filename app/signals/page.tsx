@@ -11,6 +11,7 @@ import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { useAuth } from "@/components/auth-context";
 import PricingPlans from "@/components/pricing-plans";
+import { useToast } from "@/hooks/use-toast";
 
 ///TRIGGER REFRESH AFTER PAYMENT
 export default function SignalsPage() {
@@ -20,6 +21,7 @@ export default function SignalsPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>("inactive");
   const [subscriptionType, setSubscriptionType] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<"whop" | "binance">("whop");
+  const { toast } = useToast();
   
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -52,25 +54,77 @@ export default function SignalsPage() {
   const hasAccess = subscriptionStatus === "active" && subscriptionType !== "free";
 
   // --- 3. Payment Initiation ---
+  // const handlePlanSelect = async (plan: any) => {
+  //   setLoading(true);
+  //   console.log("Selected Plan:", plan);
+  //   try {
+  //     const response = await fetch("/api/payments/create", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         planId: plan.planId, // e.g., 'plan_weekly'
+  //         provider: selectedProvider,
+  //         userId: user?._id,
+  //       }),
+  //     });
+
+  //     const data = await response.json();
+  //     if (data.checkoutUrl) {
+  //       window.location.href = data.checkoutUrl;
+  //     }
+  //   } catch (error) {
+  //     console.error("Payment initiation failed:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handlePlanSelect = async (plan: any) => {
-    setLoading(true);
     try {
-      const response = await fetch("/api/payments/create", {
+      setLoading(true);
+      
+      // Get the token from your auth state or cookies
+      // Assuming you are using next-auth or a similar token-based system:
+      const token = localStorage.getItem('token'); 
+
+      const res = await fetch("/api/payments/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
         body: JSON.stringify({
-          planId: plan.id, // e.g., 'plan_weekly'
-          provider: selectedProvider,
+          planId: plan.planId, // 'weekly', 'monthly', or '3months'
+          provider: plan.provider,
           userId: user?._id,
         }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || "Payment failed");
+
+      // Smooth redirect to the checkout page
       if (data.checkoutUrl) {
+        // toast.info(`Redirecting to ${plan.provider}...`);
+        toast({
+            title: 'Redirecting to Payment Provider',
+            description: `You are being redirected to ${plan.provider} to complete your purchase.`,
+            duration: 5000,
+            // variant: 'default',
+          });
         window.location.href = data.checkoutUrl;
       }
-    } catch (error) {
-      console.error("Payment initiation failed:", error);
+    } catch (err: any) {
+      console.error(err);
+      // toast.error(err.message || "Unable to start payment.");
+      toast({
+        title: "Payment Error",
+        description: err.message || "Unable to start payment. Please try again.",
+        duration: 5000,
+        variant: "destructive",
+
+      })
     } finally {
       setLoading(false);
     }
