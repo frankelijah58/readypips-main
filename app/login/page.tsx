@@ -64,7 +64,7 @@ export default function LoginPage() {
         toast.success('Welcome back!');
         
         // Check if user is admin and redirect accordingly
-        if (data.user?.isAdmin || data.user?.role) {
+        if (data.user?.isAdmin || data.user?.role === 'super_admin' || data.user?.role === 'admin') {
           console.log('Admin user detected, redirecting to admin dashboard');
           login(data.token, '/admin/dashboard');
         } else {

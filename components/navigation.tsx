@@ -78,35 +78,64 @@ export function Navigation() {
   const roleBasedItems = [
     {
       name: "Partner Dashboard",
-      href: "/partners",
+      href: "/partner/onboarding",
       icon: AreaChart,
       description: "Manage partners & performance",
       roles: ["partner", "admin"] as UserRole[],
     },
     {
       name: "Affiliate Dashboard",
-      href: "/affiliates",
+      href: "/affiliate/onboarding",
       icon: TrendingUp,
       description: "Track referrals & earnings",
       roles: ["affiliate", "admin"] as UserRole[],
     },
   ];
 
-  const gatedItems = [
-    {
-      name: "Partner/Affliate",
-      href: "/partner/onboarding",
-      icon: AreaChart,
-      description: "Partner dashboard",
-    },
+  // const gatedItems = [
+  //   {
+  //     name: "Partner/Affliate",
+  //     href: "/partner/onboarding",
+  //     icon: AreaChart,
+  //     description: "Partner dashboard",
+  //   },
     // {
     //   name: "Affiliates",
     //   href: "/affiliates",
     //   icon: BarChart3,
     //   description: "Affiliate earnings & links",
     // },
+  // ];
+
+  const gatedItems = [
+    {
+      name: "Partner / Affiliate",
+      icon: AreaChart,
+      description: "Partner & affiliate dashboard",
+    },
   ];
 
+  const resolvePartnerAffiliatePath = () => {
+    if (!user) return "/login";
+
+    switch (user.role) {
+      case "partner":
+        return user.partnerProfile?.isApproved === true
+          ? "/partner/dashboard"
+          : "/partner/pending";
+
+      case "affiliate":
+        return user.affiliateProfile?.isActive === true
+          ? "/affiliate/dashboard"
+          : "/affiliate/pending";
+
+      case "admin":
+        return "/admin/partners";
+
+      default:
+        return "/partner/onboarding";
+    }
+  };
 
   const moreItems = [
     {
@@ -163,6 +192,22 @@ export function Navigation() {
     router.push(href);
   };
 
+  const handlePartnerAffiliateNavigation = () => {
+    if (!user) {
+      toast.info("Please login to continue");
+      router.push("/login?redirect=/partner");
+      return;
+    }
+
+    const destination = resolvePartnerAffiliatePath();
+    router.push(destination);
+  };
+
+  const partnerLabel = user
+  ? user.role === "affiliate"
+    ? "Affiliate Dashboard"
+    : "Partner Dashboard"
+  : "Partner / Affiliate";
 
 
   return (
@@ -216,14 +261,16 @@ export function Navigation() {
               return (
                 <Button
                   key={item.name}
-                  variant={isActive(item.href) ? "default" : "ghost"}
+                  // variant={isActive(item.href) ? "default" : "ghost"}
+                  variant={"ghost"}
                   size="sm"
-                  onClick={() => handleProtectedNavigation(item.href)}
-                  className={`flex items-center space-x-2 ${
-                    isActive(item.href)
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
+                  onClick={() => handlePartnerAffiliateNavigation()}//handleProtectedNavigation(item.href)}
+                  // className={`flex items-center space-x-2 ${
+                  //   isActive(item.href)
+                  //     ? "bg-green-600 hover:bg-green-700 text-white"
+                  //     : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  // }`}
+                  className="flex items-center space-x-2 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <Icon className="w-4 h-4" />
                   <span>{item.name}</span>
@@ -306,7 +353,11 @@ export function Navigation() {
                       ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
                       : user.email.charAt(0).toUpperCase()}
                   </div>
-                  <span className="hidden sm:inline">{user.firstName || user.email}</span>
+                  <div className="flex flex-col items-start leading-tight text-left ">
+                  <span className=" hidden sm:inline ">{user.firstName || user.email}</span>
+                  <span className=" hidden sm:inline text-sm text-slate-500">{partnerLabel}</span>
+                  </div>
+
                 </Button>
               </Link>
 
@@ -413,7 +464,8 @@ export function Navigation() {
                   className="w-full justify-start text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    handleProtectedNavigation(item.href);
+                    // handleProtectedNavigation(item.href);
+                    handlePartnerAffiliateNavigation();
                   }}
                 >
                   <Icon className="w-4 h-4 mr-2" />

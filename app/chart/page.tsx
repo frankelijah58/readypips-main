@@ -23,7 +23,7 @@ export default function ChartPage() {
     }
 
     // Check subscription status
-    if (user.subscriptionStatus !== 'active' && !user.isAdmin) {
+    if (user.subscriptionStatus !== 'active' && !user.role?.includes('admin')) {
       router.push('/subscription');
       return;
     }

@@ -547,7 +547,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Phone Number Modal for Google Login Users (excluding admins) */}
-        {showPhoneModal && !user.isAdmin && user.role !== 'admin' && user.role !== 'superadmin' && (
+        {showPhoneModal && user.role !== 'admin'  && (
           <PhoneNumberModal
             isOpen={showPhoneModal}
             onClose={() => setShowPhoneModal(false)}

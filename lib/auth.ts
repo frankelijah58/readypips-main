@@ -4,6 +4,26 @@ import { getDatabase } from "./mongodb";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
+export type UserRole = "user" | "affiliate" | "partner";
+
+export interface AffiliateProfile {
+  referralCode: string;
+  commissionRate: number; // e.g. 0.1 = 10%
+  totalEarnings: number;
+  totalReferrals: number;
+  isActive: boolean;
+}
+
+export interface PartnerProfile {
+  companyName: string;
+  tier: "silver" | "gold" | "platinum";
+  revenueShare: number; // %
+  managedAffiliates: number;
+  totalRevenue: number;
+  isApproved: boolean;
+}
+
+
 export interface User {
   _id?: string;
   email: string;
@@ -11,6 +31,14 @@ export interface User {
   firstName: string;
   lastName: string;
   phoneNumber?: string;
+
+    /** 🔑 ROLE */
+  role: UserRole;
+
+  /** 🧩 PROFILES (OPTIONAL) */
+  affiliateProfile?: AffiliateProfile | null;
+  partnerProfile?: PartnerProfile | null;
+
   subscriptionStatus: "active" | "inactive" | "expired";
   subscriptionType: "free" | "basic" | "premium" | "pro" | null;
   subscriptionEndDate?: Date;
@@ -44,29 +72,20 @@ export async function verifyPassword(
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateToken(userId: string, email: string): string {
-  return jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "7d" });
+export function generateToken(userId: string, email: string, role: string ): string {
+  return jwt.sign({ userId, email, role }, JWT_SECRET, { expiresIn: "7d" });
 }
 
 // Update return type to include email
-export function verifyToken(token: string): { userId: string; email: string } | null {
+export function verifyToken(
+  token: string
+): { userId: string; email: string; role: UserRole } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+    return jwt.verify(token, JWT_SECRET) as any;
   } catch {
     return null;
   }
 }
-// export function generateToken(userId: string): string {
-//   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
-// }
-
-// export function verifyToken(token: string): { userId: string } | null {
-//   try {
-//     return jwt.verify(token, JWT_SECRET) as { userId: string };
-//   } catch {
-//     return null;
-//   }
-// }
 
 export async function createUser(
   userData: Omit<User, "_id" | "createdAt" | "updatedAt">
@@ -81,6 +100,12 @@ export async function createUser(
   const user = {
     ...userData,
     password: hashedPassword,
+
+    role: userData.role || "user",
+
+    affiliateProfile: null,
+    partnerProfile: null,
+
     // Default to free plan for all new users with 3-day trial
     subscriptionStatus: "active" as "active" | "inactive" | "expired",
     subscriptionType: "free" as "free" | "basic" | "premium" | "pro" | null,
@@ -106,6 +131,12 @@ export async function findUser(email: string): Promise<User | null> {
     firstName: user.firstName,
     lastName: user.lastName,
     phoneNumber: user.phoneNumber,
+
+     role: user.role || "user",
+
+    affiliateProfile: user.affiliateProfile || null,
+    partnerProfile: user.partnerProfile || null,
+
     subscriptionStatus: user.subscriptionStatus || "inactive",
     subscriptionType: user.subscriptionType || null,
     subscriptionEndDate: user.subscriptionEndDate,
@@ -134,6 +165,12 @@ export async function findUserById(id: string): Promise<User | null> {
       firstName: admin.firstName,
       lastName: admin.lastName,
       phoneNumber: admin.phoneNumber,
+          
+      role: admin.role || "admin",
+
+      affiliateProfile: admin.affiliateProfile || null,
+      partnerProfile: admin.partnerProfile || null,
+
       subscriptionStatus: "active" as any, // Admins always have active status
       subscriptionType: null,
       emailVerified: true,
@@ -141,7 +178,7 @@ export async function findUserById(id: string): Promise<User | null> {
       createdAt: admin.createdAt,
       updatedAt: admin.updatedAt,
       isAdmin: true,
-      role: admin.role,
+      
       permissions: admin.permissions,
     } as any;
   }
@@ -157,6 +194,12 @@ export async function findUserById(id: string): Promise<User | null> {
     firstName: user.firstName,
     lastName: user.lastName,
     phoneNumber: user.phoneNumber,
+
+    role: user.role || "user",
+
+    affiliateProfile: user.affiliateProfile || null,
+    partnerProfile: user.partnerProfile || null,
+
     subscriptionStatus: user.subscriptionStatus || "inactive",
     subscriptionType: user.subscriptionType || null,
     subscriptionEndDate: user.subscriptionEndDate,

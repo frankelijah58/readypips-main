@@ -22,13 +22,39 @@ export default function PartnerOnboarding() {
     else handleSubmit();
   };
 
-  const handleSubmit = async () => {
+//   const handleSubmit = async () => {
+//     setIsLoading(true);
+//     // Simulate API Call
+//     await new Promise(resolve => setTimeout(resolve, 1500));
+//     toast.success("Application Submitted!");
+//     router.push('/partner/dashboard');
+//   };
+
+    const handleSubmit = async () => {
     setIsLoading(true);
-    // Simulate API Call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    toast.success("Application Submitted!");
-    router.push('/partner/dashboard');
-  };
+
+    try {
+        const res = await fetch("/api/partner/apply", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(formData),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        toast.success("Application submitted for review");
+        router.push("/partner/pending");
+    } catch (err: any) {
+        toast.error(err.message || "Failed to submit application");
+    } finally {
+        setIsLoading(false);
+    }
+    };
+
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 font-sans text-slate-100 relative overflow-hidden">

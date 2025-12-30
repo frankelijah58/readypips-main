@@ -15,7 +15,7 @@ export function PhoneCheckWrapper({ children }: { children: React.ReactNode }) {
       setCheckingPhone(true);
       
       // Skip phone check for admins and super admins
-      if (user.isAdmin || user.role === 'admin' || user.role === 'superadmin') {
+      if (user.role === 'admin') {
         setShowPhoneModal(false);
         setCheckingPhone(false);
         return;

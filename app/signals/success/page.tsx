@@ -90,13 +90,13 @@ function SubscriptionSuccessContent() {
               endDate: authUser.subscriptionEndDate ? new Date(authUser.subscriptionEndDate).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             });
             setUserData({
-              id: authUser._id,
+              id: authUser._id ?? "",
               email: authUser.email,
               firstName: authUser.firstName,
               lastName: authUser.lastName,
               subscriptionStatus: authUser.subscriptionStatus,
-              subscriptionType: authUser.subscriptionType || "basic",
-              subscriptionEndDate: authUser.subscriptionEndDate ? new Date(authUser.subscriptionEndDate).toISOString() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              subscriptionType: authUser.subscriptionType ?? "",
+              subscriptionEndDate: authUser.subscriptionEndDate ? authUser.subscriptionEndDate.toISOString() : "",
             });
             toast.success("Subscription activated successfully!");
             setLoading(false);
@@ -247,7 +247,7 @@ function SubscriptionSuccessContent() {
             Verification Failed
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            We couldn't automatically verify your subscription. Your payment may still be processing.
+            We couldn&apos;t automatically verify your subscription. Your payment may still be processing.
           </p>
           <div className="space-y-3">
             <Button 
@@ -428,7 +428,7 @@ function SubscriptionSuccessContent() {
           <Card className="mb-8">
             <CardHeader>
               <CardTitle className="text-black dark:text-white">
-                What's Next?
+                What&apos;s Next?
               </CardTitle>
             </CardHeader>
             <CardContent>

@@ -3,24 +3,82 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 
-interface User {
-  _id: string;
+
+export type UserRole = "user" | "affiliate" | "partner" | "admin";
+
+export interface AffiliateProfile {
+  referralCode: string;
+  commissionRate: number; // e.g. 0.1 = 10%
+  totalEarnings: number;
+  totalReferrals: number;
+  isActive: boolean;
+}
+
+export interface PartnerProfile {
+  companyName: string;
+  tier: "silver" | "gold" | "platinum";
+  revenueShare: number; // %
+  managedAffiliates: number;
+  totalRevenue: number;
+  isApproved: boolean;
+}
+
+
+export interface User {
+  _id?: string;
   email: string;
+  password?: string;
   firstName: string;
   lastName: string;
   phoneNumber?: string;
-  phone?: string;
-  subscriptionStatus: 'active' | 'inactive' | 'expired';
-  subscriptionType: 'basic' | 'premium' | 'pro' | 'free' | null;
+
+    /** 🔑 ROLE */
+  role: UserRole;
+
+  /** 🧩 PROFILES (OPTIONAL) */
+  affiliateProfile?: AffiliateProfile | null;
+  partnerProfile?: PartnerProfile | null;
+
+  subscriptionStatus: "active" | "inactive" | "expired";
+  subscriptionType: "free" | "basic" | "premium" | "pro" | null;
   subscriptionEndDate?: Date;
   subscriptionStartDate?: Date;
-  freeTrialEndDate?: Date;
+  freeTrialEndDate?: Date; // 3-day free trial for new users
+  // Pending subscription (scheduled to activate after current expires)
+  pendingSubscription?: {
+    type: "basic" | "premium" | "pro";
+    planId: string;
+    planName: string;
+    duration: number; // days
+    scheduledStartDate: Date; // When current subscription ends
+  } | null;
   emailVerified?: boolean;
-  createdAt?: Date;
+  emailVerifiedAt?: Date;
+  provider?: "credentials" | "google";
+  googleId?: string;
   image?: string;
-  isAdmin?: boolean;
-  role?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
+
+// interface User {
+//   _id: string;
+//   email: string;
+//   firstName: string;
+//   lastName: string;
+//   phoneNumber?: string;
+//   phone?: string;
+//   subscriptionStatus: 'active' | 'inactive' | 'expired';
+//   subscriptionType: 'basic' | 'premium' | 'pro' | 'free' | null;
+//   subscriptionEndDate?: Date;
+//   subscriptionStartDate?: Date;
+//   freeTrialEndDate?: Date;
+//   emailVerified?: boolean;
+//   createdAt?: Date;
+//   image?: string;
+//   isAdmin?: boolean;
+//   role?: string;
+// }
 
 interface AuthContextType {
   user: User | null;

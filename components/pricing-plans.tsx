@@ -30,7 +30,6 @@ interface PricingPlansProps {
 }
 
 
-
 export default function PricingPlans({
   showGetStarted = true,
   onPlanSelect,

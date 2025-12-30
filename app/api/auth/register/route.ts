@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       phoneNumber,
       subscriptionStatus: 'inactive',
       subscriptionType: null,
+      role: 'user'
     });
 
     // Generate verification token

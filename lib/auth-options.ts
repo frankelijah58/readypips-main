@@ -146,7 +146,7 @@ export const authOptions: NextAuthOptions = {
           token.image = dbUser.image;
           
           // Generate JWT token for our app
-          token.appToken = generateToken(dbUser._id.toString(), dbUser.email);
+          token.appToken = generateToken(dbUser._id.toString(), dbUser.email, dbUser.role || "user");
         }
       }
       return token;
