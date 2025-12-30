@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       // 1. Fetch the Plan ID from your plan config 
       // You need to find the plan_XXXX ID from your Whop Dashboard -> Checkout Links
       const planConfig = PLANS.find(p => p.id === planId);
-      const whopPlanId = '';  //planConfig?.whopPlanId; // Ensure this is in your plans.ts
+      const whopPlanId = planConfig?.whopPlanId; // Ensure this is in your plans.ts
 
       // 2. Request a session from Whop
       const response = await fetch("https://api.whop.com/api/v2/checkout_sessions", {
