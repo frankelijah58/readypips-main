@@ -11,7 +11,7 @@ export const PLANS = [
     period: "/week",
     duration: 7,
     features: [
-      "Trusted by 12,000+ traders",
+      "Trusted by 10,000+ traders",
       "Access to the Indicator",
       "Access to Video Guides",
       "Regular indicator updates",
