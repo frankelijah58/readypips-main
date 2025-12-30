@@ -33,6 +33,9 @@ import { useAuth } from "@/components/auth-context";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { CreditDisplay } from "@/components/credit-display";
 
+type UserRole = "partner" | "affiliate" | "admin";
+
+
 export function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -70,6 +73,23 @@ export function Navigation() {
     //   icon: BarChart3,
     //   description: "Advanced charts",
     // },
+  ];
+
+  const roleBasedItems = [
+    {
+      name: "Partner Dashboard",
+      href: "/partners",
+      icon: AreaChart,
+      description: "Manage partners & performance",
+      roles: ["partner", "admin"] as UserRole[],
+    },
+    {
+      name: "Affiliate Dashboard",
+      href: "/affiliates",
+      icon: TrendingUp,
+      description: "Track referrals & earnings",
+      roles: ["affiliate", "admin"] as UserRole[],
+    },
   ];
 
   const gatedItems = [
@@ -127,6 +147,22 @@ export function Navigation() {
 
     router.push(href);
   };
+
+  const handleRoleNavigation = (href: string, roles: UserRole[]) => {
+    if (!user) {
+      toast.info("Please login to continue");
+      router.push(`/login?redirect=${href}`);
+      return;
+    }
+
+    if (!roles.includes(user.role as UserRole)) {
+      toast.error("You don’t have access to this page");
+      return;
+    }
+
+    router.push(href);
+  };
+
 
 
   return (
@@ -194,6 +230,31 @@ export function Navigation() {
                 </Button>
               );
             })}
+
+
+            {/* {roleBasedItems.map((item) => {
+                const Icon = item.icon;
+                const hasAccess = user && item.roles.includes(user.role as UserRole);
+
+                return (
+                  <Button
+                    key={item.name}
+                    variant={isActive(item.href) ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => handleRoleNavigation(item.href, item.roles)}
+                    disabled={!!user && !hasAccess}
+                    className={`flex items-center space-x-2 ${
+                      isActive(item.href)
+                        ? "bg-green-600 hover:bg-green-700 text-white"
+                        : "text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                    } ${!hasAccess && user ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </Button>
+                );
+              })} */}
+
 
 
           {/* More Dropdown */}
@@ -342,6 +403,56 @@ export function Navigation() {
                 </Link>
               );
             })}
+
+            {gatedItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Button
+                  key={item.name}
+                  variant="ghost"
+                  className="w-full justify-start text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleProtectedNavigation(item.href);
+                  }}
+                >
+                  <Icon className="w-4 h-4 mr-2" />
+                  <div className="text-left">
+                    <div>{item.name}</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      {item.description}
+                    </div>
+                  </div>
+                </Button>
+              );
+            })}
+
+
+            {/* {roleBasedItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Button
+                  key={item.name}
+                  variant="ghost"
+                  className="w-full justify-start text-black dark:text-white"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleRoleNavigation(item.href, item.roles);
+                  }}
+                >
+                  <Icon className="w-4 h-4 mr-2" />
+                  <div className="text-left">
+                    <div>{item.name}</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      {item.description}
+                    </div>
+                  </div>
+                </Button>
+              );
+            })} */}
+
+
 
             {/* More Items in Mobile */}
             <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
