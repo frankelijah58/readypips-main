@@ -29,9 +29,9 @@ export const PLANS = [
   {
     id: "monthly",
     name: "Monthly",
-    price: "USD 49.89",
-    priceKES: "USD 49.89",
-    usd: 49.89,
+    price: "USD 49",
+    priceKES: "KES 5499",
+    usd: 49,
     kes: 5499,
     period: "/month",
     duration: 30,
