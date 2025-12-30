@@ -26,10 +26,14 @@ import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import PricingPlans from "@/components/pricing-plans";
 import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/auth-context";
 
 type PaymentProvider = "stripe" | "paystack" | "pesapal";
 
 export default function SubscriptionPage() {
+  const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [currentEndDate, setCurrentEndDate] = useState<string | null>(null);
@@ -60,85 +64,53 @@ export default function SubscriptionPage() {
     }
   }, []);
 
-  const handlePlanSelect = async (plan: string) => {
-    // Check if user is on a paid plan (not free)
-    const isOnPaidPlan = currentPlan && currentPlan !== "free" && currentEndDate;
-    
-    if (isOnPaidPlan) {
-      // Show confirmation dialog for paid plan users
-      const expiryDate = new Date(currentEndDate!).toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      });
-      
-      const planNames: Record<string, string> = {
-        basic: "Weekly Plan",
-        premium: "Monthly Plan",
-        pro: "3 Months Plan"
-      };
-      
-      const currentPlanName = planNames[currentPlan] || currentPlan;
-      
-      const confirmed = confirm(
-        `You are currently on the ${currentPlanName} which expires on ${expiryDate}.\n\n` +
-        `Your new subscription will be scheduled to start after your current plan expires.\n\n` +
-        `Do you want to continue?`
-      );
-      
-      if (!confirmed) {
-        return;
-      }
 
-      toast.info(`Your new plan will activate on ${expiryDate}`, {
-        duration: 5000
-      });
-    }
 
-    setLoading(true);
+  const handlePricingPlanSelect = async (plan: any) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("Please log in to subscribe to a plan");
-        // Save current page to redirect back after login
-        router.push("/login?redirect=/subscription");
-        return;
-      }
+      setLoading(true);
+      
+      // Get the token from your auth state or cookies
+      // Assuming you are using next-auth or a similar token-based system:
+      const token = localStorage.getItem('token'); 
 
-      // Use Pesapal endpoint
-      const endpoint = "/api/payments/create-pesapal";
-
-      const response = await fetch(endpoint, {
+      const res = await fetch("/api/payments/create", {
         method: "POST",
-        headers: {
+        headers: { 
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          "Authorization": `Bearer ${token}` 
         },
         body: JSON.stringify({
-          plan: plan,
-          provider: "pesapal",
-          successUrl: `${window.location.origin}/subscription/success`,
-          cancelUrl: `${window.location.origin}/subscription`,
+          planId: plan.planId, // 'weekly', 'monthly', or '3months'
+          provider: plan.provider,
         }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || "Payment failed");
 
-      if (response.ok && data.url) {
-        window.location.href = data.url;
-      } else {
-        if (data.hasActiveSubscription) {
-          alert(
-            "You already have an active subscription. Please contact support to change your plan."
-          );
-          setCurrentPlan("active");
-        } else {
-          throw new Error(data.error || "No checkout URL received");
-        }
+      // Smooth redirect to the checkout page
+      if (data.checkoutUrl) {
+        // toast.info(`Redirecting to ${plan.provider}...`);
+        toast({
+            title: 'Redirecting to Payment Provider',
+            description: `You are being redirected to ${plan.provider} to complete your purchase.`,
+            duration: 5000,
+            // variant: 'default',
+          });
+        window.location.href = data.checkoutUrl;
       }
-    } catch (error) {
-      console.error("Error creating checkout session:", error);
-      alert("Error creating checkout session. Please try again.");
+    } catch (err: any) {
+      console.error(err);
+      // toast.error(err.message || "Unable to start payment.");
+      toast({
+        title: "Payment Error",
+        description: err.message || "Unable to start payment. Please try again.",
+        duration: 5000,
+        variant: "destructive",
+
+      })
     } finally {
       setLoading(false);
     }
@@ -242,13 +214,15 @@ export default function SubscriptionPage() {
 
         {/* Pricing Cards */}
         <div className="mb-16">
-          <PricingPlans 
+                    <PricingPlans showGetStarted={user ? false : true} onPlanSelect={(plan) => handlePricingPlanSelect(plan)} />
+          
+          {/* <PricingPlans 
             showGetStarted={false}
-            onPlanSelect={handlePlanSelect}
+            onPlanSelect={handlePricingPlanSelect}
             loading={loading}
             currentPlan={currentPlan}
             selectedProvider={selectedProvider}
-          />
+          /> */}
         </div>
 
         {/* Features Comparison */}
