@@ -92,7 +92,7 @@ export default function SignalsPage() {
               <div>
                 <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Current Plan</p>
                 <h2 className="text-2xl font-bold">
-                  {hasAccess ? `${subscriptionType?.toUpperCase()} PRO` : "Free Tier (Signals Locked)"}
+                  {hasAccess ? `${subscriptionType?.toUpperCase()} PRO` : "Free Tier (Indicator Locked)"}
                 </h2>
               </div>
               <Badge variant={hasAccess ? "default" : "destructive"} className="px-4 py-1">
@@ -109,7 +109,7 @@ export default function SignalsPage() {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="text-center max-w-2xl mx-auto mb-12">
               <Lock className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <h1 className="text-4xl font-bold mb-4">Unlock Professional Signals</h1>
+              <h1 className="text-4xl font-bold mb-4">Unlock Signals Indicator</h1>
               <p className="text-gray-500 text-lg">
                 Your current **{subscriptionType}** account does not include real-time signal access. 
                 Choose a plan below to gain entry to our private dashboard and Telegram.
@@ -132,12 +132,14 @@ export default function SignalsPage() {
               </button>
             </div>
 
-            <PricingPlans 
+            {/* <PricingPlans 
               onPlanSelect={handlePlanSelect} 
               loading={loading}
               showGetStarted={user ? false : true}
               // provider={selectedProvider} 
-            />
+            /> */}
+
+              <PricingPlans showGetStarted={user ? false : true} onPlanSelect={(plan) => handlePlanSelect(plan)} />
           </div>
         ) : (
           /* DASHBOARD VIEW: Visible only if Paid & Active */

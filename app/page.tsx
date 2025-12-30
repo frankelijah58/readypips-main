@@ -51,6 +51,7 @@ export default function HomePage() {
         body: JSON.stringify({
           planId: plan.planId, // 'weekly', 'monthly', or '3months'
           provider: plan.provider,
+          userId: user?._id,
         }),
       });
 
