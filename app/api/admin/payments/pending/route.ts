@@ -13,34 +13,36 @@ export async function GET(req: Request) {
 
     const db = await getDatabase();
 
-    // Fetch subscriptions and join with user details to get the name
-    const subscriptions = await db.collection("subscriptions").aggregate([
+    // Fetch pending intents and join with users to see who they are
+    const pending = await db.collection("payment_intents").aggregate([
+      { $match: { status: "pending" } },
       {
         $lookup: {
           from: "users",
           localField: "userId",
           foreignField: "_id",
-          as: "userDetails"
+          as: "user"
         }
       },
-      { $unwind: "$userDetails" },
+      { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
       {
         $project: {
           _id: 1,
-          plan: "$planId", // Maps to your frontend interface
-          price: "$amount",
-          status: 1,
-          startDate: 1,
-          endDate: 1,
-          userName: { $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"] }
+          reference: 1,
+          planId: 1,
+          provider: 1,
+          amount: 1,
+          createdAt: 1,
+          email: 1,
+          userName: { $concat: ["$user.firstName", " ", "$user.lastName"] }
         }
       },
-      { $sort: { startDate: -1 } }
+      { $sort: { createdAt: -1 } },
+      { $limit: 20 } // Show only the 20 most recent attempts
     ]).toArray();
 
-    return NextResponse.json({ subscriptions });
+    return NextResponse.json({ pending });
   } catch (error) {
-    console.error("Sub API Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

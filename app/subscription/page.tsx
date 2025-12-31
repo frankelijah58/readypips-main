@@ -12,50 +12,46 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   CheckCircle,
-  ArrowRight,
-  Star,
   Zap,
   Shield,
   Globe,
-  Target,
   CreditCard,
-  CreditCardIcon,
+  Coins,
+  ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import PricingPlans from "@/components/pricing-plans";
-import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth-context";
+import { cn } from "@/lib/utils";
 
-type PaymentProvider = "stripe" | "paystack" | "pesapal";
+// Updated providers based on your new API
+type PaymentProvider = "binance" | "whop";
 
 export default function SubscriptionPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [currentEndDate, setCurrentEndDate] = useState<string | null>(null);
   const [hasPendingSubscription, setHasPendingSubscription] = useState(false);
-  const [selectedProvider, setSelectedProvider] =
-    useState<PaymentProvider>("pesapal");
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>("whop");
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user has an active subscription
     const token = localStorage.getItem("token");
     if (token) {
-      // Fetch subscription status
       fetch("/api/subscriptions/status", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
         .then((data) => {
           if (data.success && data.subscription) {
-            setCurrentPlan(data.subscription.type);
+            // Mapping plan IDs to readable names
+            setCurrentPlan(data.subscription.planId); 
             setCurrentEndDate(data.subscription.endDate);
             setHasPendingSubscription(!!data.subscription.pendingSubscription);
           }
@@ -64,14 +60,14 @@ export default function SubscriptionPage() {
     }
   }, []);
 
-
-
   const handlePricingPlanSelect = async (plan: any) => {
+    if (!user) {
+      router.push("/login?redirect=/pricing");
+      return;
+    }
+
     try {
       setLoading(true);
-      
-      // Get the token from your auth state or cookies
-      // Assuming you are using next-auth or a similar token-based system:
       const token = localStorage.getItem('token'); 
 
       const res = await fetch("/api/payments/create", {
@@ -81,8 +77,8 @@ export default function SubscriptionPage() {
           "Authorization": `Bearer ${token}` 
         },
         body: JSON.stringify({
-          planId: plan.planId, // 'weekly', 'monthly', or '3months'
-          provider: plan.provider,
+          planId: plan.id, // e.g., 'weekly', 'monthly'
+          provider: selectedProvider,
         }),
       });
 
@@ -90,229 +86,149 @@ export default function SubscriptionPage() {
       
       if (!res.ok) throw new Error(data.error || "Payment failed");
 
-      // Smooth redirect to the checkout page
       if (data.checkoutUrl) {
-        // toast.info(`Redirecting to ${plan.provider}...`);
         toast({
-            title: 'Redirecting to Payment Provider',
-            description: `You are being redirected to ${plan.provider} to complete your purchase.`,
-            duration: 5000,
-            // variant: 'default',
-          });
+          title: 'Redirecting...',
+          description: `Opening ${selectedProvider === 'binance' ? 'Binance Pay' : 'Whop Checkout'}`,
+        });
         window.location.href = data.checkoutUrl;
       }
     } catch (err: any) {
-      console.error(err);
-      // toast.error(err.message || "Unable to start payment.");
       toast({
         title: "Payment Error",
         description: err.message || "Unable to start payment. Please try again.",
-        duration: 5000,
         variant: "destructive",
-
-      })
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    <div className="min-h-screen bg-slate-50 dark:bg-black">
       <Navigation />
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+      <div className="container mx-auto px-4 py-12">
+        {/* Header Section */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Access Signal Tools
+          <Badge className="mb-4 bg-primary/10 text-primary border-none py-1 px-4">
+            Premium Trading Intelligence
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">
+            Access Ready Pips Pro
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Unlock powerful trading signals and advanced market analysis with
-            our premium plans
+          <p className="text-lg text-slate-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Choose a plan that fits your trading style and start receiving high-accuracy signals today.
           </p>
 
-          {/* Current Subscription Badge */}
-          {currentPlan && currentPlan !== "free" && (
-            <div className="mt-6 flex justify-center">
-              <Badge className="bg-green-600 text-white px-4 py-2 text-sm">
-                Current Plan: {currentPlan === "basic" ? "Weekly" : currentPlan === "premium" ? "Monthly" : "3 Months"}
-                {currentEndDate && ` • Expires ${new Date(currentEndDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-              </Badge>
-            </div>
-          )}
-
-          {/* Pending Subscription Alert */}
-          {hasPendingSubscription && (
-            <div className="mt-4 max-w-xl mx-auto p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                ℹ️ You have a pending subscription that will activate when your current plan expires.
-              </p>
+          {currentPlan && (
+            <div className="mt-8 flex justify-center">
+              <div className="bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900 px-6 py-3 rounded-2xl flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+                <span className="text-emerald-900 dark:text-emerald-400 font-bold">
+                  Active Plan: <span className="uppercase">{currentPlan}</span>
+                  {currentEndDate && ` (Expires ${new Date(currentEndDate).toLocaleDateString()})`}
+                </span>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Payment Method Selection */}
-        {!currentPlan && (
-          <div className="max-w-2xl mx-auto mb-8">
-            <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-center text-black dark:text-white">
-                  Choose Payment Method
-                </CardTitle>
-                <CardDescription className="text-center text-gray-600 dark:text-gray-400">
-                  Secure Kenyan payments with Pesapal
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-center">
-                    <Button
-                      variant="default"
-                      className="h-16 bg-orange-600 hover:bg-orange-700 text-white px-8"
-                      onClick={() => setSelectedProvider("pesapal")}
-                    >
-                      <div className="flex flex-col items-center">
-                        <CreditCard className="w-6 h-6 mb-1" />
-                        <span className="text-sm font-medium">Pay with Pesapal</span>
-                        <span className="text-xs opacity-90">M-Pesa, Cards & More</span>
-                      </div>
-                    </Button>
-                  </div>
-                  
-                  {/* Payment methods info */}
-                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 text-center mb-3">
-                      <strong>Available Payment Methods:</strong>
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-700 dark:text-gray-300">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-green-600">✓</span>
-                        <span>M-Pesa</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-green-600">✓</span>
-                        <span>Airtel Money</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-green-600">✓</span>
-                        <span>Visa Card</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-green-600">✓</span>
-                        <span>Mastercard</span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                      💳 Secure payments powered by PesaPal
-                    </p>
-                  </div>
+        {/* Improved Payment Method Selection */}
+        <div className="max-w-3xl mx-auto mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Whop Provider */}
+            <button
+              onClick={() => setSelectedProvider("whop")}
+              className={cn(
+                "relative p-6 rounded-2xl border-2 transition-all text-left group",
+                selectedProvider === "whop" 
+                ? "border-primary bg-white shadow-xl shadow-primary/5" 
+                : "border-slate-200 bg-slate-50 hover:border-slate-300"
+              )}
+            >
+              <div className="flex items-center gap-4 mb-2">
+                <div className={cn("p-2 rounded-lg", selectedProvider === "whop" ? "bg-primary text-white" : "bg-slate-200")}>
+                  <CreditCard className="w-6 h-6" />
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <h3 className="font-bold text-slate-900">Card & Global</h3>
+                  <p className="text-xs text-slate-500">Visa, Mastercard, Apple Pay</p>
+                </div>
+              </div>
+              {selectedProvider === "whop" && <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-primary" />}
+            </button>
+
+            {/* Binance Provider */}
+            <button
+              onClick={() => setSelectedProvider("binance")}
+              className={cn(
+                "relative p-6 rounded-2xl border-2 transition-all text-left group",
+                selectedProvider === "binance" 
+                ? "border-amber-400 bg-white shadow-xl shadow-amber-400/5" 
+                : "border-slate-200 bg-slate-50 hover:border-slate-300"
+              )}
+            >
+              <div className="flex items-center gap-4 mb-2">
+                <div className={cn("p-2 rounded-lg", selectedProvider === "binance" ? "bg-amber-400 text-black" : "bg-slate-200")}>
+                  <Coins className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Crypto (USDT)</h3>
+                  <p className="text-xs text-slate-500">Binance Pay - Zero Fees</p>
+                </div>
+              </div>
+              {selectedProvider === "binance" && <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-amber-400" />}
+            </button>
           </div>
-        )}
-
-        {/* Pricing Cards */}
-        <div className="mb-16">
-                    <PricingPlans showGetStarted={user ? false : true} onPlanSelect={(plan) => handlePricingPlanSelect(plan)} />
-          
-          {/* <PricingPlans 
-            showGetStarted={false}
-            onPlanSelect={handlePricingPlanSelect}
-            loading={loading}
-            currentPlan={currentPlan}
-            selectedProvider={selectedProvider}
-          /> */}
         </div>
 
-        {/* Features Comparison */}
-        <div className="mt-16">
-          <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-center text-black dark:text-white">
-                Why Choose Ready Pips?
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="text-center">
-                  <Zap className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
-                    Real-Time Signals
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Get instant trading signals with high accuracy rates
-                  </p>
-                </div>
-                <div className="text-center">
-                  <Shield className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
-                    Risk Management
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Advanced risk management tools to protect your capital
-                  </p>
-                </div>
-                <div className="text-center">
-                  <Globe className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-black dark:text-white mb-2">
-                    Global Markets
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Access to forex, crypto, and stock markets worldwide
-                  </p>
-                </div>
+        {/* Pricing Cards Component */}
+        <div className="relative">
+          {loading && (
+            <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-sm flex items-center justify-center rounded-3xl">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                <p className="font-bold text-slate-900">Preparing Checkout...</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          )}
+          <PricingPlans 
+            showGetStarted={!user} 
+            onPlanSelect={(plan) => handlePricingPlanSelect(plan)} 
+          />
         </div>
 
-        {/* FAQ Section */}
-        <div className="mt-16">
-          <Card className="bg-white dark:bg-black border-gray-200 dark:border-gray-800">
-            <CardHeader>
-              <CardTitle className="text-center text-black dark:text-white">
-                Frequently Asked Questions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-semibold text-black dark:text-white mb-2">
-                    How do I get started?
-                  </h4>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Choose your plan, select your payment method, and you&apos;ll
-                    have immediate access to our trading signals and analysis
-                    tools.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-black dark:text-white mb-2">
-                    Can I cancel my subscription?
-                  </h4>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Yes, you can cancel your subscription at any time. Your
-                    access will continue until the end of your current billing
-                    period.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-black dark:text-white mb-2">
-                    What payment methods do you accept?
-                  </h4>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    We accept all major credit cards through Stripe and local
-                    payment methods through Paystack for our African users.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Feature Highlights */}
+        <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <FeatureItem 
+                icon={<Zap className="w-6 h-6 text-blue-500" />}
+                title="Instant Delivery"
+                desc="Access your dashboard and signals immediately after payment."
+            />
+            <FeatureItem 
+                icon={<Shield className="w-6 h-6 text-emerald-500" />}
+                title="Secure Checkout"
+                desc="Payments are handled by verified industry leaders (Whop & Binance)."
+            />
+            <FeatureItem 
+                icon={<Globe className="w-6 h-6 text-purple-500" />}
+                title="Global Access"
+                desc="Whether you're in Kenya or anywhere else, our payment gateways just work."
+            />
         </div>
       </div>
-
       <Footer />
+    </div>
+  );
+}
+
+function FeatureItem({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+      <div className="mb-4">{icon}</div>
+      <h3 className="font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400">{desc}</p>
     </div>
   );
 }
