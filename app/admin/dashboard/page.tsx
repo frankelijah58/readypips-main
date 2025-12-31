@@ -12,15 +12,17 @@ import ToolsManagement from './components/tools-management';
 import AdminManagement from './components/admin-management';
 import Analytics from './components/analytics';
 import SystemSettings from './components/system-settings';
+import PartnersManagement from './components/partners-management';
 
 type AdminSection =
   | 'dashboard'
   | 'users'
   | 'subscriptions'
-  | 'tools'
-  | 'admins'
-  | 'analytics'
-  | 'settings';
+  | 'partners';
+  // | 'tools'
+  // | 'admins'
+  // | 'analytics'
+  // | 'settings';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -152,10 +154,11 @@ export default function AdminDashboard() {
           {currentSection === 'dashboard' && <DashboardOverview admin={admin} />}
           {currentSection === 'users' && <UserManagement admin={admin} />}
           {currentSection === 'subscriptions' && <SubscriptionManagement admin={admin} />}
-          {currentSection === 'tools' && <ToolsManagement admin={admin} />}
-          {currentSection === 'admins' && <AdminManagement admin={admin} />}
-          {currentSection === 'analytics' && <Analytics admin={admin} />}
-          {currentSection === 'settings' && <SystemSettings admin={admin} />}
+          {/* {currentSection === 'tools' && <ToolsManagement admin={admin} />} */}
+          {currentSection === 'partners' && <PartnersManagement admin={admin} />}
+          {/* {currentSection === 'admins' && <AdminManagement admin={admin} />} */}
+          {/* {currentSection === 'analytics' && <Analytics admin={admin} />} */}
+          {/* {currentSection === 'settings' && <SystemSettings admin={admin} />} */}
         </div>
       </main>
     </div>
@@ -167,10 +170,11 @@ function getSectionTitle(section: AdminSection): string {
     dashboard: 'Dashboard Overview',
     users: 'User Management',
     subscriptions: 'Subscription Management',
-    tools: 'Tools Management',
-    admins: 'Admin Management',
-    analytics: 'Analytics & Insights',
-    settings: 'System Settings',
+    // tools: 'Tools Management',
+    partners: 'Partners Management',
+    // admins: 'Admin Management',
+    // analytics: 'Analytics & Insights',
+    // settings: 'System Settings',
   };
   return titles[section];
 }

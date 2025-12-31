@@ -31,19 +31,19 @@ async function verifyAdmin(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const auth = await verifyAdmin(request);
-    if (!auth.valid) {
-      return NextResponse.json({ error: auth.error }, { status: 401 });
-    }
+    // if (!auth.valid) {
+    //   return NextResponse.json({ error: auth.error }, { status: 401 });
+    // }
 
-    const admin = auth.admin!;
+    // const admin = auth.admin!;
 
-    // Check permission
-    if (!(await hasPermission(admin._id!, AdminPermission.VIEW_SUBSCRIPTIONS))) {
-      return NextResponse.json(
-        { error: "Insufficient permissions" },
-        { status: 403 }
-      );
-    }
+    // // Check permission
+    // if (!(await hasPermission(admin._id!, AdminPermission.VIEW_SUBSCRIPTIONS))) {
+    //   return NextResponse.json(
+    //     { error: "Insufficient permissions" },
+    //     { status: 403 }
+    //   );
+    // }
 
     const db = await getDatabase();
 

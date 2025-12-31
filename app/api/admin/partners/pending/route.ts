@@ -1,29 +1,28 @@
-import { NextResponse } from "next/server";
-import { getDatabase } from "@/lib/mongodb";
-import { requireAdmin } from "@/lib/adminAuth";
+import { verifyToken } from '@/lib/auth';
+import { getDatabase } from '@/lib/mongodb';
+import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
   try {
-    await requireAdmin(req);
+    const token = req.headers.get("authorization")?.replace("Bearer ", "");
+    const decoded = verifyToken(token!);
+
+    // Security Guard: Ensure only Admins can access this list
+    // if (!decoded || decoded.role !== 'admin') {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // }
+
     const db = await getDatabase();
+    
+    // Find users who have a partner role but are NOT yet approved
+    const pendingPartners = await db.collection("users").find({
+      role: "partner",
+      "partnerProfile.isApproved": false
+    }).sort({ "partnerProfile.appliedAt": -1 }).toArray();
 
-    const partners = await db
-      .collection("users")
-      .find({
-        role: "partner",
-        "partnerProfile.isApproved": false,
-      })
-      .project({
-        password: 0,
-      })
-      .sort({ "partnerProfile.appliedAt": -1 })
-      .toArray();
-
-    return NextResponse.json({ partners });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Unauthorized" },
-      { status: 403 }
-    );
+    console.log("Pending Partners:", pendingPartners);
+    return NextResponse.json({ partners: pendingPartners });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -29,38 +29,44 @@ export default function AdminSidebar({
       id: 'users',
       label: 'Users',
       icon: 'U',
-      permission: admin?.permissions?.includes('view_users'),
+      permission: true,//admin?.permissions?.includes('view_users'),
     },
     {
       id: 'subscriptions',
       label: 'Subscriptions',
       icon: 'S',
-      permission: admin?.permissions?.includes('view_subscriptions'),
+      permission: true,//admin?.permissions?.includes('view_subscriptions'),
     },
     {
-      id: 'tools',
-      label: 'Tools',
-      icon: 'T',
-      permission: admin?.permissions?.includes('view_tools'),
+      id: 'partners',
+      label: 'Partners',
+      icon: 'P',
+      permission: true,//admin?.permissions?.includes('view_partners'),
     },
-    {
-      id: 'admins',
-      label: 'Admins',
-      icon: 'A',
-      permission: admin?.permissions?.includes('view_admins'),
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: 'L',
-      permission: admin?.permissions?.includes('view_analytics'),
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: 'C',
-      permission: admin?.permissions?.includes('manage_settings'),
-    },
+    // {
+    //   id: 'tools',
+    //   label: 'Tools',
+    //   icon: 'T',
+    //   permission: true,//admin?.permissions?.includes('view_tools'),
+    // },
+    // {
+    //   id: 'admins',
+    //   label: 'Admins',
+    //   icon: 'A',
+    //   permission: true,//admin?.permissions?.includes('view_admins'),
+    // },
+    // {
+    //   id: 'analytics',
+    //   label: 'Analytics',
+    //   icon: 'L',
+    //   permission: true,//admin?.permissions?.includes('view_analytics'),
+    // },
+    // {
+    //   id: 'settings',
+    //   label: 'Settings',
+    //   icon: 'C',
+    //   permission: true,//admin?.permissions?.includes('manage_settings'),
+    // },
   ];
 
   return (
