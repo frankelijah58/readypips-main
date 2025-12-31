@@ -8,9 +8,9 @@ export async function GET(req: Request) {
     const decoded = verifyToken(token!);
 
     // Security Guard: Ensure only Admins can access this list
-    // if (!decoded || decoded.role !== 'admin') {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    if (!decoded || decoded.isAdmin !== true) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const db = await getDatabase();
     

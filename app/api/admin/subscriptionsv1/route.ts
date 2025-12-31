@@ -6,6 +6,7 @@ import {
   sendSubscriptionExpiringEmail,
 } from "@/lib/email-notifications";
 import { ObjectId } from "mongodb";
+import { verifyToken } from "@/lib/auth";
 
 // Middleware to verify admin token
 async function verifyAdmin(request: NextRequest) {
@@ -30,20 +31,27 @@ async function verifyAdmin(request: NextRequest) {
 // GET all subscriptions
 export async function GET(request: NextRequest) {
   try {
-    const auth = await verifyAdmin(request);
+    // const auth = await verifyAdmin(request);
     // if (!auth.valid) {
     //   return NextResponse.json({ error: auth.error }, { status: 401 });
     // }
 
     // const admin = auth.admin!;
 
-    // // Check permission
+    // Check permission
     // if (!(await hasPermission(admin._id!, AdminPermission.VIEW_SUBSCRIPTIONS))) {
     //   return NextResponse.json(
     //     { error: "Insufficient permissions" },
     //     { status: 403 }
     //   );
     // }
+
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
+    const decoded = verifyToken(token!);
+
+    if (!decoded || decoded.isAdmin !== true) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const db = await getDatabase();
 

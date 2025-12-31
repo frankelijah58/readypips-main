@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate token
-    const token = generateToken(user._id!,user.email!, user!.role);
+    const token = generateToken(user._id!,user.email!, user!.role, user.isAdmin);
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       token,
       user: {
         ...userWithoutPassword,
-        isAdmin: false,
+        isAdmin: user.isAdmin || false,
       },
     });
   } catch (error) {

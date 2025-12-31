@@ -73,14 +73,14 @@ export async function verifyPassword(
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateToken(userId: string, email: string, role: string ): string {
-  return jwt.sign({ userId, email, role }, JWT_SECRET, { expiresIn: "7d" });
+export function generateToken(userId: string, email: string, role: string, isAdmin?: boolean ): string {
+  return jwt.sign({ userId, email, role, isAdmin }, JWT_SECRET, { expiresIn: "7d" });
 }
 
 // Update return type to include email
 export function verifyToken(
   token: string
-): { userId: string; email: string; role: UserRole } | null {
+): { userId: string; email: string; role: UserRole, isAdmin?: boolean } | null {
   try {
     return jwt.verify(token, JWT_SECRET) as any;
   } catch {
@@ -103,6 +103,7 @@ export async function createUser(
     password: hashedPassword,
 
     role: userData.role || "user",
+    isAdmin: userData.isAdmin || false,
 
     affiliateProfile: null,
     partnerProfile: null,
@@ -133,7 +134,8 @@ export async function findUser(email: string): Promise<User | null> {
     lastName: user.lastName,
     phoneNumber: user.phoneNumber,
 
-     role: user.role || "user",
+    role: user.role || "user",
+    isAdmin: user.isAdmin || false,
 
     affiliateProfile: user.affiliateProfile || null,
     partnerProfile: user.partnerProfile || null,

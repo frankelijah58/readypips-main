@@ -14,12 +14,12 @@ import nodemailer from 'nodemailer';
 export async function GET(req: Request) {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    // const decoded = verifyToken(token!);
+    const decoded = verifyToken(token!);
 
     // Security Guard: Ensure only Admins can access this list
-    // if (!decoded || decoded.role !== 'admin') {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    if (!decoded || decoded.isAdmin !== true) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const db = await getDatabase();
     

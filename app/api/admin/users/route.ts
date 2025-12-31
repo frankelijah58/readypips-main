@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import { verifyAdminToken, findAdminById, hasPermission, recordAdminAction, AdminPermission } from "@/lib/admin";
 import { ObjectId } from "mongodb";
+import { verifyToken } from "@/lib/auth";
 
 // Middleware to verify admin token
 async function verifyAdmin(request: NextRequest) {
@@ -26,12 +27,12 @@ async function verifyAdmin(request: NextRequest) {
 // GET all users
 export async function GET(request: NextRequest) {
   try {
-    const auth = await verifyAdmin(request);
+    // const auth = await verifyAdmin(request);
     // if (!auth.valid) {
     //   return NextResponse.json({ error: auth.error }, { status: 401 });
     // }
 
-    const admin = auth.admin!;
+    // const admin = auth.admin!;
 
     // Check permission
     // if (!(await hasPermission(admin._id!, AdminPermission.VIEW_USERS))) {
@@ -40,6 +41,13 @@ export async function GET(request: NextRequest) {
     //     { status: 403 }
     //   );
     // }
+
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
+    const decoded = verifyToken(token!);
+
+    if (!decoded || decoded.isAdmin !== true) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const db = await getDatabase();
 
@@ -98,19 +106,26 @@ export async function GET(request: NextRequest) {
 // PUT update user
 export async function PUT(request: NextRequest) {
   try {
-    const auth = await verifyAdmin(request);
-    if (!auth.valid) {
-      return NextResponse.json({ error: auth.error }, { status: 401 });
-    }
+    // const auth = await verifyAdmin(request);
+    // if (!auth.valid) {
+    //   return NextResponse.json({ error: auth.error }, { status: 401 });
+    // }
 
-    const admin = auth.admin!;
+    // const admin = auth.admin!;
 
-    // Check permission
-    if (!(await hasPermission(admin._id!, AdminPermission.EDIT_USER))) {
-      return NextResponse.json(
-        { error: "Insufficient permissions" },
-        { status: 403 }
-      );
+    // // Check permission
+    // if (!(await hasPermission(admin._id!, AdminPermission.EDIT_USER))) {
+    //   return NextResponse.json(
+    //     { error: "Insufficient permissions" },
+    //     { status: 403 }
+    //   );
+    // }
+
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
+    const decoded = verifyToken(token!);
+
+    if (!decoded || decoded.isAdmin !== true) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { userId, updates } = await request.json();
@@ -144,7 +159,7 @@ export async function PUT(request: NextRequest) {
     }
 
     updates.updatedAt = new Date();
-    updates.updatedBy = admin._id;
+    updates.updatedBy = decoded.userId;
 
     await db
       .collection("users")
@@ -154,7 +169,7 @@ export async function PUT(request: NextRequest) {
       );
 
     // Record action
-    await recordAdminAction(admin._id!, "edit_user", {
+    await recordAdminAction(decoded.userId!, "edit_user", {
       userId: new ObjectId(userId),
       userEmail: user.email,
       changes: updates,

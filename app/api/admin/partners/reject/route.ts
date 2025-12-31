@@ -3,16 +3,17 @@ import { NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { requireAdmin } from "@/lib/adminAuth";
+import { verifyToken } from "@/lib/auth";
 
 
 export async function POST(req: Request) {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    // const decoded = verifyToken(token!);
+    const decoded = verifyToken(token!);
 
-    // if (!decoded || decoded.role !== 'admin') {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    if (!decoded || decoded.isAdmin !== true) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const { userId } = await req.json();
     const db = await getDatabase();
