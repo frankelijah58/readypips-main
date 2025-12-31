@@ -346,16 +346,16 @@ export default function ProfilePage() {
                         {subscriptionInfo.isFreePlan && subscriptionInfo.freeTrialEndDate && (
                           <>
                             <div className="flex items-center justify-between mb-3">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {/* <span className="text-sm text-gray-600 dark:text-gray-400">
                                 Free Trial
                               </span>
                               <Badge className="bg-blue-600 text-white text-xs">
                                 {subscriptionInfo.freeTrialDaysRemaining} day{subscriptionInfo.freeTrialDaysRemaining !== 1 ? 's' : ''} left
-                              </Badge>
+                              </Badge> */}
                             </div>
                             
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {/* <span className="text-sm text-gray-600 dark:text-gray-400">
                                 Trial Expires
                               </span>
                               <span className={`text-sm font-semibold ${
@@ -370,12 +370,12 @@ export default function ProfilePage() {
                                   hour: '2-digit',
                                   minute: '2-digit'
                                 })}
-                              </span>
+                              </span> */}
                             </div>
 
                             <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                               <p className="text-xs text-blue-700 dark:text-blue-400">
-                                🎁 <strong>Free Trial Active!</strong> You have full access to all premium features for {subscriptionInfo.freeTrialDaysRemaining} more day{subscriptionInfo.freeTrialDaysRemaining !== 1 ? 's' : ''}. Subscribe before trial ends to continue enjoying premium features.
+                                🎁 <strong>Free Trial Active!</strong> You have full access to limited features for {subscriptionInfo.freeTrialDaysRemaining} more day{subscriptionInfo.freeTrialDaysRemaining !== 1 ? 's' : ''}. Subscribe before trial ends to continue enjoying premium features.
                               </p>
                             </div>
 
