@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    tradingviewUsername: '',
     email: '',
     phoneNumber: '',
     password: '',
@@ -56,6 +57,7 @@ export default function RegisterPage() {
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
+          tradingviewUsername: formData.tradingviewUsername,
           email: formData.email,
           phoneNumber: formData.phoneNumber,
           password: formData.password,
@@ -173,11 +175,11 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="lastName" className="text-black dark:text-white">Tradingview Username  *</Label>
                 <Input
-                  id="lastName"
-                  name="lastName"
+                  id="tradingviewUsername"
+                  name="tradingviewUsername"
                   type="text"
                   required
-                  value={formData.email}
+                  value={formData.tradingviewUsername}
                   onChange={handleChange}
                   autoComplete="email"
                   className="bg-white dark:bg-black border-gray-300 dark:border-gray-600 text-black dark:text-white"

@@ -49,6 +49,7 @@ export default function ProfilePage() {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [tradingviewUsername, setTradingviewUsername] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
@@ -99,7 +100,7 @@ export default function ProfilePage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ firstName, lastName }),
+        body: JSON.stringify({ firstName, lastName, tradingviewUsername  }),
       });
 
       if (!response.ok) {
@@ -205,6 +206,17 @@ export default function ProfilePage() {
                         className="border-gray-300 dark:border-gray-700"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                      Tradingview Username
+                    </label>
+                    <Input 
+                      value={tradingviewUsername} 
+                      onChange={(e) => setTradingviewUsername(e.target.value)}
+                      className="border-gray-300 dark:border-gray-700"
+                    />
                   </div>
                   
                   <div>
