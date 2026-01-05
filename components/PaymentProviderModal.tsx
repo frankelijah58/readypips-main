@@ -54,7 +54,7 @@ export default function PaymentProviderModal({
           </button>
 
           {/* Binance Provider */}
-          <button
+          {/* <button
             onClick={() => onSelect("binance")}
             className="group relative flex items-center justify-between p-4 border rounded-xl hover:border-yellow-500 hover:bg-yellow-50/50 dark:hover:bg-yellow-950/10 transition-all text-left"
           >
@@ -68,7 +68,7 @@ export default function PaymentProviderModal({
               </div>
             </div>
             <div className="h-2 w-2 rounded-full bg-gray-300 group-hover:bg-yellow-500" />
-          </button>
+          </button> */}
         </div>
 
         <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 uppercase tracking-widest">
