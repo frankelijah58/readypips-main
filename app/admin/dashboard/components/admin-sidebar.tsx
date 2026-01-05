@@ -117,7 +117,7 @@ export default function AdminSidebar({
             <div className="text-sm">
               <p className="font-semibold">{admin?.firstName}</p>
               <p className="text-xs text-gray-400">
-                {admin?.role?.replace('_', ' ').toUpperCase()}
+                {admin?.isAdmin ? 'ADMIN' : admin?.role?.replace('_', ' ').toUpperCase()}
               </p>
             </div>
           </div>
