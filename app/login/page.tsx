@@ -291,7 +291,7 @@ export default function LoginPage() {
             </div>
 
             {/* Google Login Button - Placeholder */}
-            <Button 
+            {/* <Button 
               type="button" 
               variant="outline"
               className="w-full border-gray-300 dark:border-gray-600 text-black dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800" 
@@ -314,7 +314,7 @@ export default function LoginPage() {
                   Continue with Google
                 </>
               )}
-            </Button>
+            </Button> */}
 
             <div className="mt-6 text-center text-sm">
               <span className="text-gray-600 dark:text-gray-400">{`Don't have an account?`}</span>
