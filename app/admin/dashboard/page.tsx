@@ -147,7 +147,7 @@ export default function AdminDashboard() {
               {getSectionTitle(currentSection)}
             </h1>
             <p className="mt-1 text-sm text-gray-600">
-              Welcome back, {admin.firstName}! {admin.role && `(Role: ${admin.role.replace('_', ' ').toUpperCase()})`}
+              Welcome back, {admin.firstName}! 
             </p>
           </div>
         </div>
