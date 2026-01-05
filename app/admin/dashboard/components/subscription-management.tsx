@@ -1,59 +1,48 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Clock, 
-  RefreshCw, 
-  Users, 
-  DollarSign, 
-  Calendar, 
-  Search, 
-  ChevronRight, 
-  CreditCard,
-  AlertCircle,
-  TrendingUp,
-  UserCheck
+  Clock, RefreshCw, Users, Calendar, Search, 
+  ChevronRight, ChevronLeft, CreditCard, AlertCircle, 
+  TrendingUp, UserCheck, CheckCircle2, XCircle, Phone, Mail,
+  ShieldAlert
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-interface Subscription {
-  _id: string;
-  plan: string;
-  price: number;
-  status: string;
-  startDate: string;
-  endDate: string;
-  userName?: string;
-}
-
-interface PendingPayment {
-  _id: string;
-  reference: string;
-  planId: string;
-  provider: string;
-  amount: number;
-  createdAt: string;
-  email: string;
-  userName?: string;
-}
-
-export default function SubscriptionManagement({ admin }: { admin: any }) {
+export default function SubscriptionManagement() {
   const { toast } = useToast();
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
+  
+  // Data States
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [pendingPayments, setPendingPayments] = useState<any[]>([]);
+  const [stats, setStats] = useState({ active: 0, expired: 0, pending: 0, revenue: 0 });
+  
+  // UI & Pagination States
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ active: 0, expired: 0, pending: 0, revenue: 0 });
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
 
-  const fetchData = async () => {
+  // Pagination State - Pending Feed
+    const [pendingPage, setPendingPage] = useState(1);
+    const [pendingTotalPages, setPendingTotalPages] = useState(1);
+
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
+      // We fetch subscriptions with pagination and search
+      const subUrl = `/api/admin/subscriptions?page=${currentPage}&limit=${itemsPerPage}&search=${searchTerm}`;
+      
       const [subRes, pendingRes, revRes] = await Promise.all([
-        fetch('/api/admin/subscriptions', { headers }),
-        fetch('/api/admin/payments/pending', { headers }),
+        fetch(subUrl, { headers }),
+        // fetch('/api/admin/payments/pending', { headers }), // Pending is usually a smaller list
+        fetch(`/api/admin/payments/pending?page=${pendingPage}&limit=5`, { headers }),
         fetch('/api/admin/revenuev2', { headers })
       ]);
 
@@ -62,150 +51,221 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
       const revData = await revRes.json();
 
       setSubscriptions(subData.subscriptions || []);
+      setTotalPages(Math.ceil((subData.totalCount || 0) / itemsPerPage));
+      
       setPendingPayments(pendData.pending || []);
+      setPendingTotalPages(pendData.totalPages || 1);
       
       setStats({
-        active: subData.subscriptions?.filter((s: Subscription) => s.status === 'active').length || 0,
-        expired: subData.subscriptions?.filter((s: Subscription) => s.status === 'expired').length || 0,
+        active: subData.activeCount || 0,
+        expired: subData.expiredCount || 0,
         pending: pendData.pending?.length || 0,
         revenue: revData.revenue?.total || 0
       });
     } catch (error) {
-      toast({ title: 'Sync Error', description: 'Could not refresh dashboard data.', variant: 'destructive' });
+      toast({ title: 'Sync Error', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
+  }, [currentPage, pendingPage, searchTerm, toast]);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchData();
+    }, 500); // Debounce search
+    return () => clearTimeout(delayDebounceFn);
+  }, [fetchData]);
+
+  const handlePaymentAction = async (intentId: string, action: 'approve' | 'reject') => {
+    setProcessingId(intentId);
+    try {
+      const res = await fetch('/api/admin/payments/action', {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}` 
+        },
+        body: JSON.stringify({ intentId, action })
+      });
+      if (!res.ok) throw new Error();
+      toast({ title: `Successfully ${action}d payment` });
+      fetchData();
+    } catch (err) {
+      toast({ title: 'Action Failed', variant: 'destructive' });
+    } finally { setProcessingId(null); }
   };
-
-  useEffect(() => { fetchData(); }, []);
-
-  const filteredSubs = subscriptions.filter(s => 
-    s.userName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.plan.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 bg-slate-50 min-h-screen">
-      {/* Header Section */}
+      {/* Header with Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Revenue & Subscriptions</h1>
-          <p className="text-slate-500 text-sm mt-1">Real-time overview of your subscription health and growth.</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Financial Control</h1>
+          <p className="text-slate-500 text-sm">Manage user access and verify manual payments.</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Search users or plans..." 
-              className="pl-10 pr-4 py-2 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all w-64"
+              placeholder="Search by name, email..." 
+              className="pl-10 pr-4 py-2 border border-slate-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 shadow-sm"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             />
           </div>
-          <button 
-            onClick={fetchData} 
-            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-sm transition-all group"
-          >
-            <RefreshCw className={`w-5 h-5 text-slate-600 ${loading ? 'animate-spin text-blue-500' : ''}`} />
-          </button>
+          <Button variant="outline" onClick={() => fetchData()} className="rounded-xl bg-white">
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Revenue" value={`$${stats.revenue.toLocaleString()}`} icon={<TrendingUp className="w-6 h-6 text-blue-600" />} color="text-blue-600" bg="bg-blue-50" />
-        <StatCard title="Active Subs" value={stats.active.toString()} icon={<UserCheck className="w-6 h-6 text-emerald-600" />} color="text-emerald-600" bg="bg-emerald-50" />
-        <StatCard title="Pending Checkout" value={stats.pending.toString()} icon={<Clock className="w-6 h-6 text-amber-600" />} color="text-amber-600" bg="bg-amber-50" />
-        <StatCard title="Expired" value={stats.expired.toString()} icon={<AlertCircle className="w-6 h-6 text-slate-600" />} color="text-slate-600" bg="bg-slate-100" />
+        <StatCard title="Revenue" value={`$${stats.revenue}`} icon={<TrendingUp />} color="text-blue-600" bg="bg-blue-50" />
+        <StatCard title="Active" value={stats.active} icon={<UserCheck />} color="text-emerald-600" bg="bg-emerald-50" />
+        <StatCard title="In Queue" value={stats.pending} icon={<Clock />} color="text-amber-600" bg="bg-amber-50" />
+        <StatCard title="Churned" value={stats.expired} icon={<AlertCircle />} color="text-slate-500" bg="bg-slate-100" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Pending Activity Feed */}
-        <div className="lg:col-span-1 space-y-4">
+        {/* Verification Feed (Left) */}
+        {/* PAGINATED PENDING FEED */}
+        <div className="lg:col-span-1 flex flex-col gap-4">
           <div className="flex items-center justify-between px-2">
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <CreditCard className="w-4 h-4" /> Live Checkout Feed
+              <ShieldAlert className="w-4 h-4 text-amber-500" /> Pending Approval
             </h3>
-            <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-1 rounded-full animate-pulse">Live</span>
+            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">
+              {pendingPage} / {pendingTotalPages}
+            </span>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-            {pendingPayments.slice(0, 6).map((pay) => (
-              <div key={pay._id} className="p-4 hover:bg-slate-50 transition-colors">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
-                      {pay.userName?.charAt(0) || '?'}
-                    </div>
+
+          <div className="space-y-3 min-h-[500px]">
+            {pendingPayments.length > 0 ? (
+              pendingPayments.map((pay) => (
+                <div key={pay._id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm transition-all hover:border-blue-200">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="text-sm font-semibold text-slate-900 leading-none">{pay.userName || 'Guest'}</p>
-                      <p className="text-xs text-slate-400 mt-1 uppercase font-bold">{pay.planId}</p>
+                      <p className="font-bold text-slate-900 text-sm">{pay.userName || 'Guest'}</p>
+                      <p className="text-[10px] text-blue-500 font-black uppercase tracking-tighter">
+                        {pay.provider} • {pay.planId}
+                      </p>
                     </div>
+                    <span className="text-sm font-black text-slate-900">${pay.amount}</span>
                   </div>
-                  <span className="text-sm font-mono font-bold text-slate-700">${pay.amount}</span>
+
+                  <div className="space-y-1 mb-4 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-2"><Mail className="w-3 h-3" /> {pay.email}</div>
+                    {pay.phoneNumber && <div className="flex items-center gap-2"><Phone className="w-3 h-3" /> {pay.phoneNumber}</div>}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => handlePaymentAction(pay._id, 'approve')}
+                      disabled={!!processingId}
+                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 rounded-xl h-9 text-xs font-bold"
+                    >
+                      {processingId === pay._id ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Approve'}
+                    </Button>
+                    <Button 
+                      onClick={() => handlePaymentAction(pay._id, 'reject')}
+                      disabled={!!processingId}
+                      variant="outline" 
+                      className="flex-1 rounded-xl h-9 text-xs font-bold border-slate-200"
+                    >
+                      Reject
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> {new Date(pay.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                  <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded capitalize">{pay.provider}</span>
-                </div>
+              ))
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 p-12 bg-white rounded-3xl border border-dashed border-slate-200">
+                <Clock className="w-8 h-8 mb-2 opacity-20" />
+                <p className="text-xs font-medium">Clear for now!</p>
               </div>
-            ))}
-            {pendingPayments.length === 0 && (
-              <div className="p-12 text-center text-slate-400 text-sm">No active checkout sessions</div>
             )}
+          </div>
+
+          {/* Pending Pagination Controls */}
+          <div className="flex items-center justify-center gap-4 py-2">
+            <Button 
+              variant="ghost" size="sm" className="rounded-full"
+              disabled={pendingPage === 1}
+              onClick={() => setPendingPage(p => p - 1)}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-xs font-bold text-slate-400">Page {pendingPage}</span>
+            <Button 
+              variant="ghost" size="sm" className="rounded-full"
+              disabled={pendingPage === pendingTotalPages}
+              onClick={() => setPendingPage(p => p + 1)}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 
-        {/* Main Subscriptions Table */}
+        {/* Master Table (Right) */}
         <div className="lg:col-span-2 space-y-4">
-          <h3 className="font-bold text-slate-800 px-2">Completed Subscriptions</h3>
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <h3 className="font-bold text-slate-800 px-2">Subscriptions Database</h3>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-left font-semibold text-slate-600">Subscriber</th>
-                    <th className="px-6 py-4 text-left font-semibold text-slate-600">Status</th>
-                    <th className="px-6 py-4 text-left font-semibold text-slate-600">Amount</th>
-                    <th className="px-6 py-4 text-left font-semibold text-slate-600">Expires</th>
-                    <th className="px-6 py-4"></th>
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr>
+                    <th className="px-6 py-4 text-left font-bold text-slate-500 uppercase text-[10px]">User Details</th>
+                    <th className="px-6 py-4 text-left font-bold text-slate-500 uppercase text-[10px]">Status</th>
+                    <th className="px-6 py-4 text-left font-bold text-slate-500 uppercase text-[10px]">Expiry</th>
+                    <th className="px-6 py-4 text-right font-bold text-slate-500 uppercase text-[10px]">Paid</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredSubs.map((sub) => (
-                    <tr key={sub._id} className="group hover:bg-slate-50/50 transition-colors">
+                  {subscriptions.map((sub) => (
+                    <tr key={sub._id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-slate-900 uppercase text-xs tracking-wider">{sub.plan}</div>
-                        <div className="text-xs text-slate-400">{sub.userName || 'Anonymous'}</div>
+                        <div className="font-bold text-slate-900 uppercase text-[11px] tracking-tight">{sub.plan}</div>
+                        <div className="text-xs text-slate-400 font-medium">{sub.userName}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={sub.status} />
+                      <td className="px-6 py-4"><StatusBadge status={sub.status} /></td>
+                      <td className="px-6 py-4 text-[11px] text-slate-500 font-bold">
+                        {new Date(sub.endDate).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 font-mono font-semibold text-slate-700">
-                        KES {sub.price.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 text-slate-500 text-xs">
-                        {new Date(sub.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded-lg transition-all">
-                          <ChevronRight className="w-4 h-4 text-slate-400" />
-                        </button>
+                      <td className="px-6 py-4 text-right font-mono font-bold text-slate-700">
+                        ${sub.price}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {filteredSubs.length === 0 && (
-                <div className="p-20 text-center space-y-3">
-                  <div className="mx-auto w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
-                    <Users className="w-6 h-6 text-slate-300" />
-                  </div>
-                  <p className="text-slate-400">No subscriptions found.</p>
-                </div>
-              )}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <p className="text-xs text-slate-500 font-medium">
+                Page <span className="text-slate-900 font-bold">{currentPage}</span> of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 rounded-lg"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1 || loading}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="h-8 w-8 p-0 rounded-lg"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages || loading}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -214,13 +274,14 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
   );
 }
 
+// Sub-components
 function StatCard({ title, value, icon, color, bg }: any) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-5">
-      <div className={`${bg} p-3 rounded-xl`}>{icon}</div>
+    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+      <div className={`${bg} p-2.5 rounded-xl ${color}`}>{icon}</div>
       <div>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{title}</p>
-        <p className={`text-2xl font-black ${color}`}>{value}</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</p>
+        <p className={`text-xl font-black ${color}`}>{value}</p>
       </div>
     </div>
   );
@@ -229,13 +290,11 @@ function StatCard({ title, value, icon, color, bg }: any) {
 function StatusBadge({ status }: { status: string }) {
   const styles: any = {
     active: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    trial: 'bg-blue-100 text-blue-700 border-blue-200',
     expired: 'bg-slate-100 text-slate-600 border-slate-200',
-    cancelled: 'bg-rose-100 text-rose-700 border-rose-200'
+    trial: 'bg-blue-100 text-blue-700 border-blue-200'
   };
-
   return (
-    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase border tracking-tighter ${styles[status] || styles.expired}`}>
+    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${styles[status] || styles.expired}`}>
       {status}
     </span>
   );

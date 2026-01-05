@@ -13,6 +13,12 @@ export async function GET(req: Request) {
 
     const db = await getDatabase();
 
+    // Example snippet for the backend change
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
+
     // Fetch subscriptions and join with user details to get the name
     const subscriptions = await db.collection("subscriptions").aggregate([
       {
@@ -35,7 +41,9 @@ export async function GET(req: Request) {
           userName: { $concat: ["$userDetails.firstName", " ", "$userDetails.lastName"] }
         }
       },
-      { $sort: { startDate: -1 } }
+      { $sort: { startDate: -1 } },
+      { $skip: skip },
+      { $limit: limit }
     ]).toArray();
 
     return NextResponse.json({ subscriptions });
