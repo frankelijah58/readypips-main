@@ -1,7 +1,5 @@
-import { verifyToken } from '@/lib/auth';
 import { getDatabase } from '@/lib/mongodb';
 import { NextResponse } from 'next/server';
-
 
 export async function GET(req: Request) {
   try {
@@ -13,57 +11,77 @@ export async function GET(req: Request) {
 
     const db = await getDatabase();
 
-    const totalCount = await db
-      .collection('payment_intents')
-      .countDocuments({ status: 'pending' });
+    const result = await db.collection('payment_intents').aggregate([
+      // 1. Filter for pending status first for performance
+      { $match: { status: 'pending' } },
 
-    const totalPages = Math.max(Math.ceil(totalCount / limit), 1);
+      // 2. CONVERSION: Ensure userId matches the User collection _id type
+      {
+        $addFields: {
+          convertedUserId: { 
+            $cond: { 
+              if: { $ne: ["$userId", null] }, 
+              then: { $toObjectId: "$userId" }, 
+              else: null 
+            } 
+          }
+        }
+      },
 
-    // 🔒 Clamp page to avoid empty results
-    const safePage = Math.min(page, totalPages);
-    const safeSkip = (safePage - 1) * limit;
+      // 3. Lookup User details
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'convertedUserId',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
 
-    const pending = await db
-      .collection('payment_intents')
-      .aggregate([
-        { $match: { status: 'pending' } },
-        { $lookup: {
-            from: 'users',
-            localField: 'userId',
-            foreignField: '_id',
-            as: 'user'
-        }},
-        { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
-        { $project: {
-            _id: 1,
-            reference: 1,
-            planId: 1,
-            provider: 1,
-            amount: 1,
-            createdAt: 1,
-            email: 1,
-            userName: {
-              $trim: {
-                input: {
-                  $concat: ['$user.firstName', ' ', '$user.lastName']
-                }
+      // 4. Group results into Data and Total Count
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $sort: { createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $project: {
+                _id: 1,
+                reference: 1,
+                planId: 1,
+                provider: 1,
+                amount: 1,
+                createdAt: 1,
+                email: 1,
+                userName: {
+                  $ifNull: [
+                    { $trim: { input: { $concat: ['$user.firstName', ' ', '$user.lastName'] } } },
+                    'Guest User'
+                  ]
+                },
+                phoneNumber: { $ifNull: ['$user.phoneNumber', 'No Phone'] }
               }
-            },
-            phoneNumber: '$user.phoneNumber'
-        }},
-        { $sort: { createdAt: -1 } },
-        { $skip: safeSkip },
-        { $limit: limit }
-      ])
-      .toArray();
+            }
+          ]
+        }
+      }
+    ]).toArray();
+
+    // 5. Format the response
+    const pending = result[0]?.data || [];
+    const totalCount = result[0]?.metadata[0]?.total || 0;
+    const totalPages = Math.ceil(totalCount / limit);
 
     return NextResponse.json({
       pending,
-      page: safePage,
-      limit,
       totalCount,
-      totalPages
+      totalPages,
+      currentPage: page
     });
+
   } catch (error) {
     console.error('Pending payments API error:', error);
     return NextResponse.json(
