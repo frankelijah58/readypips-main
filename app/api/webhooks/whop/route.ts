@@ -65,10 +65,10 @@ export async function POST(req: NextRequest) {
       }
 
       // Update the User in the DB to cancel subscription
-      await updateUserSubscription(intent.userId, {
-        subscriptionStatus: "canceled",
-        subscriptionEndDate: new Date(),
-      });
+      // await updateUserSubscription(intent.userId, {
+      //   subscriptionStatus: "canceled",
+      //   subscriptionEndDate: new Date(),
+      // });
 
       console.log(`✅ Subscription canceled for user ${intent.userId}`);
     }
