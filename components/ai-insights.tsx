@@ -367,8 +367,8 @@ const AIInsights = forwardRef<AIInsightsRef, AIInsightsProps>(
           },
         };
 
-        console.log("🚀 [AI Insights] Sending request to API:");
-        console.log(
+        // console.log("🚀 [AI Insights] Sending request to API:");
+        // console.log(
           "📊 [AI Insights] Request Data:",
           JSON.stringify(requestData, null, 2)
         );
@@ -383,8 +383,8 @@ const AIInsights = forwardRef<AIInsightsRef, AIInsightsProps>(
           const data = await response.json();
 
           // Log API response
-          console.log("✅ [AI Insights] API Response received:");
-          console.log(
+          // console.log("✅ [AI Insights] API Response received:");
+          // console.log(
             "📊 [AI Insights] Response Data:",
             JSON.stringify(data, null, 2)
           );
@@ -392,7 +392,7 @@ const AIInsights = forwardRef<AIInsightsRef, AIInsightsProps>(
           // Parse the analysis JSON string
           const analysisData = JSON.parse(data.analysis);
 
-          console.log(
+          // console.log(
             "📊 [AI Insights] Parsed Analysis Data:",
             JSON.stringify(analysisData, null, 2)
           );
@@ -739,7 +739,7 @@ const AIInsights = forwardRef<AIInsightsRef, AIInsightsProps>(
       const strategy = TRADING_STRATEGIES.find((s) => s.id === strategyId);
       if (strategy?.defaultTimeframes) {
         setSelectedTimeframes(strategy.defaultTimeframes);
-        console.log(
+        // console.log(
           `Strategy changed to ${strategy.name}, timeframes set to:`,
           strategy.defaultTimeframes
         );
@@ -751,7 +751,7 @@ const AIInsights = forwardRef<AIInsightsRef, AIInsightsProps>(
         const newTimeframes = prev.includes(timeframe)
           ? prev.filter((tf) => tf !== timeframe)
           : [...prev, timeframe];
-        console.log(`Timeframes updated:`, newTimeframes);
+        // console.log(`Timeframes updated:`, newTimeframes);
         return newTimeframes;
       });
     };

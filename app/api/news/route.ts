@@ -66,10 +66,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol");
 
-  console.log(`📰 News API called for symbol: ${symbol}`);
+  // console.log(`📰 News API called for symbol: ${symbol}`);
 
   if (!symbol) {
-    console.log("❌ No symbol provided for news");
+    // console.log("❌ No symbol provided for news");
     return NextResponse.json(
       { error: "Symbol parameter is required" },
       { status: 400 }
@@ -77,19 +77,19 @@ export async function GET(request: NextRequest) {
   }
 
   if (!ALPHA_VANTAGE_API_KEY && !NEWS_API_KEY) {
-    console.log("⚠️ No API keys configured, using mock news data");
+    // console.log("⚠️ No API keys configured, using mock news data");
     return NextResponse.json(generateMockNews(symbol));
   }
 
   try {
     // Convert symbol to appropriate format for news search
     const searchSymbol = mapSymbolToYahoo(symbol).replace(/[=XF]/g, ""); // Remove Yahoo Finance suffixes
-    console.log(`🔄 Using search symbol: ${searchSymbol} for news`);
+    // console.log(`🔄 Using search symbol: ${searchSymbol} for news`);
 
     // Check cache first
     const cachedNews = await getCachedNews(symbol, 60); // 60 minutes cache
     if (cachedNews) {
-      console.log(
+      // console.log(
         `✅ Returning cached news for ${symbol}:`,
         cachedNews.length,
         "articles"
@@ -100,14 +100,14 @@ export async function GET(request: NextRequest) {
     // Try Alpha Vantage first if API key is available
     if (ALPHA_VANTAGE_API_KEY) {
       try {
-        console.log(`🌐 Trying Alpha Vantage news for ${searchSymbol}`);
+        // console.log(`🌐 Trying Alpha Vantage news for ${searchSymbol}`);
         const alphaUrl = `${ALPHA_VANTAGE_NEWS_URL}?function=NEWS_SENTIMENT&tickers=${searchSymbol}&apikey=${ALPHA_VANTAGE_API_KEY}`;
 
         const alphaResponse = await fetch(alphaUrl);
         const alphaData: AlphaVantageNewsResponse = await alphaResponse.json();
 
         if (alphaData.feed && alphaData.feed.length > 0) {
-          console.log(
+          // console.log(
             `✅ Alpha Vantage returned ${alphaData.feed.length} articles for ${searchSymbol}`
           );
 
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(newsItems);
         }
       } catch (alphaError) {
-        console.log(
+        // console.log(
           `❌ Alpha Vantage failed for ${searchSymbol}, trying NewsAPI`
         );
       }
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
     // Fallback to NewsAPI if Alpha Vantage fails or no key
     if (NEWS_API_KEY) {
       const url = `${NEWS_API_BASE_URL}?q=${searchSymbol}&language=en&sortBy=publishedAt&pageSize=10&apiKey=${NEWS_API_KEY}`;
-      console.log(
+      // console.log(
         `🌐 Fetching news from NewsAPI: ${url.replace(NEWS_API_KEY, "***")}`
       );
 
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
       const data: NewsAPIResponse = await response.json();
 
       if (data.status === "ok" && data.articles && data.articles.length > 0) {
-        console.log(
+        // console.log(
           `✅ NewsAPI returned ${data.articles.length} articles for ${searchSymbol}`
         );
 
@@ -171,13 +171,13 @@ export async function GET(request: NextRequest) {
     }
 
     // If both APIs fail, return mock data
-    console.log(`❌ No news found for ${symbol}, returning mock data`);
+    // console.log(`❌ No news found for ${symbol}, returning mock data`);
     return NextResponse.json(generateMockNews(symbol));
   } catch (error) {
     console.error(`❌ Error fetching news for ${symbol}:`, error);
 
     // Fallback to mock data on error
-    console.log(`🔄 Falling back to mock news for ${symbol} due to error`);
+    // console.log(`🔄 Falling back to mock news for ${symbol} due to error`);
     const mockNewsItems: NewsItem[] = [
       {
         id: "mock-1",
@@ -235,7 +235,7 @@ export async function GET(request: NextRequest) {
       },
     ];
 
-    console.log(
+    // console.log(
       `✅ Returning error fallback mock news for ${symbol}:`,
       mockNewsItems.length,
       "articles"
@@ -380,7 +380,7 @@ export async function POST(request: NextRequest) {
     // If the intent was to mark news as read in a persistent way,
     // this would require a backend service or a different data source.
     // For now, we'll just return a success message.
-    console.log(`📝 POST request received for newsId: ${newsId}`);
+    // console.log(`📝 POST request received for newsId: ${newsId}`);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error marking news as read:", error);

@@ -35,11 +35,11 @@ const getEmailTransporter = () => {
   const user = process.env.SMTP_USER || "";
   const pass = process.env.SMTP_PASS || "";
 
-  console.log('📧 [Email Notifications] SMTP Configuration:');
-  console.log('  Host:', host);
-  console.log('  Port:', port);
-  console.log('  User:', user || 'NOT SET');
-  console.log('  Pass:', pass ? '***SET***' : 'NOT SET');
+  // console.log('📧 [Email Notifications] SMTP Configuration:');
+  // console.log('  Host:', host);
+  // console.log('  Port:', port);
+  // console.log('  User:', user || 'NOT SET');
+  // console.log('  Pass:', pass ? '***SET***' : 'NOT SET');
 
   if (!user || !pass) {
     console.warn("⚠️ SMTP credentials not configured in environment variables");
@@ -77,7 +77,7 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent (${options.type}) to ${options.to}:`, info.messageId);
+    // console.log(`✅ Email sent (${options.type}) to ${options.to}:`, info.messageId);
     return true;
   } catch (error) {
     console.error(`❌ Error sending email (${options.type}) to ${options.to}:`, error);

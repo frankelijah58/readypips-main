@@ -5,20 +5,20 @@ import { updateUserSubscription } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔍 [Pesapal Webhook] Received webhook notification');
+    // console.log('🔍 [Pesapal Webhook] Received webhook notification');
     
     const body = await request.json();
     const signature = request.headers.get("x-pesapal-signature") || "";
     
-    console.log('🔍 [Pesapal Webhook] Body:', body);
-    console.log('🔍 [Pesapal Webhook] Signature:', signature);
+    // console.log('🔍 [Pesapal Webhook] Body:', body);
+    // console.log('🔍 [Pesapal Webhook] Signature:', signature);
 
     // Pesapal doesn't use webhook signatures - proceed without validation
-    console.log('✅ [Pesapal Webhook] Processing webhook (no signature validation needed)');
+    // console.log('✅ [Pesapal Webhook] Processing webhook (no signature validation needed)');
     
     // Optional: Check if webhook is enabled in production
     if (process.env.NODE_ENV === 'production' && !process.env.PESAPAL_WEBHOOK_ENABLED) {
-      console.log('⚠️ [Pesapal Webhook] Webhook disabled in production');
+      // console.log('⚠️ [Pesapal Webhook] Webhook disabled in production');
       return NextResponse.json({ error: "Webhook disabled" }, { status: 503 });
     }
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    console.log('🔍 [Pesapal Webhook] Processing payment:', {
+    // console.log('🔍 [Pesapal Webhook] Processing payment:', {
       order_tracking_id,
       payment_status,
       merchant_reference,
@@ -59,12 +59,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Payment record not found" }, { status: 404 });
     }
 
-    console.log('✅ [Pesapal Webhook] Payment record found:', paymentRecord._id);
+    // console.log('✅ [Pesapal Webhook] Payment record found:', paymentRecord._id);
 
     // Verify the transaction with Pesapal API
     try {
       const verificationData = await verifyPesapalTransaction(order_tracking_id);
-      console.log('🔍 [Pesapal Webhook] Verification data:', verificationData);
+      // console.log('🔍 [Pesapal Webhook] Verification data:', verificationData);
 
       // Update payment record
       const updateData = {
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         { $set: updateData }
       );
 
-      console.log('✅ [Pesapal Webhook] Payment record updated');
+      // console.log('✅ [Pesapal Webhook] Payment record updated');
 
       // If payment is completed, update user subscription
       if (payment_status === "COMPLETED") {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 
             if (isOnActivePaidPlan) {
               // Schedule new subscription to start after current expires
-              console.log('⏰ [Pesapal Webhook] User has active paid plan - scheduling new subscription');
+              // console.log('⏰ [Pesapal Webhook] User has active paid plan - scheduling new subscription');
               
               await db.collection("users").updateOne(
                 { _id: new ObjectId(userId) },
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
                 }
               );
               
-              console.log('✅ [Pesapal Webhook] Pending subscription scheduled');
+              // console.log('✅ [Pesapal Webhook] Pending subscription scheduled');
             } else {
               // Activate immediately
               const subscriptionStartDate = new Date();
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
                 subscriptionEndDate,
               });
 
-              console.log('✅ [Pesapal Webhook] User subscription activated immediately:', {
+              // console.log('✅ [Pesapal Webhook] User subscription activated immediately:', {
                 userId,
                 planId,
                 subscriptionType,

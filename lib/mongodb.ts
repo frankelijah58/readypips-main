@@ -5,8 +5,8 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI;
-console.log('[MongoDB] URI from env:', uri.substring(0, 50) + '...');
-console.log('[MongoDB] Connecting to:', uri.includes('mongodb+srv') ? 'MongoDB Atlas' : 'Local MongoDB');
+// console.log('[MongoDB] URI from env:', uri.substring(0, 50) + '...');
+// console.log('[MongoDB] Connecting to:', uri.includes('mongodb+srv') ? 'MongoDB Atlas' : 'Local MongoDB');
 
 const options = {
   maxPoolSize: 10,
@@ -45,7 +45,7 @@ export async function getDatabase(): Promise<Db> {
 
     const dbName = process.env.MONGODB_DB_NAME || "READYPIPS";
     
-    console.log('[MongoDB] Successfully connected to database:', dbName);
+    // console.log('[MongoDB] Successfully connected to database:', dbName);
     return client.db(dbName);
   } catch (error: any) {
     console.error('[MongoDB] Connection error:', error.message);
@@ -53,7 +53,7 @@ export async function getDatabase(): Promise<Db> {
     
     // If connection fails, try to reconnect
     if (error.name === 'MongoServerSelectionError') {
-      console.log('[MongoDB] Retrying connection...');
+      // console.log('[MongoDB] Retrying connection...');
       try {
         // Create new client and retry
         const newClient = new MongoClient(uri, options);
@@ -61,7 +61,7 @@ export async function getDatabase(): Promise<Db> {
 
         const dbName = process.env.MONGODB_DB_NAME || "READYPIPS";
         
-        console.log('[MongoDB] Reconnected successfully to:', dbName);
+        // console.log('[MongoDB] Reconnected successfully to:', dbName);
         return connectedClient.db(dbName);
       } catch (retryError: any) {
         console.error('[MongoDB] Retry failed:', retryError.message);

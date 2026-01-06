@@ -59,9 +59,9 @@ export default function AdminDashboard() {
         router.push('/signals');
         return;
       }
-      console.log('Admin profile data:', data.user);
-      console.log('Admin role:', data.user.role);
-      console.log('Is Admin flag:', data.user.isAdmin);
+      // console.log('Admin profile data:', data.user);
+      // console.log('Admin role:', data.user.role);
+      // console.log('Is Admin flag:', data.user.isAdmin);
       setAdmin(data.user);
     } catch (error) {
       console.error('Error fetching admin profile:', error);

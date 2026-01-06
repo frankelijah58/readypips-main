@@ -13,7 +13,7 @@ const bcrypt = require("bcryptjs");
 async function forceSeededAdmin() {
   let client;
   try {
-    console.log("🌱 Starting FORCE admin seeder...\n");
+    // console.log("🌱 Starting FORCE admin seeder...\n");
 
     // Connect to MongoDB
     const mongoUri = process.env.MONGODB_URI;
@@ -27,12 +27,12 @@ async function forceSeededAdmin() {
     const db = client.db(process.env.MONGODB_DB_NAME || "ready-pips");
 
     // DELETE existing admin if it exists
-    console.log("🗑️  Deleting existing admin account...");
+    // console.log("🗑️  Deleting existing admin account...");
     const deleteResult = await db.collection("admins").deleteMany({ email: "admin@readypips.com" });
     if (deleteResult.deletedCount > 0) {
-      console.log(`✅ Deleted ${deleteResult.deletedCount} existing admin(s)\n`);
+      // console.log(`✅ Deleted ${deleteResult.deletedCount} existing admin(s)\n`);
     } else {
-      console.log("ℹ️  No existing admin found\n");
+      // console.log("ℹ️  No existing admin found\n");
     }
 
     // Set fixed password for easy access during development
@@ -77,19 +77,19 @@ async function forceSeededAdmin() {
 
     const result = await db.collection("admins").insertOne(superAdmin);
 
-    console.log("✨ Super Admin Created Successfully!\n");
-    console.log("━".repeat(50));
-    console.log("📊 ADMIN CREDENTIALS");
-    console.log("━".repeat(50));
-    console.log(`Email:    ${superAdmin.email}`);
-    console.log(`Password: ${tempPassword}`);
-    console.log(`Role:     ${superAdmin.role}`);
-    console.log("━".repeat(50));
-    console.log("\n⚠️  IMPORTANT:");
-    console.log("1. Save these credentials in a secure location");
-    console.log("2. Login to the admin dashboard at: /admin/login");
-    console.log("3. Change the password after first login");
-    console.log("\n✅ Admin account created successfully!");
+    // console.log("✨ Super Admin Created Successfully!\n");
+    // console.log("━".repeat(50));
+    // console.log("📊 ADMIN CREDENTIALS");
+    // console.log("━".repeat(50));
+    // console.log(`Email:    ${superAdmin.email}`);
+    // console.log(`Password: ${tempPassword}`);
+    // console.log(`Role:     ${superAdmin.role}`);
+    // console.log("━".repeat(50));
+    // console.log("\n⚠️  IMPORTANT:");
+    // console.log("1. Save these credentials in a secure location");
+    // console.log("2. Login to the admin dashboard at: /admin/login");
+    // console.log("3. Change the password after first login");
+    // console.log("\n✅ Admin account created successfully!");
 
     await client.close();
     process.exit(0);

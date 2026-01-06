@@ -18,7 +18,7 @@ async function sleep(ms) {
 }
 
 async function testNormalAnalysis() {
-  console.log(
+  // console.log(
     "\n📊 ========================================\n   TEST 1: Normal JSON Analysis\n   ========================================\n"
   );
 
@@ -88,21 +88,21 @@ async function testNormalAnalysis() {
 
     if (response.ok) {
       const data = await response.json();
-      console.log("✅ Normal analysis successful:");
-      console.log(`   - Public ID: ${data.publicId}`);
-      console.log(`   - MongoDB ID: ${data._id}`);
+      // console.log("✅ Normal analysis successful:");
+      // console.log(`   - Public ID: ${data.publicId}`);
+      // console.log(`   - MongoDB ID: ${data._id}`);
 
       // Check analysis structure
       const analysis = JSON.parse(data.analysis);
       const isRaw = analysis.raw && !analysis.meta;
-      console.log(`   - Parse Type: ${isRaw ? "❌ Raw (fallback)" : "✅ Parsed JSON"}`);
-      console.log(
+      // console.log(`   - Parse Type: ${isRaw ? "❌ Raw (fallback)" : "✅ Parsed JSON"}`);
+      // console.log(
         `   - Confidence: ${analysis.meta?.analysis_confidence_score || "N/A"}%`
       );
       return { success: true, analysisId: data._id };
     } else {
       const error = await response.json();
-      console.log("❌ API Error:", error);
+      // console.log("❌ API Error:", error);
       return { success: false };
     }
   } catch (err) {
@@ -112,7 +112,7 @@ async function testNormalAnalysis() {
 }
 
 async function testMetrics() {
-  console.log(
+  // console.log(
     "\n📊 ========================================\n   TEST 2: Metrics Endpoint\n   ========================================\n"
   );
 
@@ -121,18 +121,18 @@ async function testMetrics() {
 
     if (response.ok) {
       const metrics = await response.json();
-      console.log("✅ Metrics retrieved:");
-      console.log(`   - Total Analyses: ${metrics.totalAnalyses}`);
-      console.log(
+      // console.log("✅ Metrics retrieved:");
+      // console.log(`   - Total Analyses: ${metrics.totalAnalyses}`);
+      // console.log(
         `   - Parse Success Rate: ${metrics.parseMetrics.successRate}`
       );
-      console.log(`   - Successes: ${metrics.parseMetrics.successes}`);
-      console.log(`   - Failures: ${metrics.parseMetrics.failures}`);
-      console.log(`   - Avg Confidence: ${metrics.confidence.average}%`);
-      console.log(`   - Status: ${metrics.status}`);
+      // console.log(`   - Successes: ${metrics.parseMetrics.successes}`);
+      // console.log(`   - Failures: ${metrics.parseMetrics.failures}`);
+      // console.log(`   - Avg Confidence: ${metrics.confidence.average}%`);
+      // console.log(`   - Status: ${metrics.status}`);
       return { success: true };
     } else {
-      console.log("❌ Failed to retrieve metrics");
+      // console.log("❌ Failed to retrieve metrics");
       return { success: false };
     }
   } catch (err) {
@@ -142,7 +142,7 @@ async function testMetrics() {
 }
 
 async function testRecentAnalyses() {
-  console.log(
+  // console.log(
     "\n📊 ========================================\n   TEST 3: Recent Analyses Endpoint\n   ========================================\n"
   );
 
@@ -151,21 +151,21 @@ async function testRecentAnalyses() {
 
     if (response.ok) {
       const data = await response.json();
-      console.log(`✅ Retrieved ${data.count} recent analyses:`);
+      // console.log(`✅ Retrieved ${data.count} recent analyses:`);
 
       if (data.analyses && data.analyses.length > 0) {
         data.analyses.slice(0, 3).forEach((analysis, i) => {
-          console.log(`\n   ${i + 1}. ${analysis.symbol} - ${analysis.timeframe}`);
-          console.log(`      - Parse: ${analysis.parseStatus}`);
-          console.log(`      - Direction: ${analysis.direction}`);
-          console.log(`      - Confidence: ${analysis.confidenceScore}%`);
+          // console.log(`\n   ${i + 1}. ${analysis.symbol} - ${analysis.timeframe}`);
+          // console.log(`      - Parse: ${analysis.parseStatus}`);
+          // console.log(`      - Direction: ${analysis.direction}`);
+          // console.log(`      - Confidence: ${analysis.confidenceScore}%`);
         });
       } else {
-        console.log("   (No analyses yet)");
+        // console.log("   (No analyses yet)");
       }
       return { success: true };
     } else {
-      console.log("❌ Failed to retrieve recent analyses");
+      // console.log("❌ Failed to retrieve recent analyses");
       return { success: false };
     }
   } catch (err) {
@@ -175,19 +175,19 @@ async function testRecentAnalyses() {
 }
 
 async function testAdminPage() {
-  console.log(
+  // console.log(
     "\n📊 ========================================\n   TEST 4: Admin Dashboard Access\n   ========================================\n"
   );
 
   try {
     // This just checks if the page exists (renders without error)
-    console.log(`   Admin Dashboard URL: ${BASE_URL}/admin/ai-insights`);
-    console.log("   ✅ Admin page available at /admin/ai-insights");
-    console.log(
+    // console.log(`   Admin Dashboard URL: ${BASE_URL}/admin/ai-insights`);
+    // console.log("   ✅ Admin page available at /admin/ai-insights");
+    // console.log(
       "   - Displays real-time metrics (refreshes every 30s)"
     );
-    console.log("   - Shows recent analyses with parse status");
-    console.log("   - Export functionality for reports");
+    // console.log("   - Shows recent analyses with parse status");
+    // console.log("   - Export functionality for reports");
     return { success: true };
   } catch (err) {
     console.error("❌ Admin page test failed:", err);
@@ -196,25 +196,25 @@ async function testAdminPage() {
 }
 
 async function runAllTests() {
-  console.log(`
+  // console.log(`
 ╔════════════════════════════════════════════════════════════════╗
 ║         AI INSIGHTS COMPREHENSIVE TEST SUITE                   ║
 ║              Testing Gemini Integration & Fallbacks            ║
 ╚════════════════════════════════════════════════════════════════╝
 `);
 
-  console.log(`🔗 Base URL: ${BASE_URL}\n`);
+  // console.log(`🔗 Base URL: ${BASE_URL}\n`);
 
   // Check if server is running
   try {
     const pingResponse = await fetch(`${BASE_URL}/api/health`).catch(() => null);
     if (!pingResponse) {
-      console.log(
+      // console.log(
         "⚠️  Server may not be running. Proceeding with tests anyway...\n"
       );
     }
   } catch (err) {
-    console.log("⚠️  Could not verify server status. Proceeding...\n");
+    // console.log("⚠️  Could not verify server status. Proceeding...\n");
   }
 
   const results = {
@@ -228,13 +228,13 @@ async function runAllTests() {
   await sleep(1000);
 
   // Re-check metrics after analysis
-  console.log(
+  // console.log(
     "\n📊 ========================================\n   FINAL: Metrics After Analysis\n   ========================================\n"
   );
   const finalMetrics = await testMetrics();
 
   // Summary
-  console.log(`
+  // console.log(`
 ╔════════════════════════════════════════════════════════════════╗
 ║                      TEST SUMMARY                              ║
 ╚════════════════════════════════════════════════════════════════╝

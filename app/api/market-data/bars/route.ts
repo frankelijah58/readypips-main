@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   const timeframe = searchParams.get("timeframe") || "1d";
   const limit = parseInt(searchParams.get("limit") || "250");
 
-  console.log(
+  // console.log(
     `📊 Bars API called for symbol: ${symbol}, timeframe: ${timeframe}, limit: ${limit}`
   );
 
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   try {
     // Convert symbol to Yahoo Finance format
     const yahooSymbol = mapSymbolToYahoo(symbol);
-    console.log(
+    // console.log(
       `🔄 Converted ${symbol} to Yahoo Finance format: ${yahooSymbol}`
     );
 
@@ -55,12 +55,12 @@ export async function GET(request: NextRequest) {
 
     // Fetch data from Yahoo Finance
     const url = `${YAHOO_FINANCE_BASE_URL}/${yahooSymbol}?interval=${interval}&range=${range}`;
-    console.log(`🌐 Fetching bars from Yahoo Finance: ${url}`);
+    // console.log(`🌐 Fetching bars from Yahoo Finance: ${url}`);
 
     const response = await fetch(url);
     const data: YahooFinanceResponse = await response.json();
 
-    console.log(
+    // console.log(
       `📊 Yahoo Finance bars response for ${symbol}:`,
       JSON.stringify(data, null, 2)
     );
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       !data.chart.result ||
       data.chart.result.length === 0
     ) {
-      console.log(
+      // console.log(
         `❌ No bars data found for ${symbol}, falling back to mock data`
       );
       const bars = generateMockBars(symbol, timeframe, limit);
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       }))
       .filter((bar) => bar.open > 0 && bar.close > 0); // Filter out invalid data
 
-    console.log(`✅ Returning ${bars.length} bars for ${symbol}`);
+    // console.log(`✅ Returning ${bars.length} bars for ${symbol}`);
 
     return NextResponse.json({
       symbol,
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     console.error(`❌ Error fetching bars for ${symbol}:`, error);
 
     // Fallback to mock data on error
-    console.log(`🔄 Falling back to mock bars for ${symbol} due to error`);
+    // console.log(`🔄 Falling back to mock bars for ${symbol} due to error`);
     const bars = generateMockBars(symbol, timeframe, limit);
 
     return NextResponse.json({

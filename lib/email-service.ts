@@ -8,11 +8,11 @@ const SMTP_CONFIG = {
   pass: process.env.EMAIL_PASSWORD || '',
 };
 
-console.log('📧 [Email Service] SMTP Configuration (HARDCODED):');
-console.log('  Host:', SMTP_CONFIG.host);
-console.log('  Port:', SMTP_CONFIG.port);
-console.log('  User:', SMTP_CONFIG.user);
-console.log('  Pass: ***SET***');
+// console.log('📧 [Email Service] SMTP Configuration (HARDCODED):');
+// console.log('  Host:', SMTP_CONFIG.host);
+// console.log('  Port:', SMTP_CONFIG.port);
+// console.log('  User:', SMTP_CONFIG.user);
+// console.log('  Pass: ***SET***');
 
 // Email configuration
 const transporter = nodemailer.createTransport({
@@ -142,17 +142,17 @@ export const sendEmail = async ({ to, subject, html }: { to: string; subject: st
     const fromName = process.env.SMTP_FROM_NAME || 'Ready Pips';
     const fromEmail = process.env.SMTP_FROM_EMAIL || 'no-reply@readypips.com';
   
-    console.log('📧 [Email Service] Preparing to send email...');
-    console.log('  To:', to);
-    console.log('  From Name:', fromName);
-    console.log('  From Email:', fromEmail);
-    console.log('  Subject:', subject);
+    // console.log('📧 [Email Service] Preparing to send email...');
+    // console.log('  To:', to);
+    // console.log('  From Name:', fromName);
+    // console.log('  From Email:', fromEmail);
+    // console.log('  Subject:', subject);
     
-    console.log('📧 [Email Service] Transporter config being used:');
-    console.log('  Host:', SMTP_CONFIG.host);
-    console.log('  Port:', SMTP_CONFIG.port);
-    console.log('  User:', SMTP_CONFIG.user);
-    console.log('  Pass:', '***17 chars***');
+    // console.log('📧 [Email Service] Transporter config being used:');
+    // console.log('  Host:', SMTP_CONFIG.host);
+    // console.log('  Port:', SMTP_CONFIG.port);
+    // console.log('  User:', SMTP_CONFIG.user);
+    // console.log('  Pass:', '***17 chars***');
     
     const mailOptions = {
       from: `${fromName} <${fromEmail}>`,
@@ -161,10 +161,10 @@ export const sendEmail = async ({ to, subject, html }: { to: string; subject: st
       html,
     };
 
-    console.log('📧 [Email Service] Attempting to send email via transporter...');
+    // console.log('📧 [Email Service] Attempting to send email via transporter...');
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully to:', to);
-    console.log('✅ Message ID:', result.messageId);
+    // console.log('✅ Email sent successfully to:', to);
+    // console.log('✅ Message ID:', result.messageId);
     return true;
   } catch (error: any) {
     console.error('❌ Email sending failed:', error);

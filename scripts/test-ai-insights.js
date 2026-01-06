@@ -115,22 +115,22 @@ const testData = {
 };
 
 async function testAIInsights() {
-  console.log("\n📊 ========================================");
-  console.log("   AI INSIGHTS API TEST");
-  console.log("   ========================================\n");
+  // console.log("\n📊 ========================================");
+  // console.log("   AI INSIGHTS API TEST");
+  // console.log("   ========================================\n");
 
-  console.log(`🔍 Testing AI Insights API at ${BASE_URL}/api/ai-insights\n`);
+  // console.log(`🔍 Testing AI Insights API at ${BASE_URL}/api/ai-insights\n`);
 
   try {
-    console.log("📤 Sending analysis request...\n");
-    console.log("Request Data Summary:");
-    console.log(`  - Symbol: ${testData.symbol}`);
-    console.log(`  - Strategy: ${testData.analysisContext.strategy}`);
-    console.log(`  - Primary Timeframe: ${testData.primaryTimeframe}`);
-    console.log(`  - Additional Timeframes: ${testData.timeframes.slice(1).join(", ")}`);
-    console.log(`  - Current Price: $${testData.marketData.price}`);
-    console.log(`  - RSI: ${testData.primaryIndicators.rsi}`);
-    console.log(`\n`);
+    // console.log("📤 Sending analysis request...\n");
+    // console.log("Request Data Summary:");
+    // console.log(`  - Symbol: ${testData.symbol}`);
+    // console.log(`  - Strategy: ${testData.analysisContext.strategy}`);
+    // console.log(`  - Primary Timeframe: ${testData.primaryTimeframe}`);
+    // console.log(`  - Additional Timeframes: ${testData.timeframes.slice(1).join(", ")}`);
+    // console.log(`  - Current Price: $${testData.marketData.price}`);
+    // console.log(`  - RSI: ${testData.primaryIndicators.rsi}`);
+    // console.log(`\n`);
 
     const response = await fetch(`${BASE_URL}/api/ai-insights`, {
       method: "POST",
@@ -149,14 +149,14 @@ async function testAIInsights() {
 
     const result = await response.json();
 
-    console.log("✅ Analysis received successfully!\n");
-    console.log("Response Structure:");
-    console.log(`  - MongoDB ID: ${result._id}`);
-    console.log(`  - Public ID: ${result.publicId}`);
-    console.log(`  - Symbol: ${result.symbol}`);
-    console.log(`  - Timeframe/Strategy: ${result.timeframe}`);
-    console.log(`  - Created At: ${result.createdAt}`);
-    console.log(`\n`);
+    // console.log("✅ Analysis received successfully!\n");
+    // console.log("Response Structure:");
+    // console.log(`  - MongoDB ID: ${result._id}`);
+    // console.log(`  - Public ID: ${result.publicId}`);
+    // console.log(`  - Symbol: ${result.symbol}`);
+    // console.log(`  - Timeframe/Strategy: ${result.timeframe}`);
+    // console.log(`  - Created At: ${result.createdAt}`);
+    // console.log(`\n`);
 
     // Parse and display analysis
     let analysis;
@@ -166,78 +166,78 @@ async function testAIInsights() {
           ? JSON.parse(result.analysis)
           : result.analysis;
 
-      console.log("📊 Analysis Content:");
-      console.log("  ✓ Meta information present");
+      // console.log("📊 Analysis Content:");
+      // console.log("  ✓ Meta information present");
       if (analysis.meta) {
-        console.log(`    - Confidence Score: ${analysis.meta.analysis_confidence_score}%`);
+        // console.log(`    - Confidence Score: ${analysis.meta.analysis_confidence_score}%`);
       }
 
       if (analysis.analysis) {
-        console.log("  ✓ Technical analysis present");
+        // console.log("  ✓ Technical analysis present");
         if (analysis.analysis.categories) {
-          console.log(`    - Categories: ${Object.keys(analysis.analysis.categories).join(", ")}`);
+          // console.log(`    - Categories: ${Object.keys(analysis.analysis.categories).join(", ")}`);
         }
       }
 
       if (analysis.simulation_strategy) {
-        console.log("  ✓ Simulation strategy present");
-        console.log(`    - Direction: ${analysis.simulation_strategy.direction}`);
+        // console.log("  ✓ Simulation strategy present");
+        // console.log(`    - Direction: ${analysis.simulation_strategy.direction}`);
         if (analysis.simulation_strategy.theoretical_entry) {
-          console.log(
+          // console.log(
             `    - Entry Price: $${analysis.simulation_strategy.theoretical_entry.price}`
           );
         }
         if (analysis.simulation_strategy.target_levels) {
-          console.log(
+          // console.log(
             `    - Target Levels: ${analysis.simulation_strategy.target_levels.length} targets defined`
           );
         }
       }
 
       if (analysis.implementation) {
-        console.log("  ✓ Implementation steps present");
+        // console.log("  ✓ Implementation steps present");
         if (analysis.implementation.simulation_steps) {
-          console.log(
+          // console.log(
             `    - Steps: ${analysis.implementation.simulation_steps.length} steps defined`
           );
         }
       }
 
       if (analysis.technical_rationale) {
-        console.log("  ✓ Technical rationale present");
-        console.log(
+        // console.log("  ✓ Technical rationale present");
+        // console.log(
           `    - Trend Analysis: ${analysis.technical_rationale.trend_analysis.substring(0, 50)}...`
         );
       }
 
       if (analysis.contingency_scenarios) {
-        console.log("  ✓ Contingency scenarios present");
-        console.log(
+        // console.log("  ✓ Contingency scenarios present");
+        // console.log(
           `    - Scenarios: ${analysis.contingency_scenarios.length} scenarios defined`
         );
       }
 
-      console.log(`\n✅ AI Analysis Complete!`);
-      console.log(`📊 Full analysis has ${Object.keys(analysis).length} main sections\n`);
+      // console.log(`\n✅ AI Analysis Complete!`);
+      // console.log(`📊 Full analysis has ${Object.keys(analysis).length} main sections\n`);
 
       // Show sample of simulation strategy
       if (analysis.simulation_strategy) {
-        console.log("Sample Simulation Strategy:");
-        console.log(
+        // console.log("Sample Simulation Strategy:");
+        // console.log(
           JSON.stringify(analysis.simulation_strategy, null, 2)
             .split("\n")
             .slice(0, 20)
             .join("\n")
         );
-        console.log("...\n");
+        // console.log("...\n");
       }
     } catch (e) {
-      console.log("⚠️  Could not parse analysis details:", e.message);
+      // console.log("⚠️  Could not parse analysis details:", e.message);
     }
 
-    console.log("✅ ========================================");
-    console.log("   AI INSIGHTS TEST COMPLETED SUCCESSFULLY");
-    console.log("   ========================================\n");
+    // console.log("✅ ========================================");
+    // console.log("   AI INSIGHTS TEST COMPLETED SUCCESSFULLY");
+    // console.log("   ========================================\n");
   } catch (error) {
     console.error("❌ Test failed:", error.message);
     process.exit(1);
@@ -252,7 +252,7 @@ async function waitForServer(maxAttempts = 30) {
         method: "HEAD",
       }).catch(() => null);
       if (response && response.ok) {
-        console.log("✅ Server is ready\n");
+        // console.log("✅ Server is ready\n");
         return true;
       }
     } catch (e) {
@@ -267,7 +267,7 @@ async function waitForServer(maxAttempts = 30) {
 (async () => {
   const serverReady = await waitForServer();
   if (!serverReady) {
-    console.log("⚠️  Server may not be responding, attempting test anyway...\n");
+    // console.log("⚠️  Server may not be responding, attempting test anyway...\n");
   }
   await testAIInsights();
 })();

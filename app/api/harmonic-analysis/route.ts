@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`🔍 Starting harmonic analysis for ${symbol} (${timeframe})`);
+    // console.log(`🔍 Starting harmonic analysis for ${symbol} (${timeframe})`);
 
     // Map the symbol to Yahoo Finance format
     const mappedSymbol = mapSymbolToYahoo(symbol);
-    console.log(`🔄 [Harmonic Analysis] Mapping ${symbol} to ${mappedSymbol}`);
+    // console.log(`🔄 [Harmonic Analysis] Mapping ${symbol} to ${mappedSymbol}`);
 
     // Validate interval - only allow valid Yahoo Finance intervals
     const validIntervals = ["1d", "1wk", "1mo"];
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     try {
       // Try the primary mapped symbol
       result = await yahooFinance.historical(mappedSymbol, queryOptions);
-      console.log(
+      // console.log(
         `📊 [Harmonic Analysis] Successfully fetched ${result.length} bars for ${mappedSymbol} (${validInterval} timeframe)`
       );
     } catch (error) {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         try {
           result = await yahooFinance.historical(altSymbol, queryOptions);
           usedSymbol = altSymbol;
-          console.log(
+          // console.log(
             `✅ [Harmonic Analysis] Successfully fetched ${result.length} bars using alternative symbol ${altSymbol}`
           );
           success = true;
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       time: candle.date.getTime(),
     }));
 
-    console.log(`📊 Analyzed ${candles.length} bars for harmonic patterns`);
+    // console.log(`📊 Analyzed ${candles.length} bars for harmonic patterns`);
 
     // Simulate harmonic pattern analysis
     // In a real implementation, you would use the Frank State Strategy here
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
       fibLevels["1.000"] = high;
     }
 
-    console.log(
+    // console.log(
       `✅ Harmonic analysis complete: ${patterns.length} patterns found`
     );
 

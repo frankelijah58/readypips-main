@@ -166,7 +166,7 @@ function createMockStrategy(): HarmonicStrategy {
 
     reset: () => {
       // Reset strategy state
-      console.log("Mock strategy reset");
+      // console.log("Mock strategy reset");
     },
   };
 }

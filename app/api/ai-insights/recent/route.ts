@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       return summary;
     });
 
-    console.log(`📊 [AI Recent] Retrieved ${formatted.length} recent analyses`);
+    // console.log(`📊 [AI Recent] Retrieved ${formatted.length} recent analyses`);
 
     return NextResponse.json({
       timestamp: new Date().toISOString(),

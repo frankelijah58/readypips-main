@@ -67,13 +67,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    console.log('Decoded token:', decoded);
+    // console.log('Decoded token:', decoded);
 
     // Verify admin has permission
     const db = await getDatabase();
     
     // Try to find admin user with multiple approaches
-    console.log('Looking for admin user with ID:', decoded.userId);
+    // console.log('Looking for admin user with ID:', decoded.userId);
     
     let adminUser = await db.collection('users').findOne({
       _id: new ObjectId(decoded.userId)
@@ -81,7 +81,7 @@ export async function PUT(
     
     // If not found with ObjectId, try with string ID
     if (!adminUser) {
-      console.log('Not found with ObjectId in users, trying string ID...');
+      // console.log('Not found with ObjectId in users, trying string ID...');
       adminUser = await db.collection('users').findOne({
         _id: decoded.userId as any
       });
@@ -89,7 +89,7 @@ export async function PUT(
     
     // If still not found, check the admins collection (for separate admin system)
     if (!adminUser) {
-      console.log('Not found in users collection, checking admins collection...');
+      // console.log('Not found in users collection, checking admins collection...');
       const admin = await db.collection('admins').findOne({
         _id: new ObjectId(decoded.userId)
       }) || await db.collection('admins').findOne({
@@ -97,7 +97,7 @@ export async function PUT(
       });
       
       if (admin) {
-        console.log('Found in admins collection:', admin.email);
+        // console.log('Found in admins collection:', admin.email);
         // Convert admin to user format for compatibility
         adminUser = {
           ...admin,
@@ -107,7 +107,7 @@ export async function PUT(
       }
     }
 
-    console.log('Admin user found:', adminUser ? {
+    // console.log('Admin user found:', adminUser ? {
       id: adminUser._id?.toString(),
       email: adminUser.email,
       isAdmin: adminUser.isAdmin,
@@ -135,7 +135,7 @@ export async function PUT(
       }, { status: 403 });
     }
 
-    console.log('Admin verification passed');
+    // console.log('Admin verification passed');
 
     const { firstName, lastName, email, phoneNumber } = await request.json();
 

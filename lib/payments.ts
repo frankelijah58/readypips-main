@@ -300,7 +300,7 @@ async function registerPesapalIPN(accessToken: string, baseUrl: string): Promise
   try {
     const ipnUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/payments/pesapal-webhook`;
     
-    console.log("🔍 Registering IPN URL:", ipnUrl);
+    // console.log("🔍 Registering IPN URL:", ipnUrl);
     
     const ipnRequest = {
       url: ipnUrl,
@@ -323,10 +323,10 @@ async function registerPesapalIPN(accessToken: string, baseUrl: string): Promise
     }
     
     const ipnData = await ipnResponse.json();
-    console.log("🔍 IPN registration response:", ipnData);
+    // console.log("🔍 IPN registration response:", ipnData);
     
     if (ipnData.ipn_id) {
-      console.log("✅ IPN registered successfully:", ipnData.ipn_id);
+      // console.log("✅ IPN registered successfully:", ipnData.ipn_id);
       
       // Automatically save to .env file
       try {
@@ -349,7 +349,7 @@ async function registerPesapalIPN(accessToken: string, baseUrl: string): Promise
             notificationIdRegex,
             `PESAPAL_NOTIFICATION_ID=${ipnData.ipn_id}`
           );
-          console.log("📝 Updated PESAPAL_NOTIFICATION_ID in .env file");
+          // console.log("📝 Updated PESAPAL_NOTIFICATION_ID in .env file");
         } else {
           // Add new line in Pesapal section
           const pesapalSectionRegex = /(# Pesapal[\s\S]*?)(\n# |$)/;
@@ -364,20 +364,20 @@ async function registerPesapalIPN(accessToken: string, baseUrl: string): Promise
             if (!envContent.endsWith('\n')) envContent += '\n';
             envContent += `\n# Auto-generated Pesapal IPN ID\nPESAPAL_NOTIFICATION_ID=${ipnData.ipn_id}\n`;
           }
-          console.log("📝 Added PESAPAL_NOTIFICATION_ID to .env file");
+          // console.log("📝 Added PESAPAL_NOTIFICATION_ID to .env file");
         }
         
         // Write back to .env file
         fs.writeFileSync(envPath, envContent, 'utf8');
-        console.log("✅ .env file updated automatically with notification ID");
+        // console.log("✅ .env file updated automatically with notification ID");
         
         // Update process.env so it's available immediately
         process.env.PESAPAL_NOTIFICATION_ID = ipnData.ipn_id;
         
       } catch (fsError) {
         console.error("⚠️  Could not auto-update .env file:", fsError);
-        console.log("⚠️  Please manually add this to your .env file:");
-        console.log(`PESAPAL_NOTIFICATION_ID=${ipnData.ipn_id}`);
+        // console.log("⚠️  Please manually add this to your .env file:");
+        // console.log(`PESAPAL_NOTIFICATION_ID=${ipnData.ipn_id}`);
       }
       
       return ipnData.ipn_id;
@@ -409,10 +409,10 @@ export async function initializePesapal(
   const originalAmount = amount;
   
   if (isTestMode) {
-    console.log(`🧪 [Pesapal Test Mode] Using ${testAmount} KES instead of ${amount} KES for ${plan.name} package`);
+    // console.log(`🧪 [Pesapal Test Mode] Using ${testAmount} KES instead of ${amount} KES for ${plan.name} package`);
     amount = testAmount;
   } else {
-    console.log(`💰 [Pesapal Production] Processing ${amount} KES for ${plan.name} package`);
+    // console.log(`💰 [Pesapal Production] Processing ${amount} KES for ${plan.name} package`);
   }
 
   // Check if Pesapal credentials are available
@@ -423,7 +423,7 @@ export async function initializePesapal(
   // Mock mode for testing without valid credentials
   const isMockMode = process.env.PESAPAL_MOCK_MODE === 'true';
   if (isMockMode) {
-    console.log("🧪 [Pesapal Mock Mode] Simulating successful payment creation");
+    // console.log("🧪 [Pesapal Mock Mode] Simulating successful payment creation");
     return {
       order_tracking_id: `mock_${Date.now()}_${Math.random().toString(36).substring(7)}`,
       redirect_url: "https://cybqa.pesapal.com/pesapaliframe/PesapalIframe3/Index/?OrderTrackingId=mock_order_123",
@@ -436,16 +436,16 @@ export async function initializePesapal(
 
   try {
     // Step 1: Get Pesapal access token
-    console.log("🔍 Requesting Pesapal access token...");
-    console.log("🔍 Consumer Key:", process.env.PESAPAL_CONSUMER_KEY ? "Present" : "Missing");
-    console.log("🔍 Consumer Secret:", process.env.PESAPAL_CONSUMER_SECRET ? "Present" : "Missing");
+    // console.log("🔍 Requesting Pesapal access token...");
+    // console.log("🔍 Consumer Key:", process.env.PESAPAL_CONSUMER_KEY ? "Present" : "Missing");
+    // console.log("🔍 Consumer Secret:", process.env.PESAPAL_CONSUMER_SECRET ? "Present" : "Missing");
     
     const tokenRequest = {
       consumer_key: process.env.PESAPAL_CONSUMER_KEY,
       consumer_secret: process.env.PESAPAL_CONSUMER_SECRET,
     };
     
-    console.log("🔍 Token request payload:", tokenRequest);
+    // console.log("🔍 Token request payload:", tokenRequest);
 
     // Use production endpoints for real credentials
     const isProduction = process.env.PESAPAL_USE_PRODUCTION === 'true';
@@ -453,7 +453,7 @@ export async function initializePesapal(
       ? "https://pay.pesapal.com/v3/api" 
       : "https://cybqa.pesapal.com/pesapalv3/api";
     
-    console.log(`🔍 Using ${isProduction ? 'PRODUCTION' : 'SANDBOX'} endpoints: ${baseUrl}`);
+    // console.log(`🔍 Using ${isProduction ? 'PRODUCTION' : 'SANDBOX'} endpoints: ${baseUrl}`);
 
     const tokenResponse = await fetch(`${baseUrl}/Auth/RequestToken`, {
       method: "POST",
@@ -465,8 +465,8 @@ export async function initializePesapal(
       body: JSON.stringify(tokenRequest),
     });
 
-    console.log("🔍 Token response status:", tokenResponse.status);
-    console.log("🔍 Token response headers:", Object.fromEntries(tokenResponse.headers.entries()));
+    // console.log("🔍 Token response status:", tokenResponse.status);
+    // console.log("🔍 Token response headers:", Object.fromEntries(tokenResponse.headers.entries()));
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
@@ -475,7 +475,7 @@ export async function initializePesapal(
     }
 
     const tokenData = await tokenResponse.json();
-    console.log("🔍 Token response data:", tokenData);
+    // console.log("🔍 Token response data:", tokenData);
     
     // Check for API errors
     if (tokenData.error) {
@@ -499,7 +499,7 @@ export async function initializePesapal(
       throw new Error("No access token received from Pesapal");
     }
 
-    console.log("✅ Pesapal access token obtained");
+    // console.log("✅ Pesapal access token obtained");
 
     // Step 2: Create Pesapal order
     const orderRequest: PesapalOrderRequest = {
@@ -529,7 +529,7 @@ export async function initializePesapal(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(notificationId);
     
     if (!isValidUUID) {
-      console.log("⚠️  No valid notification_id found. Attempting to register new IPN...");
+      // console.log("⚠️  No valid notification_id found. Attempting to register new IPN...");
       const newIpnId = await registerPesapalIPN(accessToken, baseUrl);
       if (newIpnId) {
         notificationId = newIpnId;
@@ -539,13 +539,13 @@ export async function initializePesapal(
     // Only add notification_id to request if we have a valid one
     if (isValidUUID || notificationId) {
       orderRequest.notification_id = notificationId;
-      console.log("🔍 Using notification_id:", notificationId);
+      // console.log("🔍 Using notification_id:", notificationId);
     } else {
-      console.log("⚠️  Proceeding without notification_id - IPN notifications will be disabled");
-      console.log("⚠️  You can register an IPN later in your PesaPal dashboard");
+      // console.log("⚠️  Proceeding without notification_id - IPN notifications will be disabled");
+      // console.log("⚠️  You can register an IPN later in your PesaPal dashboard");
     }
 
-    console.log("🔍 Creating Pesapal order with data:", orderRequest);
+    // console.log("🔍 Creating Pesapal order with data:", orderRequest);
 
     const orderResponse = await fetch(`${baseUrl}/Transactions/SubmitOrderRequest`, {
       method: "POST",
@@ -557,8 +557,8 @@ export async function initializePesapal(
       body: JSON.stringify(orderRequest),
     });
 
-    console.log("🔍 Order response status:", orderResponse.status);
-    console.log("🔍 Order response headers:", Object.fromEntries(orderResponse.headers.entries()));
+    // console.log("🔍 Order response status:", orderResponse.status);
+    // console.log("🔍 Order response headers:", Object.fromEntries(orderResponse.headers.entries()));
 
     if (!orderResponse.ok) {
       const errorText = await orderResponse.text();
@@ -567,7 +567,7 @@ export async function initializePesapal(
     }
 
     const orderData: PesapalOrderResponse = await orderResponse.json();
-    console.log("🔍 Order creation response:", orderData);
+    // console.log("🔍 Order creation response:", orderData);
 
     if (orderData.status === "200" && orderData.redirect_url) {
       return {

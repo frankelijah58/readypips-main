@@ -29,7 +29,7 @@ export async function GET(req: Request) {
       "partnerProfile.isApproved": true
     }).sort({ "partnerProfile.appliedAt": -1 }).toArray();
 
-    console.log("Pending Partners:", pendingPartners);
+    // console.log("Pending Partners:", pendingPartners);
     return NextResponse.json({ partners: pendingPartners });
   } catch (error) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

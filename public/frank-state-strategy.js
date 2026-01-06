@@ -518,9 +518,9 @@ const candles = [
 ];
 
 const result = strategy.analyze(candles);
-console.log('Signals:', result.signals);
-console.log('Patterns:', result.patterns);
-console.log('Fibonacci Levels:', result.fibLevels);
+// console.log('Signals:', result.signals);
+// console.log('Patterns:', result.patterns);
+// console.log('Fibonacci Levels:', result.fibLevels);
 */
 
 // Export for use in other modules

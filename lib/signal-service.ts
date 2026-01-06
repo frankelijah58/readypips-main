@@ -103,7 +103,7 @@ export class SignalService {
     try {
       // Map the symbol to Yahoo Finance format
       const mappedSymbol = mapSymbolToYahoo(symbol);
-      console.log(`🔄 [Signal Service] Mapping ${symbol} to ${mappedSymbol}`);
+      // console.log(`🔄 [Signal Service] Mapping ${symbol} to ${mappedSymbol}`);
 
       // Validate interval - only allow valid Yahoo Finance intervals
       const validIntervals = ["1d", "1wk", "1mo"];
@@ -132,7 +132,7 @@ export class SignalService {
       try {
         // Try the primary mapped symbol
         result = await yahooFinance.historical(mappedSymbol, queryOptions);
-        console.log(
+        // console.log(
           `📊 [Signal Service] Successfully fetched ${result.length} bars for ${mappedSymbol} (${validInterval} timeframe)`
         );
       } catch (error) {
@@ -148,7 +148,7 @@ export class SignalService {
           try {
             result = await yahooFinance.historical(altSymbol, queryOptions);
             usedSymbol = altSymbol;
-            console.log(
+            // console.log(
               `✅ [Signal Service] Successfully fetched ${result.length} bars using alternative symbol ${altSymbol}`
             );
             success = true;
@@ -172,7 +172,7 @@ export class SignalService {
         return [];
       }
 
-      console.log(
+      // console.log(
         `📊 Analyzed ${result.length} bars for ${usedSymbol} (${validInterval} timeframe)`
       );
 
@@ -477,7 +477,7 @@ export class SignalService {
     const signals: SignalAnalysis[] = [];
     let totalBarsAnalyzed = 0;
 
-    console.log(
+    // console.log(
       `🚀 Starting signal generation for ${this.symbols.length} symbols...`
     );
 
@@ -489,7 +489,7 @@ export class SignalService {
           totalBarsAnalyzed += marketData.length;
 
           if (marketData.length < 50) {
-            console.log(
+            // console.log(
               `⚠️  Insufficient data for ${symbol} (${timeframe}): ${marketData.length} bars, skipping...`
             );
             continue;
@@ -501,7 +501,7 @@ export class SignalService {
           // Only include high-confidence signals
           if (analysis.confidence >= 60) {
             signals.push(analysis);
-            console.log(
+            // console.log(
               `✅ Generated ${analysis.signal} signal for ${symbol} (${timeframe}) - Confidence: ${analysis.confidence}%`
             );
           }
@@ -511,11 +511,11 @@ export class SignalService {
       }
     }
 
-    console.log(`📈 Signal generation complete!`);
-    console.log(`   • Total bars analyzed: ${totalBarsAnalyzed}`);
-    console.log(`   • Symbols processed: ${this.symbols.length}`);
-    console.log(`   • Timeframes per symbol: ${this.timeframes.length}`);
-    console.log(`   • High-confidence signals generated: ${signals.length}`);
+    // console.log(`📈 Signal generation complete!`);
+    // console.log(`   • Total bars analyzed: ${totalBarsAnalyzed}`);
+    // console.log(`   • Symbols processed: ${this.symbols.length}`);
+    // console.log(`   • Timeframes per symbol: ${this.timeframes.length}`);
+    // console.log(`   • High-confidence signals generated: ${signals.length}`);
 
     return signals;
   }
@@ -545,14 +545,14 @@ export class SignalService {
         await signalsCollection.insertOne(signalDoc);
       }
 
-      console.log(`Saved ${signals.length} signals to database`);
+      // console.log(`Saved ${signals.length} signals to database`);
     } catch (error) {
       console.error("Error saving signals to database:", error);
     }
   }
 
   async startSignalGeneration(): Promise<void> {
-    console.log("Starting real signal generation service...");
+    // console.log("Starting real signal generation service...");
 
     // Generate initial signals
     await this.generateAndSaveSignals();
@@ -564,7 +564,7 @@ export class SignalService {
   }
 
   async generateAndSaveSignals(): Promise<void> {
-    console.log(`🎯 Initializing proprietary signal algorithm...`);
+    // console.log(`🎯 Initializing proprietary signal algorithm...`);
     const startTime = Date.now();
 
     try {
@@ -575,11 +575,11 @@ export class SignalService {
         const endTime = Date.now();
         const duration = (endTime - startTime) / 1000;
 
-        console.log(`🎉 Signal generation and saving completed successfully!`);
-        console.log(`   • Duration: ${duration.toFixed(2)} seconds`);
-        console.log(`   • Signals saved to database: ${signals.length}`);
+        // console.log(`🎉 Signal generation and saving completed successfully!`);
+        // console.log(`   • Duration: ${duration.toFixed(2)} seconds`);
+        // console.log(`   • Signals saved to database: ${signals.length}`);
       } else {
-        console.log(`📊 No high-confidence signals generated`);
+        // console.log(`📊 No high-confidence signals generated`);
       }
     } catch (error) {
       console.error("Error in generateAndSaveSignals:", error);

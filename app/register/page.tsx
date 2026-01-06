@@ -34,7 +34,7 @@ export default function RegisterPage() {
     const savedRef = Cookies.get('refereer_code');
     if (savedRef) {
       setFormData((prev) => ({ ...prev, refereer: savedRef }));
-      console.log("Refereer Code Loaded:", savedRef);
+      // console.log("Refereer Code Loaded:", savedRef);
     }
   }, []);
 

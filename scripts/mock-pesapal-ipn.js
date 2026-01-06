@@ -50,10 +50,10 @@ function makeRequest(url, data) {
 }
 
 async function mockPesapalIPN(orderTrackingId) {
-  console.log(`🔍 Mocking Pesapal IPN for transaction: ${orderTrackingId}\n`);
+  // console.log(`🔍 Mocking Pesapal IPN for transaction: ${orderTrackingId}\n`);
 
   try {
-    console.log('🔍 Sending mock IPN to your webhook endpoint...');
+    // console.log('🔍 Sending mock IPN to your webhook endpoint...');
     
     const mockIPNData = {
       OrderNotificationType: "IPNCHANGE",
@@ -61,23 +61,23 @@ async function mockPesapalIPN(orderTrackingId) {
       OrderMerchantReference: `ref_${Date.now()}_mock`
     };
 
-    console.log('🔍 Mock IPN data:', JSON.stringify(mockIPNData, null, 2));
+    // console.log('🔍 Mock IPN data:', JSON.stringify(mockIPNData, null, 2));
 
     const response = await makeRequest('http://localhost:3000/api/payments/pesapal-webhook', mockIPNData);
 
-    console.log('🔍 Webhook response status:', response.status);
-    console.log('🔍 Webhook response data:', JSON.stringify(response.data, null, 2));
+    // console.log('🔍 Webhook response status:', response.status);
+    // console.log('🔍 Webhook response data:', JSON.stringify(response.data, null, 2));
 
     if (response.status === 200) {
-      console.log('\n✅ Mock IPN sent successfully!');
-      console.log('🎉 Your webhook endpoint processed the notification');
+      // console.log('\n✅ Mock IPN sent successfully!');
+      // console.log('🎉 Your webhook endpoint processed the notification');
     } else {
-      console.log('\n⚠️  Webhook responded with non-200 status');
+      // console.log('\n⚠️  Webhook responded with non-200 status');
     }
 
   } catch (error) {
     console.error('❌ Mock IPN failed:', error.message);
-    console.log('\n💡 Make sure your app is running on localhost:3000');
+    // console.log('\n💡 Make sure your app is running on localhost:3000');
   }
 }
 
@@ -85,8 +85,8 @@ async function mockPesapalIPN(orderTrackingId) {
 const orderTrackingId = process.argv[2];
 
 if (!orderTrackingId) {
-  console.log('Usage: node scripts/mock-pesapal-ipn.js <order_tracking_id>');
-  console.log('Example: node scripts/mock-pesapal-ipn.js 9b5f77db-4ec2-4a8d-ba7d-db59dc9d9495');
+  // console.log('Usage: node scripts/mock-pesapal-ipn.js <order_tracking_id>');
+  // console.log('Example: node scripts/mock-pesapal-ipn.js 9b5f77db-4ec2-4a8d-ba7d-db59dc9d9495');
   process.exit(1);
 }
 

@@ -37,7 +37,7 @@ export default function LoginPage() {
       // Check if user is an admin
       const isAdmin = (user as any).isAdmin || (user as any).role === 'super_admin' || (user as any).role === 'admin';
       const destination = isAdmin ? '/admin/dashboard' : redirectTo;
-      console.log('✅ User already authenticated, redirecting to:', destination);
+      // console.log('✅ User already authenticated, redirecting to:', destination);
       setIsRedirecting(true);
       router.replace(destination);
     }
@@ -65,10 +65,10 @@ export default function LoginPage() {
         
         // Check if user is admin and redirect accordingly
         if (data.user?.isAdmin || data.user?.role === 'super_admin' || data.user?.role === 'admin') {
-          console.log('Admin user detected, redirecting to admin dashboard');
+          // console.log('Admin user detected, redirecting to admin dashboard');
           login(data.token, '/admin/dashboard');
         } else {
-          console.log('Regular user detected, redirecting to:', redirectTo);
+          // console.log('Regular user detected, redirecting to:', redirectTo);
           login(data.token, redirectTo);
         }
       } else {

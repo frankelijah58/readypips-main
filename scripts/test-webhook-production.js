@@ -48,7 +48,7 @@ function makeRequest(url, data) {
 }
 
 async function testProductionWebhook() {
-  console.log('🔍 Testing production webhook...\n');
+  // console.log('🔍 Testing production webhook...\n');
 
   try {
     const testData = {
@@ -57,17 +57,17 @@ async function testProductionWebhook() {
       OrderMerchantReference: 'test_ref_' + Date.now()
     };
 
-    console.log('🔍 Test data:', JSON.stringify(testData, null, 2));
+    // console.log('🔍 Test data:', JSON.stringify(testData, null, 2));
 
     const response = await makeRequest('https://readypips.com/api/payments/pesapal-webhook', testData);
 
-    console.log('🔍 Webhook response status:', response.status);
-    console.log('🔍 Webhook response data:', JSON.stringify(response.data, null, 2));
+    // console.log('🔍 Webhook response status:', response.status);
+    // console.log('🔍 Webhook response data:', JSON.stringify(response.data, null, 2));
 
     if (response.status === 200) {
-      console.log('\n✅ Webhook is working!');
+      // console.log('\n✅ Webhook is working!');
     } else {
-      console.log('\n⚠️  Webhook responded with non-200 status');
+      // console.log('\n⚠️  Webhook responded with non-200 status');
     }
 
   } catch (error) {

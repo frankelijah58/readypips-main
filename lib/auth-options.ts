@@ -37,15 +37,15 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       try {
-        console.log('[Google OAuth] Attempting to sign in user:', user.email);
+        // console.log('[Google OAuth] Attempting to sign in user:', user.email);
         const db = await getDatabase();
-        console.log('[Google OAuth] Database connection successful');
+        // console.log('[Google OAuth] Database connection successful');
         
         // Check if user exists
         let existingUser = await db.collection("users").findOne({ 
           email: user.email 
         });
-        console.log('[Google OAuth] Existing user check:', existingUser ? 'Found' : 'Not found');
+        // console.log('[Google OAuth] Existing user check:', existingUser ? 'Found' : 'Not found');
 
         if (!existingUser) {
           // Create new user with Google OAuth
@@ -73,7 +73,7 @@ export const authOptions: NextAuthOptions = {
           };
 
           const result = await db.collection("users").insertOne(newUser);
-          console.log('[Google OAuth] New user created with free trial:', { 
+          // console.log('[Google OAuth] New user created with free trial:', { 
             email: user.email, 
             id: result.insertedId,
             freeTrialEndDate: freeTrialEndDate.toISOString()
@@ -98,7 +98,7 @@ export const authOptions: NextAuthOptions = {
             updateData.freeTrialEndDate = freeTrialEndDate;
             updateData.subscriptionStatus = "active";
             updateData.subscriptionType = "free";
-            console.log('[Google OAuth] Adding free trial to existing user:', { 
+            // console.log('[Google OAuth] Adding free trial to existing user:', { 
               email: user.email, 
               freeTrialEndDate: freeTrialEndDate.toISOString() 
             });
@@ -109,11 +109,11 @@ export const authOptions: NextAuthOptions = {
               { email: user.email },
               { $set: updateData }
             );
-            console.log('[Google OAuth] Existing user updated:', user.email);
+            // console.log('[Google OAuth] Existing user updated:', user.email);
           }
         }
 
-        console.log('[Google OAuth] Sign in successful for:', user.email);
+        // console.log('[Google OAuth] Sign in successful for:', user.email);
         return true;
       } catch (error: any) {
         console.error('[Google OAuth] Sign in error:', error);
@@ -172,7 +172,7 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn({ user, account, profile, isNewUser }) {
-      console.log('[Google OAuth] User signed in:', {
+      // console.log('[Google OAuth] User signed in:', {
         email: user.email,
         isNewUser,
         provider: account?.provider,

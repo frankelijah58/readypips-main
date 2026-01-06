@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // If no signals in database, generate some using the real service
     if (signals.length === 0) {
-      console.log("No signals in database, generating new ones...");
+      // console.log("No signals in database, generating new ones...");
       const signalService = SignalService.getInstance();
       await signalService.generateAndSaveSignals();
 

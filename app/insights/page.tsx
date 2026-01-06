@@ -141,7 +141,7 @@ export default function InsightsPage() {
 
   const handleAnalysisClick = (analysis: AIInsight) => {
     // Handle analysis click
-    console.log("Analysis clicked:", analysis);
+    // console.log("Analysis clicked:", analysis);
   };
 
   const toggleSection = (section: string) => {

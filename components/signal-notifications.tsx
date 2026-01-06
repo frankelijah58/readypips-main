@@ -66,7 +66,7 @@ export default function SignalNotifications({ pair }: SignalNotificationsProps) 
     // Play sound
     if (audioRef.current) {
       audioRef.current.play().catch(err => {
-        console.log('Audio play prevented:', err);
+        // console.log('Audio play prevented:', err);
       });
     }
 

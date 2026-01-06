@@ -47,7 +47,7 @@ export default function PricingPlans({
       setSelectedPlanForPayment(plan);
       setIsModalOpen(true);
     } else {
-      console.log("No onPlanSelect handler provided");
+      // console.log("No onPlanSelect handler provided");
     }
   };
 

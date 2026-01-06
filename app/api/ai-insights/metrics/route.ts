@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
       status: parseFailures === 0 ? "✅ Healthy" : `⚠️ ${parseFailures} parse failures detected`,
     };
 
-    console.log("📊 [AI Metrics] Retrieved AI Insights metrics:", metrics);
+    // console.log("📊 [AI Metrics] Retrieved AI Insights metrics:", metrics);
 
     return NextResponse.json(metrics);
   } catch (error) {

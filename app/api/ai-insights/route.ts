@@ -124,23 +124,23 @@ export async function POST(request: NextRequest) {
     }: AnalysisRequest = await request.json();
 
     // Log incoming market data
-    console.log("🔍 [AI Insights] Analysis request received:");
-    console.log("📊 [AI Insights] Symbol:", symbol);
-    console.log(
+    // console.log("🔍 [AI Insights] Analysis request received:");
+    // console.log("📊 [AI Insights] Symbol:", symbol);
+    // console.log(
       "📊 [AI Insights] Market Data:",
       JSON.stringify(marketData, null, 2)
     );
-    console.log(
+    // console.log(
       "📊 [AI Insights] Primary Indicators:",
       JSON.stringify(primaryIndicators, null, 2)
     );
-    console.log("📊 [AI Insights] Timeframes:", timeframes);
-    console.log("📊 [AI Insights] Primary Timeframe:", primaryTimeframe);
-    console.log(
+    // console.log("📊 [AI Insights] Timeframes:", timeframes);
+    // console.log("📊 [AI Insights] Primary Timeframe:", primaryTimeframe);
+    // console.log(
       "📊 [AI Insights] Analysis Context:",
       JSON.stringify(analysisContext, null, 2)
     );
-    console.log(
+    // console.log(
       "📊 [AI Insights] All Indicators Keys:",
       Object.keys(allIndicators)
     );
@@ -443,9 +443,9 @@ Respond ONLY with valid JSON in the exact format above. Ensure all price levels 
     }
 
     // Log AI response
-    console.log("🤖 [AI Insights] Gemini API Response (defensive logging):");
-    console.log("🤖 [AI Insights] Raw Response Length:", generatedText.length || rawResponseText.length);
-    console.log(
+    // console.log("🤖 [AI Insights] Gemini API Response (defensive logging):");
+    // console.log("🤖 [AI Insights] Raw Response Length:", generatedText.length || rawResponseText.length);
+    // console.log(
       "🤖 [AI Insights] Raw Response Preview:",
       (generatedText || rawResponseText).substring(0, 1000) + "..."
     );
@@ -462,27 +462,27 @@ Respond ONLY with valid JSON in the exact format above. Ensure all price levels 
         analysis = JSON.parse(jsonMatch[0]);
 
         // Log parsed analysis
-        console.log("✅ [AI Insights] Successfully parsed AI analysis:");
-        console.log(
+        // console.log("✅ [AI Insights] Successfully parsed AI analysis:");
+        // console.log(
           "📊 [AI Insights] Analysis Structure:",
           JSON.stringify(analysis, null, 2)
         );
-        console.log("📊 [AI Insights] Analysis Keys:", Object.keys(analysis));
+        // console.log("📊 [AI Insights] Analysis Keys:", Object.keys(analysis));
 
         if (analysis.meta) {
-          console.log(
+          // console.log(
             "📊 [AI Insights] Meta Data:",
             JSON.stringify(analysis.meta, null, 2)
           );
         }
         if (analysis.analysis) {
-          console.log(
+          // console.log(
             "📊 [AI Insights] Analysis Categories:",
             Object.keys(analysis.analysis)
           );
         }
         if (analysis.simulation_strategy) {
-          console.log(
+          // console.log(
             "📊 [AI Insights] Simulation Strategy:",
             JSON.stringify(analysis.simulation_strategy, null, 2)
           );
@@ -538,11 +538,11 @@ Respond ONLY with valid JSON in the exact format above. Ensure all price levels 
     const result = await db.collection("analyses").insertOne(analysisRecord);
 
     // Log database storage
-    console.log("💾 [AI Insights] Analysis stored in database:");
-    console.log("💾 [AI Insights] MongoDB ID:", result.insertedId);
-    console.log("💾 [AI Insights] Public ID:", analysisRecord.publicId);
-    console.log("💾 [AI Insights] Symbol:", analysisRecord.symbol);
-    console.log("💾 [AI Insights] Strategy:", analysisRecord.timeframe);
+    // console.log("💾 [AI Insights] Analysis stored in database:");
+    // console.log("💾 [AI Insights] MongoDB ID:", result.insertedId);
+    // console.log("💾 [AI Insights] Public ID:", analysisRecord.publicId);
+    // console.log("💾 [AI Insights] Symbol:", analysisRecord.symbol);
+    // console.log("💾 [AI Insights] Strategy:", analysisRecord.timeframe);
 
     // Free analysis - no credit deduction
     // if (userId) {
@@ -557,8 +557,8 @@ Respond ONLY with valid JSON in the exact format above. Ensure all price levels 
       _id: result.insertedId,
     };
 
-    console.log("✅ [AI Insights] Analysis completed successfully");
-    console.log(
+    // console.log("✅ [AI Insights] Analysis completed successfully");
+    // console.log(
       "✅ [AI Insights] Response data keys:",
       Object.keys(responseData)
     );

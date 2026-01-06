@@ -3,7 +3,7 @@ import { getDatabase } from "@/lib/mongodb";
 
 export async function GET() {
   try {
-    console.log("🏥 Health check requested");
+    // console.log("🏥 Health check requested");
 
     // Test database connection
     const db = await getDatabase();

@@ -11,7 +11,7 @@ export function useSymbolChange() {
 
   const handleSymbolChange = useCallback((event: CustomEvent<SymbolChangeEvent>) => {
     const { symbol, type } = event.detail;
-    console.log(`🔄 [useSymbolChange] Symbol changed to: ${symbol} (${type})`);
+    // console.log(`🔄 [useSymbolChange] Symbol changed to: ${symbol} (${type})`);
     setCurrentSymbol(symbol);
   }, []);
 

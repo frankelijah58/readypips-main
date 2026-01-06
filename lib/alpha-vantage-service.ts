@@ -141,7 +141,7 @@ export class AlphaVantageService {
     const url = `${this.baseUrl}?function=GLOBAL_QUOTE&symbol=${mappedSymbol}&apikey=${this.apiKey}`;
 
     try {
-      console.log(`🔍 [Alpha Vantage] Fetching quote for ${symbol} (mapped to ${mappedSymbol})`);
+      // console.log(`🔍 [Alpha Vantage] Fetching quote for ${symbol} (mapped to ${mappedSymbol})`);
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -180,7 +180,7 @@ export class AlphaVantageService {
         lastUpdated: quote["07. latest trading day"]
       };
 
-      console.log(`✅ [Alpha Vantage] Successfully fetched quote for ${symbol}:`, marketData);
+      // console.log(`✅ [Alpha Vantage] Successfully fetched quote for ${symbol}:`, marketData);
       return marketData;
 
     } catch (error) {
@@ -213,7 +213,7 @@ export class AlphaVantageService {
     url += `&outputsize=${outputSize}`;
 
     try {
-      console.log(`📊 [Alpha Vantage] Fetching time series for ${symbol} (${interval})`);
+      // console.log(`📊 [Alpha Vantage] Fetching time series for ${symbol} (${interval})`);
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -258,7 +258,7 @@ export class AlphaVantageService {
         }))
         .sort((a, b) => a.timestamp - b.timestamp);
 
-      console.log(`✅ [Alpha Vantage] Successfully fetched ${result.length} time series points for ${symbol}`);
+      // console.log(`✅ [Alpha Vantage] Successfully fetched ${result.length} time series points for ${symbol}`);
       return result;
 
     } catch (error) {

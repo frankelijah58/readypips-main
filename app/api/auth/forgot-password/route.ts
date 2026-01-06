@@ -5,14 +5,14 @@ import { sendEmail, emailTemplates } from "@/lib/email-service";
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔍 [Forgot Password] Starting password reset process...');
-    console.log('🔍 [Forgot Password] Environment variables check:');
-    console.log('  SMTP_HOST:', process.env.SMTP_HOST || 'NOT SET');
-    console.log('  SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
-    console.log('  SMTP_USER:', process.env.SMTP_USER || 'NOT SET');
-    console.log('  SMTP_PASS:', process.env.SMTP_PASS ? '***EXISTS***' : 'NOT SET');
-    console.log('  SMTP_FROM_EMAIL:', process.env.SMTP_FROM_EMAIL || 'NOT SET');
-    console.log('  NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL || 'NOT SET');
+    // console.log('🔍 [Forgot Password] Starting password reset process...');
+    // console.log('🔍 [Forgot Password] Environment variables check:');
+    // console.log('  SMTP_HOST:', process.env.SMTP_HOST || 'NOT SET');
+    // console.log('  SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
+    // console.log('  SMTP_USER:', process.env.SMTP_USER || 'NOT SET');
+    // console.log('  SMTP_PASS:', process.env.SMTP_PASS ? '***EXISTS***' : 'NOT SET');
+    // console.log('  SMTP_FROM_EMAIL:', process.env.SMTP_FROM_EMAIL || 'NOT SET');
+    // console.log('  NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL || 'NOT SET');
     
     const { email } = await request.json();
 

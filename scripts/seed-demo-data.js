@@ -12,7 +12,7 @@ const crypto = require("crypto");
 async function seedData() {
   let client;
   try {
-    console.log("Seeding demo data...\n");
+    // console.log("Seeding demo data...\n");
 
     const mongoUri = process.env.MONGODB_URI;
     const dbName = process.env.MONGODB_DB_NAME || "ready-pips";
@@ -22,7 +22,7 @@ async function seedData() {
     const db = client.db(dbName);
 
     // Clear existing data
-    console.log("Clearing existing collections...");
+    // console.log("Clearing existing collections...");
     await db.collection("users").deleteMany({});
     await db.collection("subscriptions").deleteMany({});
     await db.collection("tools").deleteMany({});
@@ -129,7 +129,7 @@ async function seedData() {
     ];
 
     const usersResult = await db.collection("users").insertMany(users);
-    console.log(`Created ${usersResult.insertedIds.length} users`);
+    // console.log(`Created ${usersResult.insertedIds.length} users`);
 
     const userIds = Object.values(usersResult.insertedIds);
 
@@ -219,7 +219,7 @@ async function seedData() {
     ];
 
     const subsResult = await db.collection("subscriptions").insertMany(subscriptions);
-    console.log(`Created ${subsResult.insertedIds.length} subscriptions`);
+    // console.log(`Created ${subsResult.insertedIds.length} subscriptions`);
 
     // Seed Tools
     const tools = [
@@ -271,7 +271,7 @@ async function seedData() {
     ];
 
     const toolsResult = await db.collection("tools").insertMany(tools);
-    console.log(`Created ${toolsResult.insertedIds.length} tools`);
+    // console.log(`Created ${toolsResult.insertedIds.length} tools`);
 
     // Seed Announcements
     const announcements = [
@@ -314,16 +314,16 @@ async function seedData() {
     ];
 
     const announcementsResult = await db.collection("announcements").insertMany(announcements);
-    console.log(`Created ${announcementsResult.insertedIds.length} announcements`);
+    // console.log(`Created ${announcementsResult.insertedIds.length} announcements`);
 
-    console.log("\n" + "=".repeat(50));
-    console.log("DEMO DATA SEEDED SUCCESSFULLY");
-    console.log("=".repeat(50));
-    console.log("\nSummary:");
-    console.log(`- ${users.length} Users`);
-    console.log(`- ${subscriptions.length} Subscriptions`);
-    console.log(`- ${tools.length} Tools`);
-    console.log(`- ${announcements.length} Announcements`);
+    // console.log("\n" + "=".repeat(50));
+    // console.log("DEMO DATA SEEDED SUCCESSFULLY");
+    // console.log("=".repeat(50));
+    // console.log("\nSummary:");
+    // console.log(`- ${users.length} Users`);
+    // console.log(`- ${subscriptions.length} Subscriptions`);
+    // console.log(`- ${tools.length} Tools`);
+    // console.log(`- ${announcements.length} Announcements`);
 
     await client.close();
     process.exit(0);

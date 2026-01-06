@@ -26,14 +26,14 @@ export async function POST(request: NextRequest) {
     // Find admin by email
     const admin = await findAdminByEmail(email);
     if (!admin) {
-      console.log(`[Admin Login] No admin found for email: ${email}`);
+      // console.log(`[Admin Login] No admin found for email: ${email}`);
       return NextResponse.json(
         { error: "Invalid credentials" },
         { status: 401 }
       );
     }
     
-    console.log(`[Admin Login] Admin found: ${admin.email}, role: ${admin.role}, active: ${admin.isActive}`);
+    // console.log(`[Admin Login] Admin found: ${admin.email}, role: ${admin.role}, active: ${admin.isActive}`);
 
     // Check if admin is active
     if (!admin.isActive) {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     // Verify password
     const passwordValid = await verifyPassword(password, admin.password!);
     if (!passwordValid) {
-      console.log(`[Admin Login] Invalid password for: ${email}`);
+      // console.log(`[Admin Login] Invalid password for: ${email}`);
       // Record failed login attempt
       await recordAdminAction(admin._id!, "failed_login", {
         email,
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log(`[Admin Login] Password valid for: ${email}`);
+    // console.log(`[Admin Login] Password valid for: ${email}`);
 
     // Update last login
     await updateAdminLastLogin(admin._id!);

@@ -320,7 +320,7 @@ export class NewsService {
 
   async fetchMarketNews(): Promise<NewsItem[]> {
     try {
-      console.log("📰 Fetching market news from Alpha Vantage...");
+      // console.log("📰 Fetching market news from Alpha Vantage...");
 
       if (!this.alphaVantageApiKey) {
         console.warn("⚠️ No Alpha Vantage API key found, using mock data");
@@ -330,7 +330,7 @@ export class NewsService {
       // Use the NEWS_SENTIMENT endpoint with proper parameters
       const url = `https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=AAPL,GOOGL,MSFT,TSLA,AMZN,META,NVDA&topics=technology,financial_markets,economy_macro&limit=50&apikey=${this.alphaVantageApiKey}`;
 
-      console.log("🔗 Fetching from:", url);
+      // console.log("🔗 Fetching from:", url);
 
       const response = await fetch(url);
 
@@ -340,7 +340,7 @@ export class NewsService {
 
       const data = await response.json();
 
-      console.log("📊 Alpha Vantage response:", JSON.stringify(data, null, 2));
+      // console.log("📊 Alpha Vantage response:", JSON.stringify(data, null, 2));
 
       // Check for API errors
       if (data["Error Message"]) {
@@ -361,7 +361,7 @@ export class NewsService {
       }
 
       const articles = data.feed;
-      console.log(`📰 Found ${articles.length} articles from Alpha Vantage`);
+      // console.log(`📰 Found ${articles.length} articles from Alpha Vantage`);
 
       if (articles.length === 0) {
         console.warn("⚠️ No articles found, using mock data");
@@ -370,7 +370,7 @@ export class NewsService {
 
       const processedArticles: NewsItem[] = articles.map(
         (article: any, index: number) => {
-          console.log(
+          // console.log(
             `📰 Processing article ${index + 1}: ${article.title}...`
           );
 
@@ -404,7 +404,7 @@ export class NewsService {
             updatedAt: new Date(),
           };
 
-          console.log(`📰 Processed article ${index + 1}:`, {
+          // console.log(`📰 Processed article ${index + 1}:`, {
             title: processedArticle.title,
             category: processedArticle.category,
             impact: processedArticle.impact,
@@ -417,13 +417,13 @@ export class NewsService {
         }
       );
 
-      console.log(
+      // console.log(
         `✅ Successfully processed ${processedArticles.length} news articles`
       );
       return processedArticles;
     } catch (error) {
       console.error("❌ Error fetching market news:", error);
-      console.log("🔄 Falling back to mock data...");
+      // console.log("🔄 Falling back to mock data...");
       return this.getMockNews();
     }
   }
@@ -479,7 +479,7 @@ export class NewsService {
         return this.getMockEconomicEvents();
       }
 
-      console.log("📅 Fetching economic calendar from Alpha Vantage...");
+      // console.log("📅 Fetching economic calendar from Alpha Vantage...");
 
       // Note: Alpha Vantage doesn't have a direct economic calendar endpoint
       // We'll use mock data for now, but you could integrate with other APIs like:
@@ -553,7 +553,7 @@ export class NewsService {
 
   async saveNewsToDatabase(news: NewsItem[]): Promise<void> {
     try {
-      console.log(`💾 Saving ${news.length} news articles to database...`);
+      // console.log(`💾 Saving ${news.length} news articles to database...`);
       const db = await getDatabase();
       const newsCollection = db.collection("news");
 
@@ -564,7 +564,7 @@ export class NewsService {
       const deleteResult = await newsCollection.deleteMany({
         createdAt: { $lt: weekAgo },
       });
-      console.log(`🗑️ Deleted ${deleteResult.deletedCount} old news articles`);
+      // console.log(`🗑️ Deleted ${deleteResult.deletedCount} old news articles`);
 
       // Insert new news (remove _id field to let MongoDB generate it)
       if (news.length > 0) {
@@ -574,11 +574,11 @@ export class NewsService {
         });
 
         const insertResult = await newsCollection.insertMany(newsToInsert);
-        console.log(
+        // console.log(
           `✅ Successfully saved ${insertResult.insertedCount} news articles to database`
         );
       } else {
-        console.log("📰 No news articles to save");
+        // console.log("📰 No news articles to save");
       }
     } catch (error) {
       console.error("❌ Error saving news to database:", error);
@@ -606,7 +606,7 @@ export class NewsService {
           return eventWithoutId;
         });
         await eventsCollection.insertMany(eventsToInsert as any);
-        console.log(`📅 Saved ${events.length} economic events to database`);
+        // console.log(`📅 Saved ${events.length} economic events to database`);
       }
     } catch (error) {
       console.error("Error saving economic events to database:", error);
@@ -615,7 +615,7 @@ export class NewsService {
 
   async getNewsFromDatabase(limit: number = 50): Promise<NewsItem[]> {
     try {
-      console.log(`📰 Fetching up to ${limit} news articles from database...`);
+      // console.log(`📰 Fetching up to ${limit} news articles from database...`);
       const db = await getDatabase();
       const newsCollection = db.collection("news");
 
@@ -625,9 +625,9 @@ export class NewsService {
         .limit(limit)
         .toArray();
 
-      console.log(`📰 Retrieved ${news.length} news articles from database`);
+      // console.log(`📰 Retrieved ${news.length} news articles from database`);
       if (news.length > 0) {
-        console.log("📰 First article from database:", news[0].title);
+        // console.log("📰 First article from database:", news[0].title);
       }
 
       return news as any as NewsItem[];

@@ -54,32 +54,32 @@ function SubscriptionSuccessContent() {
 
   useEffect(() => {
     const checkSubscription = async () => {
-      console.log("🔍 [Subscription Success] useEffect triggered");
-      console.log("🔍 [Subscription Success] sessionId:", sessionId);
-      console.log("🔍 [Subscription Success] reference:", reference);
-      console.log("🔍 [Subscription Success] orderTrackingId:", orderTrackingId);
-      console.log("🔍 [Subscription Success] merchantReference:", merchantReference);
-      console.log("🔍 [Subscription Success] authUser:", authUser);
+      // console.log("🔍 [Subscription Success] useEffect triggered");
+      // console.log("🔍 [Subscription Success] sessionId:", sessionId);
+      // console.log("🔍 [Subscription Success] reference:", reference);
+      // console.log("🔍 [Subscription Success] orderTrackingId:", orderTrackingId);
+      // console.log("🔍 [Subscription Success] merchantReference:", merchantReference);
+      // console.log("🔍 [Subscription Success] authUser:", authUser);
 
       // Determine payment ID based on provider
       const paymentId = sessionId || reference || orderTrackingId;
-      console.log("🔍 [Subscription Success] Payment ID determined:", paymentId);
+      // console.log("🔍 [Subscription Success] Payment ID determined:", paymentId);
 
       if (paymentId) {
-        console.log("🔍 [Subscription Success] Starting verification for:", paymentId);
+        // console.log("🔍 [Subscription Success] Starting verification for:", paymentId);
         verifySubscription(paymentId);
       } else {
-        console.log("❌ [Subscription Success] No payment ID found");
+        // console.log("❌ [Subscription Success] No payment ID found");
         
         // Check if user's subscription has already been activated by webhook
-        console.log("🔍 [Subscription Success] Checking if subscription was already activated...");
+        // console.log("🔍 [Subscription Success] Checking if subscription was already activated...");
         
         // Use auth context user data if available
         if (authUser) {
-          console.log("✅ [Subscription Success] Using auth context user data:", authUser);
+          // console.log("✅ [Subscription Success] Using auth context user data:", authUser);
           
           if (authUser.subscriptionStatus === "active") {
-            console.log("✅ [Subscription Success] Subscription already active!");
+            // console.log("✅ [Subscription Success] Subscription already active!");
             setSubscriptionData({
               sessionId: "webhook-processed",
               provider: "stripe",
@@ -106,12 +106,12 @@ function SubscriptionSuccessContent() {
 
         // If no auth user, try to refresh auth
         if (!authUser) {
-          console.log("🔍 [Subscription Success] No auth user, refreshing auth...");
+          // console.log("🔍 [Subscription Success] No auth user, refreshing auth...");
           await checkAuth();
           // Wait a bit for auth to refresh
           setTimeout(() => {
             if (authUser) {
-              console.log("✅ [Subscription Success] Auth refreshed, user data:", authUser);
+              // console.log("✅ [Subscription Success] Auth refreshed, user data:", authUser);
               // Re-run the logic with fresh user data
               checkSubscription();
               return;
@@ -120,7 +120,7 @@ function SubscriptionSuccessContent() {
         }
 
         // Show error if no user data available
-        console.log("❌ [Subscription Success] No user data available");
+        // console.log("❌ [Subscription Success] No user data available");
         toast.error("Unable to retrieve user information. Please log in again.");
         setLoading(false);
       }
@@ -131,15 +131,15 @@ function SubscriptionSuccessContent() {
 
   const verifySubscription = async (paymentId: string) => {
     try {
-      console.log("🔍 [Subscription Success] verifySubscription called with:", paymentId);
+      // console.log("🔍 [Subscription Success] verifySubscription called with:", paymentId);
 
       // Get token from localStorage
       const token = localStorage.getItem("token");
 
-      console.log("🔍 [Subscription Success] Token found:", !!token);
+      // console.log("🔍 [Subscription Success] Token found:", !!token);
 
       if (!token) {
-        console.log("❌ [Subscription Success] No token found");
+        // console.log("❌ [Subscription Success] No token found");
         toast.error("Authentication required");
         setLoading(false);
         return;
@@ -154,14 +154,14 @@ function SubscriptionSuccessContent() {
       } else {
         provider = "paystack";
       }
-      console.log("🔍 [Subscription Success] Provider determined:", provider);
+      // console.log("🔍 [Subscription Success] Provider determined:", provider);
 
       const requestBody = {
         sessionId: paymentId,
         provider,
       };
 
-      console.log("🔍 [Subscription Success] Making API request to /api/payments/verify-session...");
+      // console.log("🔍 [Subscription Success] Making API request to /api/payments/verify-session...");
       const response = await fetch("/api/payments/verify-session", {
         method: "POST",
         headers: {
@@ -171,35 +171,35 @@ function SubscriptionSuccessContent() {
         body: JSON.stringify(requestBody),
       });
 
-      console.log("🔍 [Subscription Success] Response status:", response.status);
+      // console.log("🔍 [Subscription Success] Response status:", response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ [Subscription Success] Success response:", data);
+        // console.log("✅ [Subscription Success] Success response:", data);
         
         // Set subscription and user data
         setSubscriptionData(data.payment);
         setUserData(data.user);
         
         // Refresh auth context to get updated user data
-        console.log("🔍 [Subscription Success] Refreshing auth context...");
+        // console.log("🔍 [Subscription Success] Refreshing auth context...");
         await checkAuth();
         
         toast.success("🎉 Subscription activated successfully!");
-        console.log("✅ [Subscription Success] Verification complete!");
+        // console.log("✅ [Subscription Success] Verification complete!");
       } else {
         const errorData = await response.json();
         console.error("❌ [Subscription Success] Error response:", errorData);
 
         // If 401, the token might be invalid - try to refresh auth
         if (response.status === 401) {
-          console.log("⚠️ [Subscription Success] Token invalid, attempting to refresh auth...");
+          // console.log("⚠️ [Subscription Success] Token invalid, attempting to refresh auth...");
           await checkAuth();
           
           // Retry verification with refreshed token
           const newToken = localStorage.getItem("token");
           if (newToken && newToken !== token) {
-            console.log("� [Subscription Success] Retrying with refreshed token...");
+            // console.log("� [Subscription Success] Retrying with refreshed token...");
             return verifySubscription(paymentId);
           }
         }
@@ -215,7 +215,7 @@ function SubscriptionSuccessContent() {
       setLoading(false);
       return;
     } finally {
-      console.log("🏁 [Subscription Success] Verification process completed");
+      // console.log("🏁 [Subscription Success] Verification process completed");
       setLoading(false);
     }
   };

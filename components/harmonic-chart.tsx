@@ -129,7 +129,7 @@ export function HarmonicChart({
                 "1.000": true,
               },
             });
-            console.log("Frank State Strategy loaded successfully");
+            // console.log("Frank State Strategy loaded successfully");
           }
         };
         document.head.appendChild(script);
@@ -145,13 +145,13 @@ export function HarmonicChart({
   useEffect(() => {
     // Prevent multiple initializations
     if (isInitializedRef.current) {
-      console.log("🔄 [TradingView] Widget already initialized, skipping...");
+      // console.log("🔄 [TradingView] Widget already initialized, skipping...");
       return;
     }
 
     const initWidget = async () => {
       try {
-        console.log(
+        // console.log(
           "🚀 [TradingView] Initializing harmonic analysis widget..."
         );
         isInitializedRef.current = true;
@@ -168,7 +168,7 @@ export function HarmonicChart({
         (window as any).TradingView.actualResolution = timeframe;
         (window as any).TradingView.currentlyDisplayedSymbol = symbol;
 
-        console.log("🔧 [TradingView] Setting up harmonic analysis chart");
+        // console.log("🔧 [TradingView] Setting up harmonic analysis chart");
 
         // Initialize datafeed
         const datafeed = initDatafeed();
@@ -222,12 +222,12 @@ export function HarmonicChart({
           ],
         };
 
-        console.log("⚙️ [TradingView] Creating harmonic analysis widget");
+        // console.log("⚙️ [TradingView] Creating harmonic analysis widget");
         const tvWidget = new window.TradingView.widget(widgetOptions);
         widgetRef.current = tvWidget;
 
         tvWidget.onChartReady(() => {
-          console.log("✅ [TradingView] Harmonic analysis chart is ready");
+          // console.log("✅ [TradingView] Harmonic analysis chart is ready");
           setChartReady(true);
 
           // Listen for symbol changes
@@ -235,7 +235,7 @@ export function HarmonicChart({
           if (chart) {
             chart.onSymbolChanged().subscribe(null, (symbolInfo: any) => {
               const newSymbol = symbolInfo.full_name || symbolInfo.name;
-              console.log(`🔄 [TradingView] Symbol changed to: ${newSymbol}`);
+              // console.log(`🔄 [TradingView] Symbol changed to: ${newSymbol}`);
               setCurrentSymbol(newSymbol);
 
               // Notify parent component about symbol change
@@ -275,7 +275,7 @@ export function HarmonicChart({
 
     return () => {
       if (tvWidget) {
-        console.log("🧹 [TradingView] Cleaning up harmonic analysis widget");
+        // console.log("🧹 [TradingView] Cleaning up harmonic analysis widget");
         tvWidget.remove();
         widgetRef.current = null;
         isInitializedRef.current = false;
@@ -332,7 +332,7 @@ export function HarmonicChart({
             // Add annotations to chart
             addChartAnnotations(result.patterns, result.fibLevels);
 
-            console.log(
+            // console.log(
               `🔍 Found ${result.patterns.length} harmonic patterns for ${symbolToAnalyze}`
             );
           }

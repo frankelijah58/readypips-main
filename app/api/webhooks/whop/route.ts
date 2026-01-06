@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
       { $set: { processed: true, processedAt: new Date() } }
     );
 
-    console.log(`✅ Whop webhook processed for user ${userId}`);
+    // console.log(`✅ Whop webhook processed for user ${userId}`);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {
@@ -334,7 +334,7 @@ export async function POST(req: NextRequest) {
 //       }
 //     );
 
-//     console.log(`✅ Whop subscription activated for user ${userId}`);
+//     // console.log(`✅ Whop subscription activated for user ${userId}`);
 
 //     return NextResponse.json({ success: true }, { status: 200 });
 //   } catch (error) {
@@ -394,7 +394,7 @@ export async function POST(req: NextRequest) {
 //         { $set: { status: "completed", updatedAt: new Date() } }
 //       );
 
-//       console.log(`✅ Subscription activated for user ${intent.userId}`);
+//       // console.log(`✅ Subscription activated for user ${intent.userId}`);
 //     }
 //     else if (event === "membership.canceled" || event === "subscription.canceled") {
 //       const reference = data.custom_id; 
@@ -415,7 +415,7 @@ export async function POST(req: NextRequest) {
 //       //   subscriptionEndDate: new Date(),
 //       // });
 
-//       console.log(`✅ Subscription canceled for user ${intent.userId}`);
+//       // console.log(`✅ Subscription canceled for user ${intent.userId}`);
 //     }
 
 

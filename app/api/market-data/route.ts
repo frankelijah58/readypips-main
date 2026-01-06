@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol");
 
-  console.log(`🔍 Market Data API called for symbol: ${symbol}`);
+  // console.log(`🔍 Market Data API called for symbol: ${symbol}`);
 
   if (!symbol) {
-    console.log("❌ No symbol provided");
+    // console.log("❌ No symbol provided");
     return NextResponse.json(
       { error: "Symbol parameter is required" },
       { status: 400 }
@@ -49,43 +49,43 @@ export async function GET(request: NextRequest) {
     // Check cache first
     const cachedData = await getCachedMarketData(symbol, 5); // 5 minutes cache
     if (cachedData) {
-      console.log(`✅ Returning cached data for ${symbol}`);
+      // console.log(`✅ Returning cached data for ${symbol}`);
       return NextResponse.json(cachedData);
     }
 
     // Try Alpha Vantage first if configured
     if (alphaVantageService.isConfigured()) {
-      console.log(`🔍 [Alpha Vantage] Fetching data for ${symbol}`);
+      // console.log(`🔍 [Alpha Vantage] Fetching data for ${symbol}`);
       const alphaVantageData = await alphaVantageService.getQuote(symbol);
       
       if (alphaVantageData) {
-        console.log(`✅ [Alpha Vantage] Successfully fetched data for ${symbol}`);
+        // console.log(`✅ [Alpha Vantage] Successfully fetched data for ${symbol}`);
         
         // Cache the response
         await cacheMarketData(symbol, alphaVantageData);
         
         return NextResponse.json(alphaVantageData);
       } else {
-        console.log(`⚠️ [Alpha Vantage] No data for ${symbol}, falling back to Yahoo Finance`);
+        // console.log(`⚠️ [Alpha Vantage] No data for ${symbol}, falling back to Yahoo Finance`);
       }
     } else {
-      console.log(`⚠️ [Alpha Vantage] Not configured, using Yahoo Finance fallback`);
+      // console.log(`⚠️ [Alpha Vantage] Not configured, using Yahoo Finance fallback`);
     }
 
     // Fallback to Yahoo Finance
     const yahooSymbol = mapSymbolToYahoo(symbol);
-    console.log(
+    // console.log(
       `🔄 Converted ${symbol} to Yahoo Finance format: ${yahooSymbol}`
     );
 
     // Fetch fresh data from Yahoo Finance
     const url = `${YAHOO_FINANCE_BASE_URL}/${yahooSymbol}?interval=1d&range=1d`;
-    console.log(`🌐 Fetching from Yahoo Finance: ${url}`);
+    // console.log(`🌐 Fetching from Yahoo Finance: ${url}`);
 
     const response = await fetch(url);
     const data: YahooFinanceResponse = await response.json();
 
-    console.log(
+    // console.log(
       `📊 Yahoo Finance response for ${symbol}:`,
       JSON.stringify(data, null, 2)
     );
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       !data.chart.result ||
       data.chart.result.length === 0
     ) {
-      console.log(`❌ No data found for ${symbol}, falling back to mock data`);
+      // console.log(`❌ No data found for ${symbol}, falling back to mock data`);
 
       // Fallback to mock data when both APIs return no data
       const mockData = {
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       mockData.change = mockData.price - mockData.open;
       mockData.changePercent = (mockData.change / mockData.open) * 100;
 
-      console.log(`✅ Returning fallback mock data for ${symbol}:`, mockData);
+      // console.log(`✅ Returning fallback mock data for ${symbol}:`, mockData);
       return NextResponse.json(mockData);
     }
 
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
       open: quote.open[0] || previousClose,
     };
 
-    console.log(`✅ Parsed market data for ${symbol}:`, marketData);
+    // console.log(`✅ Parsed market data for ${symbol}:`, marketData);
 
     // Cache the response
     await cacheMarketData(symbol, marketData);
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
     console.error(`❌ Error fetching market data for ${symbol}:`, error);
 
     // Fallback to mock data on error
-    console.log(`🔄 Falling back to mock data for ${symbol} due to error`);
+    // console.log(`🔄 Falling back to mock data for ${symbol} due to error`);
     const mockData = {
       symbol: symbol,
       price: 150 + Math.random() * 100,
@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
     mockData.change = mockData.price - mockData.open;
     mockData.changePercent = (mockData.change / mockData.open) * 100;
 
-    console.log(
+    // console.log(
       `✅ Returning error fallback mock data for ${symbol}:`,
       mockData
     );

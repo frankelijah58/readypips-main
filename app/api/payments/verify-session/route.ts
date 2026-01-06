@@ -24,56 +24,56 @@ interface PaymentRecord {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔍 [Verify Session] Starting verification...');
-    console.log('🔍 [Verify Session] Request URL:', request.url);
-    console.log('🔍 [Verify Session] Request method:', request.method);
+    // console.log('🔍 [Verify Session] Starting verification...');
+    // console.log('🔍 [Verify Session] Request URL:', request.url);
+    // console.log('🔍 [Verify Session] Request method:', request.method);
     
     const authHeader = request.headers.get("authorization");
     const cookieToken = request.cookies.get("token")?.value;
     
-    console.log('🔍 [Verify Session] Auth header:', !!authHeader);
-    console.log('🔍 [Verify Session] Cookie token:', !!cookieToken);
+    // console.log('🔍 [Verify Session] Auth header:', !!authHeader);
+    // console.log('🔍 [Verify Session] Cookie token:', !!cookieToken);
     
     const token = authHeader?.replace("Bearer ", "") || cookieToken;
 
     if (!token) {
-      console.log('❌ [Verify Session] No token found');
+      // console.log('❌ [Verify Session] No token found');
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       );
     }
 
-    console.log('🔍 [Verify Session] Token found, verifying...');
+    // console.log('🔍 [Verify Session] Token found, verifying...');
     const decoded = verifyToken(token);
     if (!decoded) {
-      console.log('❌ [Verify Session] Invalid token');
+      // console.log('❌ [Verify Session] Invalid token');
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
     
-    console.log('✅ [Verify Session] Token verified, userId:', decoded.userId);
+    // console.log('✅ [Verify Session] Token verified, userId:', decoded.userId);
 
     const requestBody = await request.json();
-    console.log('🔍 [Verify Session] Request body:', requestBody);
+    // console.log('🔍 [Verify Session] Request body:', requestBody);
     
     const { sessionId, provider } = requestBody;
-    console.log('🔍 [Verify Session] Session ID:', sessionId);
-    console.log('🔍 [Verify Session] Provider:', provider);
+    // console.log('🔍 [Verify Session] Session ID:', sessionId);
+    // console.log('🔍 [Verify Session] Provider:', provider);
 
     if (!sessionId || !provider) {
-      console.log('❌ [Verify Session] Missing sessionId or provider');
-      console.log('🔍 [Verify Session] sessionId:', sessionId);
-      console.log('🔍 [Verify Session] provider:', provider);
+      // console.log('❌ [Verify Session] Missing sessionId or provider');
+      // console.log('🔍 [Verify Session] sessionId:', sessionId);
+      // console.log('🔍 [Verify Session] provider:', provider);
       return NextResponse.json(
         { error: "Session ID and provider are required" },
         { status: 400 }
       );
     }
 
-    console.log('🔍 [Verify Session] Connecting to database...');
+    // console.log('🔍 [Verify Session] Connecting to database...');
     const db = await getDatabase();
     const paymentsCollection = db.collection("payments");
-    console.log('✅ [Verify Session] Database connected');
+    // console.log('✅ [Verify Session] Database connected');
 
     let paymentData: any;
     let planId: string;
@@ -85,10 +85,10 @@ export async function POST(request: NextRequest) {
     // Verify payment with provider
     if (provider === "stripe") {
       try {
-        console.log('🔍 [Verify Session] Verifying Stripe session...');
+        // console.log('🔍 [Verify Session] Verifying Stripe session...');
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         paymentData = session;
-        console.log('🔍 [Verify Session] Stripe session retrieved:', {
+        // console.log('🔍 [Verify Session] Stripe session retrieved:', {
           id: session.id,
           payment_status: session.payment_status,
           status: session.status,
@@ -111,27 +111,27 @@ export async function POST(request: NextRequest) {
           amount = session.amount_total || 0;
           currency = session.currency?.toUpperCase() || "USD";
 
-          console.log('✅ [Verify Session] Stripe payment completed');
-          console.log('🔍 [Verify Session] Stripe Plan:', stripePlan);
-          console.log('🔍 [Verify Session] Mapped Plan ID:', planId);
-          console.log('🔍 [Verify Session] Plan Name:', planName);
-          console.log('🔍 [Verify Session] Amount:', amount);
-          console.log('🔍 [Verify Session] Currency:', currency);
+          // console.log('✅ [Verify Session] Stripe payment completed');
+          // console.log('🔍 [Verify Session] Stripe Plan:', stripePlan);
+          // console.log('🔍 [Verify Session] Mapped Plan ID:', planId);
+          // console.log('🔍 [Verify Session] Plan Name:', planName);
+          // console.log('🔍 [Verify Session] Amount:', amount);
+          // console.log('🔍 [Verify Session] Currency:', currency);
 
           // Update user subscription if payment is completed
           if (status === "completed" && planId) {
             const subscriptionEndDate = new Date();
             subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30);
 
-            console.log('🔍 [Verify Session] Updating user subscription...');
+            // console.log('🔍 [Verify Session] Updating user subscription...');
             await updateUserSubscription(decoded.userId, {
               subscriptionStatus: "active",
               subscriptionType: planId as "basic" | "premium" | "pro",
               subscriptionEndDate,
             });
-            console.log('✅ [Verify Session] User subscription updated');
+            // console.log('✅ [Verify Session] User subscription updated');
           } else {
-            console.log('⚠️ [Verify Session] Payment completed but no planId found');
+            // console.log('⚠️ [Verify Session] Payment completed but no planId found');
           }
         } else {
           status = "pending";
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
           planName = `${stripePlan.charAt(0).toUpperCase() + stripePlan.slice(1)} Plan`;
           amount = session.amount_total || 0;
           currency = session.currency?.toUpperCase() || "USD";
-          console.log('⏳ [Verify Session] Stripe payment pending, status:', session.payment_status);
+          // console.log('⏳ [Verify Session] Stripe payment pending, status:', session.payment_status);
         }
       } catch (error) {
         console.error("❌ [Verify Session] Stripe session verification error:", error);
@@ -156,11 +156,11 @@ export async function POST(request: NextRequest) {
       }
     } else if (provider === "paystack") {
       try {
-        console.log('🔍 [Verify Session] Verifying Paystack transaction...');
+        // console.log('🔍 [Verify Session] Verifying Paystack transaction...');
         // Verify Paystack transaction
         const paystackData = await verifyPaystackTransaction(sessionId);
         paymentData = paystackData;
-        console.log('🔍 [Verify Session] Paystack data:', paystackData);
+        // console.log('🔍 [Verify Session] Paystack data:', paystackData);
 
         if (paystackData.status && paystackData.data.status === "success") {
           status = "completed";
@@ -169,9 +169,9 @@ export async function POST(request: NextRequest) {
           amount = paystackData.data.amount / 100; // Convert from cents (KES)
           currency = paystackData.data.currency;
 
-          console.log('✅ [Verify Session] Paystack payment completed');
-          console.log('🔍 [Verify Session] Plan ID:', planId);
-          console.log('🔍 [Verify Session] Plan Name:', planName);
+          // console.log('✅ [Verify Session] Paystack payment completed');
+          // console.log('🔍 [Verify Session] Plan ID:', planId);
+          // console.log('🔍 [Verify Session] Plan Name:', planName);
 
           // Update user subscription if payment is completed
           if (status === "completed" && planId) {
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
               subscriptionType: planId as "basic" | "premium" | "pro",
               subscriptionEndDate,
             });
-            console.log('✅ [Verify Session] User subscription updated');
+            // console.log('✅ [Verify Session] User subscription updated');
           }
         } else {
           status = "pending";
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
           planName = paystackData.data.metadata?.planName || `${planId.charAt(0).toUpperCase() + planId.slice(1)} Plan`;
           amount = paystackData.data.amount / 100; // Convert from cents (KES)
           currency = paystackData.data.currency;
-          console.log('⏳ [Verify Session] Paystack payment pending');
+          // console.log('⏳ [Verify Session] Paystack payment pending');
         }
       } catch (error) {
         console.error("❌ [Verify Session] Paystack verification error:", error);
@@ -202,11 +202,11 @@ export async function POST(request: NextRequest) {
       }
     } else if (provider === "pesapal") {
       try {
-        console.log('🔍 [Verify Session] Verifying Pesapal transaction...');
+        // console.log('🔍 [Verify Session] Verifying Pesapal transaction...');
         // Verify Pesapal transaction
         const pesapalData = await verifyPesapalTransaction(sessionId);
         paymentData = pesapalData;
-        console.log('🔍 [Verify Session] Pesapal data:', pesapalData);
+        // console.log('🔍 [Verify Session] Pesapal data:', pesapalData);
 
         // Check payment status (can be in different fields)
         const isCompleted = 
@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
           pesapalData.payment_status_description?.toLowerCase() === "completed" ||
           pesapalData.status_code === 1;
 
-        console.log('🔍 [Verify Session] Payment completed check:', {
+        // console.log('🔍 [Verify Session] Payment completed check:', {
           payment_status: pesapalData.payment_status,
           payment_status_description: pesapalData.payment_status_description,
           status_code: pesapalData.status_code,
@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
           if (existingPayment) {
             planId = existingPayment.planId || "";
             planName = existingPayment.planName || "Subscription";
-            console.log('🔍 [Verify Session] Found existing payment record:', {
+            // console.log('🔍 [Verify Session] Found existing payment record:', {
               planId: existingPayment.planId,
               planName: existingPayment.planName
             });
@@ -245,9 +245,9 @@ export async function POST(request: NextRequest) {
           amount = pesapalData.amount;
           currency = pesapalData.currency;
 
-          console.log('✅ [Verify Session] Pesapal payment completed');
-          console.log('🔍 [Verify Session] Plan ID:', planId);
-          console.log('🔍 [Verify Session] Plan Name:', planName);
+          // console.log('✅ [Verify Session] Pesapal payment completed');
+          // console.log('🔍 [Verify Session] Plan ID:', planId);
+          // console.log('🔍 [Verify Session] Plan Name:', planName);
 
           // Update user subscription if payment is completed
           if (status === "completed" && planId) {
@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
                 currentEndDate && 
                 currentEndDate > now;
 
-              console.log('🔍 [Verify Session] Current subscription status:', {
+              // console.log('🔍 [Verify Session] Current subscription status:', {
                 currentType,
                 currentEndDate: currentEndDate?.toISOString(),
                 isOnActivePaidPlan,
@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
 
               if (isOnActivePaidPlan) {
                 // User has active paid subscription - schedule new subscription to start after current expires
-                console.log('⏰ [Verify Session] User has active paid plan - scheduling new subscription');
+                // console.log('⏰ [Verify Session] User has active paid plan - scheduling new subscription');
                 
                 await db.collection("users").updateOne(
                   { _id: new ObjectId(decoded.userId) },
@@ -306,10 +306,10 @@ export async function POST(request: NextRequest) {
                   }
                 );
                 
-                console.log('✅ [Verify Session] Pending subscription scheduled to start on:', currentEndDate.toISOString());
+                // console.log('✅ [Verify Session] Pending subscription scheduled to start on:', currentEndDate.toISOString());
               } else {
                 // User is on free plan or expired plan - activate immediately
-                console.log('🚀 [Verify Session] Activating subscription immediately');
+                // console.log('🚀 [Verify Session] Activating subscription immediately');
                 
                 const subscriptionStartDate = new Date();
                 const subscriptionEndDate = new Date();
@@ -322,7 +322,7 @@ export async function POST(request: NextRequest) {
                   subscriptionEndDate,
                 });
                 
-                console.log('✅ [Verify Session] User subscription activated immediately!');
+                // console.log('✅ [Verify Session] User subscription activated immediately!');
               }
             }
           }
@@ -343,7 +343,7 @@ export async function POST(request: NextRequest) {
 
           amount = pesapalData.amount;
           currency = pesapalData.currency;
-          console.log('⏳ [Verify Session] Pesapal payment pending, status:', pesapalData.payment_status_description);
+          // console.log('⏳ [Verify Session] Pesapal payment pending, status:', pesapalData.payment_status_description);
         }
       } catch (error) {
         console.error("❌ [Verify Session] Pesapal verification error:", error);
@@ -353,7 +353,7 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      console.log('❌ [Verify Session] Invalid provider:', provider);
+      // console.log('❌ [Verify Session] Invalid provider:', provider);
       return NextResponse.json(
         { error: "Invalid payment provider" },
         { status: 400 }
@@ -375,7 +375,7 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     };
 
-    console.log('🔍 [Verify Session] Payment record created:', {
+    // console.log('🔍 [Verify Session] Payment record created:', {
       userId: paymentRecord.userId,
       sessionId: paymentRecord.sessionId,
       provider: paymentRecord.provider,
@@ -388,11 +388,11 @@ export async function POST(request: NextRequest) {
 
     // Check if payment already exists
     const existingPayment = await paymentsCollection.findOne({ sessionId });
-    console.log('🔍 [Verify Session] Existing payment found:', !!existingPayment);
+    // console.log('🔍 [Verify Session] Existing payment found:', !!existingPayment);
 
     if (existingPayment) {
       // Update existing payment
-      console.log('🔍 [Verify Session] Updating existing payment...');
+      // console.log('🔍 [Verify Session] Updating existing payment...');
       await paymentsCollection.updateOne(
         { sessionId },
         {
@@ -402,22 +402,22 @@ export async function POST(request: NextRequest) {
           },
         }
       );
-      console.log('✅ [Verify Session] Payment updated in database');
+      // console.log('✅ [Verify Session] Payment updated in database');
     } else {
       // Insert new payment
-      console.log('🔍 [Verify Session] Inserting new payment...');
+      // console.log('🔍 [Verify Session] Inserting new payment...');
       await paymentsCollection.insertOne(paymentRecord);
-      console.log('✅ [Verify Session] Payment inserted in database');
+      // console.log('✅ [Verify Session] Payment inserted in database');
     }
 
     // Get user details
-    console.log('🔍 [Verify Session] Fetching user details...');
+    // console.log('🔍 [Verify Session] Fetching user details...');
     const user = await findUserById(decoded.userId);
     if (!user) {
-      console.log('❌ [Verify Session] User not found');
+      // console.log('❌ [Verify Session] User not found');
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    console.log('✅ [Verify Session] User found:', {
+    // console.log('✅ [Verify Session] User found:', {
       id: user._id,
       email: user.email,
       subscriptionStatus: user.subscriptionStatus,
@@ -451,8 +451,8 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log('✅ [Verify Session] Verification completed successfully');
-    console.log('🔍 [Verify Session] Response data:', responseData);
+    // console.log('✅ [Verify Session] Verification completed successfully');
+    // console.log('🔍 [Verify Session] Response data:', responseData);
 
     return NextResponse.json(responseData);
   } catch (error) {

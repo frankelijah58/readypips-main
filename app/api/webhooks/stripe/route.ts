@@ -25,13 +25,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  console.log("🔍 [Stripe Webhook] Event received:", event.type);
+  // console.log("🔍 [Stripe Webhook] Event received:", event.type);
 
   // Handle the event
   switch (event.type) {
     case "checkout.session.completed":
       const session = event.data.object as Stripe.Checkout.Session;
-      console.log(
+      // console.log(
         "🔍 [Stripe Webhook] Checkout session completed:",
         session.id
       );
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
           }
         );
 
-        console.log(
+        // console.log(
           "✅ [Stripe Webhook] User subscription updated:",
           result.modifiedCount
         );
@@ -84,15 +84,15 @@ export async function POST(request: NextRequest) {
       }
 
     case "invoice.payment_succeeded":
-      console.log("🔍 [Stripe Webhook] Invoice payment succeeded");
+      // console.log("🔍 [Stripe Webhook] Invoice payment succeeded");
       return NextResponse.json({ received: true });
 
     case "invoice.payment_failed":
-      console.log("🔍 [Stripe Webhook] Invoice payment failed");
+      // console.log("🔍 [Stripe Webhook] Invoice payment failed");
       return NextResponse.json({ received: true });
 
     default:
-      console.log(`🔍 [Stripe Webhook] Unhandled event type: ${event.type}`);
+      // console.log(`🔍 [Stripe Webhook] Unhandled event type: ${event.type}`);
       return NextResponse.json({ received: true });
   }
 }

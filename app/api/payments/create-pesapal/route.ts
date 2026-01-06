@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const amountInKes = kesAmounts[planId] || subscriptionPlan.price;
 
     try {
-      console.log("🔍 [Create Pesapal] Initializing Pesapal transaction with:", {
+      // console.log("🔍 [Create Pesapal] Initializing Pesapal transaction with:", {
         planId,
         planName: subscriptionPlan.name,
         priceUSD: subscriptionPlan.price,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         amountInKes
       );
 
-      console.log("✅ [Create Pesapal] Pesapal response:", pesapalResponse);
+      // console.log("✅ [Create Pesapal] Pesapal response:", pesapalResponse);
 
       // Store payment record in database
       const paymentRecord = {

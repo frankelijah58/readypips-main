@@ -15,7 +15,7 @@ const bcrypt = require("bcryptjs");
 async function seedAdmin() {
   let client;
   try {
-    console.log("🌱 Starting admin seeder...\n");
+    // console.log("🌱 Starting admin seeder...\n");
 
     // Connect to MongoDB using environment variable
     const mongoUri = process.env.MONGODB_URI;
@@ -34,9 +34,9 @@ async function seedAdmin() {
       .findOne({ role: "super_admin" });
 
     if (existingAdmin) {
-      console.log("✅ Super admin already exists!");
-      console.log(`   Email: ${existingAdmin.email}`);
-      console.log("   Skipping seed...\n");
+      // console.log("✅ Super admin already exists!");
+      // console.log(`   Email: ${existingAdmin.email}`);
+      // console.log("   Skipping seed...\n");
       await client.close();
       process.exit(0);
     }
@@ -81,21 +81,21 @@ async function seedAdmin() {
 
     const result = await db.collection("admins").insertOne(superAdmin);
 
-    console.log("✨ Super Admin Created Successfully!\n");
-    console.log("━".repeat(50));
-    console.log("📊 ADMIN CREDENTIALS");
-    console.log("━".repeat(50));
-    console.log(`Email:    ${superAdmin.email}`);
-    console.log(`Password: ${tempPassword}`);
-    console.log(`Role:     ${superAdmin.role}`);
-    console.log("━".repeat(50));
-    console.log("\n⚠️  IMPORTANT:");
-    console.log("1. Save these credentials in a secure location");
-    console.log("2. Login to the admin dashboard at: /admin/login");
-    console.log("3. Change the password after first login");
-    console.log("4. Use admin dashboard to create additional admin accounts\n");
+    // console.log("✨ Super Admin Created Successfully!\n");
+    // console.log("━".repeat(50));
+    // console.log("📊 ADMIN CREDENTIALS");
+    // console.log("━".repeat(50));
+    // console.log(`Email:    ${superAdmin.email}`);
+    // console.log(`Password: ${tempPassword}`);
+    // console.log(`Role:     ${superAdmin.role}`);
+    // console.log("━".repeat(50));
+    // console.log("\n⚠️  IMPORTANT:");
+    // console.log("1. Save these credentials in a secure location");
+    // console.log("2. Login to the admin dashboard at: /admin/login");
+    // console.log("3. Change the password after first login");
+    // console.log("4. Use admin dashboard to create additional admin accounts\n");
 
-    console.log("✅ Seeding completed successfully!");
+    // console.log("✅ Seeding completed successfully!");
     await client.close();
     process.exit(0);
   } catch (error) {

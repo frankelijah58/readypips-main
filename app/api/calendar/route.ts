@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     if (refresh) {
       // Fetch fresh economic events from external APIs
-      console.log("📅 Fetching fresh economic calendar...");
+      // console.log("📅 Fetching fresh economic calendar...");
       const freshEvents = await newsService.fetchEconomicCalendar();
       await newsService.saveEconomicEventsToDatabase(freshEvents);
       
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     // If no events in database, fetch fresh events
     if (events.length === 0) {
-      console.log("📅 No economic events in database, fetching fresh events...");
+      // console.log("📅 No economic events in database, fetching fresh events...");
       const freshEvents = await newsService.fetchEconomicCalendar();
       await newsService.saveEconomicEventsToDatabase(freshEvents);
       

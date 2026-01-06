@@ -42,7 +42,7 @@ const loadSettings = (): TradingViewSettings => {
   };
 
   const settings = savedSettings ? JSON.parse(savedSettings) : defaults;
-  console.log("📂 [TradingView] Loading settings from localStorage:", settings);
+  // console.log("📂 [TradingView] Loading settings from localStorage:", settings);
 
   return settings;
 };
@@ -59,7 +59,7 @@ export default function TradingViewInsightsChart() {
   const isInitializedRef = useRef(false);
   const [chartReady, setChartReady] = useState(false);
   const [settings, setSettings] = useState<TradingViewSettings>(() => {
-    console.log(
+    // console.log(
       "📂 [TradingView] Loading settings from localStorage (lazy init)"
     );
     return loadSettings();
@@ -100,7 +100,7 @@ export default function TradingViewInsightsChart() {
 
   // Update theme
   const updateTheme = useCallback((isDarkMode: boolean) => {
-    console.log(
+    // console.log(
       "🔄 [TradingView] Updating theme to:",
       isDarkMode ? "Dark" : "Light"
     );
@@ -128,7 +128,7 @@ export default function TradingViewInsightsChart() {
       // Listen for market changes
       window.addEventListener("changeMarket", (event: any) => {
         const { symbol: newSymbol } = event.detail;
-        console.log(
+        // console.log(
           "📈 [TradingView] Received changeMarket event with symbol:",
           newSymbol
         );
@@ -143,7 +143,7 @@ export default function TradingViewInsightsChart() {
       // Listen for theme changes
       window.addEventListener("toggleDarkMode", (event: any) => {
         const { isDarkMode } = event.detail;
-        console.log(
+        // console.log(
           "🎨 [TradingView] Received toggleDarkMode event:",
           isDarkMode ? "dark" : "light"
         );
@@ -166,13 +166,13 @@ export default function TradingViewInsightsChart() {
   useEffect(() => {
     // Prevent multiple initializations
     if (isInitializedRef.current) {
-      console.log("🔄 [TradingView] Widget already initialized, skipping...");
+      // console.log("🔄 [TradingView] Widget already initialized, skipping...");
       return;
     }
 
     const initWidget = async () => {
       try {
-        console.log("🚀 [TradingView] Initializing widget...");
+        // console.log("🚀 [TradingView] Initializing widget...");
         isInitializedRef.current = true;
 
         await loadScripts();
@@ -191,7 +191,7 @@ export default function TradingViewInsightsChart() {
         (window as any).TradingView.currentlyDisplayedSymbol =
           settingsRef.current.symbol;
 
-        console.log(
+        // console.log(
           "🔧 [TradingView] Setting actualResolution to:",
           settingsRef.current.interval
         );
@@ -305,7 +305,7 @@ export default function TradingViewInsightsChart() {
           },
         };
 
-        console.log(
+        // console.log(
           "⚙️ [TradingView] Creating widget with options:",
           widgetOptions
         );
@@ -313,7 +313,7 @@ export default function TradingViewInsightsChart() {
         widgetRef.current = tvWidget;
 
         tvWidget.onChartReady(() => {
-          console.log("✅ [TradingView] Chart is ready");
+          // console.log("✅ [TradingView] Chart is ready");
           setChartReady(true);
 
           // Subscribe to interval changes
@@ -321,7 +321,7 @@ export default function TradingViewInsightsChart() {
             .activeChart()
             .onIntervalChanged()
             .subscribe(null, (newInterval: string) => {
-              console.log("⏱️ [TradingView] Interval changed to:", newInterval);
+              // console.log("⏱️ [TradingView] Interval changed to:", newInterval);
 
               // Extract the numeric part from the interval (remove "m" suffix)
               // The widget passes "5m" but we want to save "5"
@@ -333,7 +333,7 @@ export default function TradingViewInsightsChart() {
               // Set the resolution directly as in the Vue implementation
               (window as any).TradingView.actualResolution = numericInterval;
 
-              console.log(
+              // console.log(
                 "🔧 [TradingView] Updating actualResolution to:",
                 numericInterval,
                 "from:",
@@ -351,7 +351,7 @@ export default function TradingViewInsightsChart() {
             .subscribe(null, (symbolInfo: any) => {
               const newSymbol = symbolInfo.name;
               const newType = symbolInfo.type;
-              console.log(
+              // console.log(
                 "📊 [TradingView] Symbol changed to:",
                 newSymbol,
                 "Type:",
@@ -366,7 +366,7 @@ export default function TradingViewInsightsChart() {
               const marketChangeEvent = new CustomEvent("marketChange", {
                 detail: { symbol: newSymbol, type: newType },
               });
-              console.log(
+              // console.log(
                 "📡 [TradingView] Dispatching marketChange event:",
                 newSymbol,
                 newType
@@ -397,7 +397,7 @@ export default function TradingViewInsightsChart() {
 
     return () => {
       if (tvWidget) {
-        console.log("🧹 [TradingView] Cleaning up widget");
+        // console.log("🧹 [TradingView] Cleaning up widget");
         saveSettings(settingsRef.current);
         tvWidget.remove();
         widgetRef.current = null;

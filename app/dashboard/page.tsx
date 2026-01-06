@@ -71,18 +71,18 @@ export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    console.log("🔄 Dashboard useEffect triggered");
-    // console.log("👤 User state:", user);
-    // console.log("⏳ Auth loading:", authLoading);
-    console.log("🔄 Redirect attempted:", redirectAttempted);
+    // console.log("🔄 Dashboard useEffect triggered");
+    // // console.log("👤 User state:", user);
+    // // console.log("⏳ Auth loading:", authLoading);
+    // console.log("🔄 Redirect attempted:", redirectAttempted);
 
     if (authLoading) {
-      console.log("⏳ Still loading auth, waiting...");
+      // console.log("⏳ Still loading auth, waiting...");
       return;
     }
 
     if (!user && !redirectAttempted) {
-      console.log("❌ No user found, redirecting to login");
+      // console.log("❌ No user found, redirecting to login");
       setRedirectAttempted(true);
 
       // Use router.push first, then fallback to window.location
@@ -91,7 +91,7 @@ export default function DashboardPage() {
       // Fallback redirect after a short delay
       setTimeout(() => {
         if (window.location.pathname !== "/login") {
-          console.log("🔄 Fallback redirect to login");
+          // console.log("🔄 Fallback redirect to login");
           window.location.href = "/login";
         }
       }, 2000);
@@ -127,7 +127,7 @@ export default function DashboardPage() {
       checkPhoneNumber();
       
       // Redirect authenticated users to signals page
-      console.log("✅ User authenticated, redirecting to signals");
+      // console.log("✅ User authenticated, redirecting to signals");
       router.push("/signals");
       return;
     }
@@ -135,11 +135,11 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      console.log("🔍 Fetching dashboard data...");
+      // console.log("🔍 Fetching dashboard data...");
       const token = localStorage.getItem("token");
 
       if (!token) {
-        console.log("❌ No token found, redirecting to login");
+        // console.log("❌ No token found, redirecting to login");
         if (!redirectAttempted) {
           setRedirectAttempted(true);
           router.push("/login");
@@ -147,18 +147,18 @@ export default function DashboardPage() {
         return;
       }
 
-      console.log("📡 Making API request to /api/dashboard");
+      // console.log("📡 Making API request to /api/dashboard");
       const response = await fetch("/api/dashboard", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      console.log("📊 Response status:", response.status);
+      // console.log("📊 Response status:", response.status);
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.log("❌ Unauthorized, redirecting to login");
+          // console.log("❌ Unauthorized, redirecting to login");
           localStorage.removeItem("token");
           if (!redirectAttempted) {
             setRedirectAttempted(true);
@@ -167,7 +167,7 @@ export default function DashboardPage() {
           return;
         }
         if (response.status === 403) {
-          console.log("❌ Forbidden, redirecting to subscription");
+          // console.log("❌ Forbidden, redirecting to subscription");
           router.push("/subscription");
           return;
         }
@@ -179,13 +179,13 @@ export default function DashboardPage() {
       }
 
       const dashboardData = await response.json();
-      console.log("✅ Dashboard data received:", dashboardData);
+      // console.log("✅ Dashboard data received:", dashboardData);
       setData(dashboardData);
     } catch (error) {
       console.error("❌ Error fetching dashboard data:", error);
       toast.error("Failed to load dashboard data");
     } finally {
-      console.log("🏁 Setting loading to false");
+      // console.log("🏁 Setting loading to false");
       setLoading(false);
     }
   };

@@ -124,7 +124,7 @@ export default function HarmonicAnalysisPage() {
 
   // Handle symbol changes from the chart
   const handleSymbolChange = (newSymbol: string) => {
-    console.log(`🔄 [Page] Symbol changed to: ${newSymbol}`);
+    // console.log(`🔄 [Page] Symbol changed to: ${newSymbol}`);
     setCurrentSymbol(newSymbol);
     // Trigger new analysis for the new symbol
     analyzeHarmonicPatterns(newSymbol);

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const cronSecret = process.env.CRON_SECRET || "your-secret-key";
     
     if (authHeader !== `Bearer ${cronSecret}`) {
-      console.log("❌ [Check Expired] Unauthorized access attempt");
+      // console.log("❌ [Check Expired] Unauthorized access attempt");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const usersCollection = db.collection("users");
     
     const currentDate = new Date();
-    console.log(`🔍 [Check Expired] Checking for expired subscriptions at ${currentDate.toISOString()}`);
+    // console.log(`🔍 [Check Expired] Checking for expired subscriptions at ${currentDate.toISOString()}`);
 
     // Find all users with active subscriptions that have expired
     const expiredUsers = await usersCollection.find({
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       subscriptionEndDate: { $lte: currentDate }
     }).toArray();
 
-    console.log(`🔍 [Check Expired] Found ${expiredUsers.length} expired subscriptions`);
+    // console.log(`🔍 [Check Expired] Found ${expiredUsers.length} expired subscriptions`);
 
     if (expiredUsers.length === 0) {
       return NextResponse.json({
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         );
 
         updateResults.activatedPending++;
-        console.log(`✅ [Check Expired] Activated pending ${pending.type} subscription for ${user.email}`);
+        // console.log(`✅ [Check Expired] Activated pending ${pending.type} subscription for ${user.email}`);
       } else {
         // No pending subscription - revert to free plan
         await usersCollection.updateOne(
@@ -86,11 +86,11 @@ export async function POST(request: NextRequest) {
         );
 
         updateResults.revertedToFree++;
-        console.log(`🔄 [Check Expired] Reverted ${user.email} to free plan`);
+        // console.log(`🔄 [Check Expired] Reverted ${user.email} to free plan`);
       }
     }
 
-    console.log(`✅ [Check Expired] Processed ${updateResults.total} expired subscriptions:`, {
+    // console.log(`✅ [Check Expired] Processed ${updateResults.total} expired subscriptions:`, {
       activatedPending: updateResults.activatedPending,
       revertedToFree: updateResults.revertedToFree
     });
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       expiredDate: user.subscriptionEndDate
     }));
 
-    console.log(`📊 [Check Expired] Expired subscriptions:`, expiredDetails);
+    // console.log(`📊 [Check Expired] Expired subscriptions:`, expiredDetails);
 
     return NextResponse.json({
       success: true,

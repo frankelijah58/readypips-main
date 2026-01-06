@@ -39,7 +39,7 @@ export function useSubscriptionAccess(): SubscriptionAccessResult {
     const checkAccess = () => {
       const currentDate = new Date();
       
-      console.log('🔍 Checking subscription access for user:', {
+      // console.log('🔍 Checking subscription access for user:', {
         email: user.email,
         subscriptionType: user.subscriptionType,
         subscriptionStatus: user.subscriptionStatus,
@@ -52,7 +52,7 @@ export function useSubscriptionAccess(): SubscriptionAccessResult {
       // Check if user is on free trial (no paid subscription)
       const isFreeTrial = user.subscriptionType === 'free' || !user.subscriptionType;
       
-      console.log('🎯 Is Free Trial User:', isFreeTrial);
+      // console.log('🎯 Is Free Trial User:', isFreeTrial);
       
       if (isFreeTrial) {
         // Check free trial expiration
@@ -62,7 +62,7 @@ export function useSubscriptionAccess(): SubscriptionAccessResult {
           const timeDiff = trialEndDate.getTime() - currentDate.getTime();
           const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
           
-          console.log('📅 Free Trial Check:', {
+          // console.log('📅 Free Trial Check:', {
             trialEndDate: trialEndDate.toISOString(),
             currentDate: currentDate.toISOString(),
             timeDiff,
@@ -95,7 +95,7 @@ export function useSubscriptionAccess(): SubscriptionAccessResult {
           }
         } else {
           // No trial end date set (shouldn't happen, but handle gracefully)
-          console.log('⚠️ Free trial user but no freeTrialEndDate found:', user);
+          // console.log('⚠️ Free trial user but no freeTrialEndDate found:', user);
           setAccessData({
             hasAccess: false,
             loading: false,

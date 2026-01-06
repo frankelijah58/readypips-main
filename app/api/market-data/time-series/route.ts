@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const interval = searchParams.get("interval") as '1min' | '5min' | '15min' | '30min' | '60min' | 'daily' || 'daily';
   const outputSize = searchParams.get("outputSize") as 'compact' | 'full' || 'compact';
 
-  console.log(`📊 Time Series API called for symbol: ${symbol}, interval: ${interval}, outputSize: ${outputSize}`);
+  // console.log(`📊 Time Series API called for symbol: ${symbol}, interval: ${interval}, outputSize: ${outputSize}`);
 
   if (!symbol) {
     return NextResponse.json({ error: "Symbol parameter is required" }, { status: 400 });

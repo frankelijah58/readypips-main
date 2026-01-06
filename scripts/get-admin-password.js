@@ -14,7 +14,7 @@ const bcrypt = require("bcryptjs");
 async function resetAdminPassword() {
   let client;
   try {
-    console.log("🔑 Admin Password Reset Script\n");
+    // console.log("🔑 Admin Password Reset Script\n");
 
     const mongoUri = process.env.MONGODB_URI;
     if (!mongoUri) {
@@ -32,14 +32,14 @@ async function resetAdminPassword() {
       .findOne({ role: "super_admin" });
 
     if (!superAdmin) {
-      console.log("❌ No super admin found. Please run: node scripts/seed-admin.js\n");
+      // console.log("❌ No super admin found. Please run: node scripts/seed-admin.js\n");
       await client.close();
       process.exit(1);
     }
 
-    console.log("✅ Found super admin:");
-    console.log(`   Email: ${superAdmin.email}`);
-    console.log(`   Name: ${superAdmin.firstName} ${superAdmin.lastName}\n`);
+    // console.log("✅ Found super admin:");
+    // console.log(`   Email: ${superAdmin.email}`);
+    // console.log(`   Name: ${superAdmin.firstName} ${superAdmin.lastName}\n`);
 
     // Set fixed password for easy access
     const fixedPassword = "1234567890";
@@ -62,14 +62,14 @@ async function resetAdminPassword() {
       throw new Error("Failed to update password");
     }
 
-    console.log("✅ Password has been set!\n");
-    console.log("🔐 LOGIN CREDENTIALS:");
-    console.log("───────────────────────────────────");
-    console.log(`📧 Email:    ${superAdmin.email}`);
-    console.log(`🔑 Password: ${fixedPassword}`);
-    console.log("───────────────────────────────────\n");
-    console.log("⚠️  Please save these credentials securely!");
-    console.log("📍 Login at: http://localhost:3000/admin/login\n");
+    // console.log("✅ Password has been set!\n");
+    // console.log("🔐 LOGIN CREDENTIALS:");
+    // console.log("───────────────────────────────────");
+    // console.log(`📧 Email:    ${superAdmin.email}`);
+    // console.log(`🔑 Password: ${fixedPassword}`);
+    // console.log("───────────────────────────────────\n");
+    // console.log("⚠️  Please save these credentials securely!");
+    // console.log("📍 Login at: http://localhost:3000/admin/login\n");
 
     await client.close();
     process.exit(0);

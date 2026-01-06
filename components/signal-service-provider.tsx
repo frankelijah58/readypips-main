@@ -12,9 +12,9 @@ export function SignalServiceProvider() {
         });
         
         if (response.ok) {
-          console.log('Signal generation service started successfully');
+          // console.log('Signal generation service started successfully');
         } else {
-          console.log('Signal generation service already running or failed to start');
+          // console.log('Signal generation service already running or failed to start');
         }
       } catch (error) {
         console.error('Error starting signal generation service:', error);

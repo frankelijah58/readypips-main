@@ -99,11 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      console.log('🔐 Checking authentication...');
+      // console.log('🔐 Checking authentication...');
       
       // Check NextAuth session first
       if (session?.user) {
-        console.log('✅ NextAuth session found:', session.user);
+        // console.log('✅ NextAuth session found:', session.user);
         setUser({
           _id: session.user.id,
           email: session.user.email,
@@ -135,12 +135,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Fall back to regular token check
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('❌ No token found in localStorage');
+        // console.log('❌ No token found in localStorage');
         setLoading(false);
         return;
       }
 
-      console.log('📡 Making auth verification request...');
+      // console.log('📡 Making auth verification request...');
       const response = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: {
@@ -149,14 +149,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      console.log('🔑 Auth response status:', response.status);
+      // console.log('🔑 Auth response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Auth successful, user data:', data.user);
+        // console.log('✅ Auth successful, user data:', data.user);
         setUser(data.user);
       } else {
-        console.log('❌ Auth failed, status:', response.status);
+        // console.log('❌ Auth failed, status:', response.status);
         // Only remove token if it's actually invalid (401), not on network errors
         if (response.status === 401) {
           localStorage.removeItem('token');
@@ -168,13 +168,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Don't remove token on network errors - keep it for retry
       // Only remove on actual auth failures (handled in response.status check above)
     } finally {
-      console.log('🏁 Setting auth loading to false');
+      // console.log('🏁 Setting auth loading to false');
       setLoading(false);
     }
   };
 
   const refreshUser = async () => {
-    console.log('🔄 Refreshing user data...');
+    // console.log('🔄 Refreshing user data...');
     await checkAuth();
   };
 

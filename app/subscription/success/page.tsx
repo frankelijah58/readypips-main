@@ -12,30 +12,30 @@ export default function SubscriptionSuccessPage() {
 
   useEffect(() => {
     const handleRedirect = async () => {
-      console.log('🔍 [Subscription Success] Page loaded');
-      console.log('🔍 [Subscription Success] Search params:', searchParams.toString());
+      // console.log('🔍 [Subscription Success] Page loaded');
+      // console.log('🔍 [Subscription Success] Search params:', searchParams.toString());
       
       // Get Paystack parameters
       const reference = searchParams.get('reference');
       const trxref = searchParams.get('trxref');
       
-      console.log('🔍 [Subscription Success] Reference:', reference);
-      console.log('🔍 [Subscription Success] Trxref:', trxref);
+      // console.log('🔍 [Subscription Success] Reference:', reference);
+      // console.log('🔍 [Subscription Success] Trxref:', trxref);
       
       if (reference || trxref) {
         const paymentRef = reference || trxref;
-        console.log('🔍 [Subscription Success] Payment reference found:', paymentRef);
+        // console.log('🔍 [Subscription Success] Payment reference found:', paymentRef);
         
         // Redirect to the main success page with the payment reference
         const successUrl = `/signals/success?reference=${paymentRef}`;
-        console.log('🔍 [Subscription Success] Redirecting to:', successUrl);
+        // console.log('🔍 [Subscription Success] Redirecting to:', successUrl);
         
         // Small delay to show loading state
         setTimeout(() => {
           router.push(successUrl);
         }, 1000);
       } else {
-        console.log('❌ [Subscription Success] No payment reference found');
+        // console.log('❌ [Subscription Success] No payment reference found');
         // Redirect to dashboard if no payment reference
         setTimeout(() => {
           router.push('/dashboard');

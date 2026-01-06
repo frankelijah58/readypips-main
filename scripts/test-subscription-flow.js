@@ -1,10 +1,10 @@
 require('dotenv').config({ path: '.env.local' });
 
-console.log('🧪 Testing Subscription Flow...\n');
+// console.log('🧪 Testing Subscription Flow...\n');
 
 // Test JWT token generation and verification
 function testJWT() {
-  console.log('🔐 Testing JWT functionality...');
+  // console.log('🔐 Testing JWT functionality...');
   
   const jwt = require('jsonwebtoken');
   const secret = process.env.JWT_SECRET || 'your-secret-key';
@@ -13,11 +13,11 @@ function testJWT() {
   try {
     // Generate token
     const token = jwt.sign({ userId }, secret, { expiresIn: '7d' });
-    console.log('✅ Token generated:', token.substring(0, 20) + '...');
+    // console.log('✅ Token generated:', token.substring(0, 20) + '...');
     
     // Verify token
     const decoded = jwt.verify(token, secret);
-    console.log('✅ Token verified:', decoded);
+    // console.log('✅ Token verified:', decoded);
     
     return token;
   } catch (error) {
@@ -28,7 +28,7 @@ function testJWT() {
 
 // Test user data structure
 function testUserData() {
-  console.log('\n👤 Testing user data structure...');
+  // console.log('\n👤 Testing user data structure...');
   
   const mockUser = {
     _id: '68b1fcc05cf0b6dbd69a7c74',
@@ -43,7 +43,7 @@ function testUserData() {
     updatedAt: new Date()
   };
   
-  console.log('✅ Mock user created:', {
+  // console.log('✅ Mock user created:', {
     id: mockUser._id,
     email: mockUser.email,
     name: `${mockUser.firstName} ${mockUser.lastName}`,
@@ -55,7 +55,7 @@ function testUserData() {
 
 // Test plan mapping
 function testPlanMapping() {
-  console.log('\n📋 Testing plan mapping...');
+  // console.log('\n📋 Testing plan mapping...');
   
   const stripePlanMapping = {
     starter: "basic",
@@ -69,20 +69,20 @@ function testPlanMapping() {
     enterprise: "pro"
   };
   
-  console.log('✅ Stripe plan mapping:', stripePlanMapping);
-  console.log('✅ Paystack plan mapping:', paystackPlanMapping);
+  // console.log('✅ Stripe plan mapping:', stripePlanMapping);
+  // console.log('✅ Paystack plan mapping:', paystackPlanMapping);
   
   // Test mapping
   const testPlans = ['starter', 'professional', 'enterprise'];
   testPlans.forEach(plan => {
     const mappedPlan = stripePlanMapping[plan];
-    console.log(`  ${plan} → ${mappedPlan}`);
+    // console.log(`  ${plan} → ${mappedPlan}`);
   });
 }
 
 // Test subscription update logic
 function testSubscriptionUpdate() {
-  console.log('\n🔄 Testing subscription update logic...');
+  // console.log('\n🔄 Testing subscription update logic...');
   
   const subscriptionData = {
     subscriptionStatus: "active",
@@ -90,7 +90,7 @@ function testSubscriptionUpdate() {
     subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
   };
   
-  console.log('✅ Subscription data:', {
+  // console.log('✅ Subscription data:', {
     status: subscriptionData.subscriptionStatus,
     type: subscriptionData.subscriptionType,
     endDate: subscriptionData.subscriptionEndDate.toISOString().split('T')[0]
@@ -101,7 +101,7 @@ function testSubscriptionUpdate() {
 
 // Test payment verification flow
 function testPaymentVerification() {
-  console.log('\n💳 Testing payment verification flow...');
+  // console.log('\n💳 Testing payment verification flow...');
   
   // Simulate Stripe payment data
   const stripePayment = {
@@ -129,14 +129,14 @@ function testPaymentVerification() {
     }
   };
   
-  console.log('✅ Stripe payment data:', {
+  // console.log('✅ Stripe payment data:', {
     id: stripePayment.id,
     status: stripePayment.payment_status,
     plan: stripePayment.metadata.plan,
     amount: stripePayment.amount_total / 100
   });
   
-  console.log('✅ Paystack payment data:', {
+  // console.log('✅ Paystack payment data:', {
     status: paystackPayment.data.status,
     plan: paystackPayment.data.metadata.planId,
     amount: paystackPayment.data.amount / 100
@@ -147,18 +147,18 @@ function testPaymentVerification() {
 
 // Test database operations
 async function testDatabaseOperations() {
-  console.log('\n🗄️ Testing database operations...');
+  // console.log('\n🗄️ Testing database operations...');
   
   try {
     const { getDatabase } = require('../lib/mongodb');
     const db = await getDatabase();
     
-    console.log('✅ Database connected successfully');
+    // console.log('✅ Database connected successfully');
     
     // Test user collection access
     const usersCollection = db.collection('users');
     const userCount = await usersCollection.countDocuments();
-    console.log(`✅ Users collection accessible, count: ${userCount}`);
+    // console.log(`✅ Users collection accessible, count: ${userCount}`);
     
     // Test finding specific user
     const { ObjectId } = require('mongodb');
@@ -166,14 +166,14 @@ async function testDatabaseOperations() {
     const user = await usersCollection.findOne({ _id: userId });
     
     if (user) {
-      console.log('✅ User found:', {
+      // console.log('✅ User found:', {
         id: user._id.toString(),
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
         subscription: user.subscriptionStatus
       });
     } else {
-      console.log('❌ User not found');
+      // console.log('❌ User not found');
     }
     
     return true;
@@ -185,7 +185,7 @@ async function testDatabaseOperations() {
 
 // Run all tests
 async function runAllTests() {
-  console.log('🚀 Starting subscription flow tests...\n');
+  // console.log('🚀 Starting subscription flow tests...\n');
   
   // Test JWT
   const token = testJWT();
@@ -205,22 +205,22 @@ async function runAllTests() {
   // Test database
   const dbSuccess = await testDatabaseOperations();
   
-  console.log('\n📊 Test Results Summary:');
-  console.log(`✅ JWT Token: ${token ? 'Generated' : 'Failed'}`);
-  console.log(`✅ User Data: Valid`);
-  console.log(`✅ Plan Mapping: Valid`);
-  console.log(`✅ Subscription Data: Valid`);
-  console.log(`✅ Payment Data: Valid`);
-  console.log(`✅ Database: ${dbSuccess ? 'Connected' : 'Failed'}`);
+  // console.log('\n📊 Test Results Summary:');
+  // console.log(`✅ JWT Token: ${token ? 'Generated' : 'Failed'}`);
+  // console.log(`✅ User Data: Valid`);
+  // console.log(`✅ Plan Mapping: Valid`);
+  // console.log(`✅ Subscription Data: Valid`);
+  // console.log(`✅ Payment Data: Valid`);
+  // console.log(`✅ Database: ${dbSuccess ? 'Connected' : 'Failed'}`);
   
   if (token && dbSuccess) {
-    console.log('\n🎉 All tests passed! Subscription flow should work correctly.');
-    console.log('\n📝 Next steps:');
-    console.log('1. Test actual payment flow with Stripe/Paystack');
-    console.log('2. Verify user subscription status updates in database');
-    console.log('3. Check success page displays real user data');
+    // console.log('\n🎉 All tests passed! Subscription flow should work correctly.');
+    // console.log('\n📝 Next steps:');
+    // console.log('1. Test actual payment flow with Stripe/Paystack');
+    // console.log('2. Verify user subscription status updates in database');
+    // console.log('3. Check success page displays real user data');
   } else {
-    console.log('\n⚠️ Some tests failed. Please check the issues above.');
+    // console.log('\n⚠️ Some tests failed. Please check the issues above.');
   }
 }
 
