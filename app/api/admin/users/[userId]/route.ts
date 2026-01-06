@@ -108,13 +108,13 @@ export async function PUT(
     }
 
     // console.log('Admin user found:', adminUser ? {
-      id: adminUser._id?.toString(),
-      email: adminUser.email,
-      isAdmin: adminUser.isAdmin,
-      role: adminUser.role,
-      firstName: adminUser.firstName,
-      lastName: adminUser.lastName
-    } : 'NULL - User not found in database');
+    //   id: adminUser._id?.toString(),
+    //   email: adminUser.email,
+    //   isAdmin: adminUser.isAdmin,
+    //   role: adminUser.role,
+    //   firstName: adminUser.firstName,
+    //   lastName: adminUser.lastName
+    // } : 'NULL - User not found in database');
 
     if (!adminUser) {
       console.error('Admin user not found in database with ID:', decoded.userId);

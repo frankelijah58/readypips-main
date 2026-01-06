@@ -80,9 +80,9 @@ export async function POST(request: NextRequest) {
     // console.log("  - NEXT_PUBLIC_APP_URL:", process.env.NEXT_PUBLIC_APP_URL);
     // console.log("  - NODE_ENV:", process.env.NODE_ENV);
     // console.log(
-      "  - Fallback URL:",
-      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-    );
+    //   "  - Fallback URL:",
+    //   process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    // );
  
     const finalSuccessUrl =
       requestSuccessUrl ||
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     // Ensure the success URL has the correct format
     if (!finalSuccessUrl.includes("{CHECKOUT_SESSION_ID}")) {
-      // console.log(
+      console.log(
         "⚠️ [Create Checkout] Warning: Success URL missing session ID placeholder"
       );
     }
@@ -105,9 +105,9 @@ export async function POST(request: NextRequest) {
     // console.log("🔍 [Create Checkout] Success URL:", finalSuccessUrl);
     // console.log("🔍 [Create Checkout] Cancel URL:", finalCancelUrl);
     // console.log(
-      "🔍 [Create Checkout] NEXT_PUBLIC_APP_URL:",
-      process.env.NEXT_PUBLIC_APP_URL
-    );
+    //   "🔍 [Create Checkout] NEXT_PUBLIC_APP_URL:",
+    //   process.env.NEXT_PUBLIC_APP_URL
+    // );
 
     // Determine billing interval based on plan
     const getBillingInterval = (planType: string) => {
@@ -163,18 +163,18 @@ export async function POST(request: NextRequest) {
     );
 
     // console.log("🔍 [Create Checkout] Stripe session created:", {
-      id: session.id,
-      url: session.url,
-      success_url: session.success_url,
-      cancel_url: session.cancel_url,
-      metadata: session.metadata,
-    });
+    //   id: session.id,
+    //   url: session.url,
+    //   success_url: session.success_url,
+    //   cancel_url: session.cancel_url,
+    //   metadata: session.metadata,
+    // });
 
     // Log the actual redirect URL that Stripe will use
     // console.log(
-      "🔍 [Create Checkout] Expected redirect URL:",
-      actualSuccessUrl
-    );
+    //   "🔍 [Create Checkout] Expected redirect URL:",
+    //   actualSuccessUrl
+    // );
 
     // Test URL construction
     // console.log("🔍 [Create Checkout] Test URL construction:");
@@ -184,13 +184,13 @@ export async function POST(request: NextRequest) {
 
     // Also log what Stripe actually returns for success_url
     // console.log(
-      "🔍 [Create Checkout] Stripe's success_url:",
-      session.success_url
-    );
+    //   "🔍 [Create Checkout] Stripe's success_url:",
+    //   session.success_url
+    // );
 
     // Check if Stripe's success_url matches our expected URL
     if (session.success_url !== actualSuccessUrl) {
-      // console.log(
+      console.log(
         "⚠️ [Create Checkout] Warning: Stripe's success_url doesn't match expected URL"
       );
       // console.log("  - Expected:", actualSuccessUrl);

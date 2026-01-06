@@ -11,17 +11,17 @@ export async function GET(request: NextRequest) {
     // Check environment variables
     // console.log("🔧 Environment check:");
     // console.log(
-      "- MONGODB_URI:",
-      process.env.MONGODB_URI ? "✅ Set" : "❌ Missing"
-    );
+    //   "- MONGODB_URI:",
+    //   process.env.MONGODB_URI ? "✅ Set" : "❌ Missing"
+    // );
     // console.log(
-      "- JWT_SECRET:",
-      process.env.JWT_SECRET ? "✅ Set" : "❌ Missing"
-    );
+    //   "- JWT_SECRET:",
+    //   process.env.JWT_SECRET ? "✅ Set" : "❌ Missing"
+    // );
     // console.log(
-      "- STRIPE_SECRET_KEY:",
-      process.env.STRIPE_SECRET_KEY ? "✅ Set" : "❌ Missing"
-    );
+    //   "- STRIPE_SECRET_KEY:",
+    //   process.env.STRIPE_SECRET_KEY ? "✅ Set" : "❌ Missing"
+    // );
 
     // Verify authentication
     const authHeader = request.headers.get("authorization");
@@ -59,9 +59,9 @@ export async function GET(request: NextRequest) {
     }
 
     // console.log("✅ User data found:", {
-      subscriptionType: userData.subscriptionType,
-      subscriptionStatus: userData.subscriptionStatus,
-    });
+    //   subscriptionType: userData.subscriptionType,
+    //   subscriptionStatus: userData.subscriptionStatus,
+    // });
 
     // Get signals
     // console.log("📊 Fetching signals...");

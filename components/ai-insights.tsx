@@ -369,9 +369,9 @@ const AIInsights = forwardRef<AIInsightsRef, AIInsightsProps>(
 
         // console.log("🚀 [AI Insights] Sending request to API:");
         // console.log(
-          "📊 [AI Insights] Request Data:",
-          JSON.stringify(requestData, null, 2)
-        );
+        //   "📊 [AI Insights] Request Data:",
+        //   JSON.stringify(requestData, null, 2)
+        // );
 
         const response = await fetch("/api/ai-insights", {
           method: "POST",
@@ -385,17 +385,17 @@ const AIInsights = forwardRef<AIInsightsRef, AIInsightsProps>(
           // Log API response
           // console.log("✅ [AI Insights] API Response received:");
           // console.log(
-            "📊 [AI Insights] Response Data:",
-            JSON.stringify(data, null, 2)
-          );
+          //   "📊 [AI Insights] Response Data:",
+          //   JSON.stringify(data, null, 2)
+          // );
 
           // Parse the analysis JSON string
           const analysisData = JSON.parse(data.analysis);
 
           // console.log(
-            "📊 [AI Insights] Parsed Analysis Data:",
-            JSON.stringify(analysisData, null, 2)
-          );
+          //   "📊 [AI Insights] Parsed Analysis Data:",
+          //   JSON.stringify(analysisData, null, 2)
+          // );
 
           const newInsight = {
             _id: data._id,
@@ -740,9 +740,9 @@ const AIInsights = forwardRef<AIInsightsRef, AIInsightsProps>(
       if (strategy?.defaultTimeframes) {
         setSelectedTimeframes(strategy.defaultTimeframes);
         // console.log(
-          `Strategy changed to ${strategy.name}, timeframes set to:`,
-          strategy.defaultTimeframes
-        );
+        //   `Strategy changed to ${strategy.name}, timeframes set to:`,
+        //   strategy.defaultTimeframes
+        // );
       }
     };
 

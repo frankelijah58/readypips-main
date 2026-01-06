@@ -74,10 +74,10 @@ export const authOptions: NextAuthOptions = {
 
           const result = await db.collection("users").insertOne(newUser);
           // console.log('[Google OAuth] New user created with free trial:', { 
-            email: user.email, 
-            id: result.insertedId,
-            freeTrialEndDate: freeTrialEndDate.toISOString()
-          });
+          //   email: user.email, 
+          //   id: result.insertedId,
+          //   freeTrialEndDate: freeTrialEndDate.toISOString()
+          // });
         } else {
           // Update existing user with Google info if not already linked
           const updateData: any = {
@@ -99,9 +99,9 @@ export const authOptions: NextAuthOptions = {
             updateData.subscriptionStatus = "active";
             updateData.subscriptionType = "free";
             // console.log('[Google OAuth] Adding free trial to existing user:', { 
-              email: user.email, 
-              freeTrialEndDate: freeTrialEndDate.toISOString() 
-            });
+            //   email: user.email, 
+            //   freeTrialEndDate: freeTrialEndDate.toISOString() 
+            // });
           }
           
           if (Object.keys(updateData).length > 1) { // More than just updatedAt
@@ -173,10 +173,10 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user, account, profile, isNewUser }) {
       // console.log('[Google OAuth] User signed in:', {
-        email: user.email,
-        isNewUser,
-        provider: account?.provider,
-      });
+      //   email: user.email,
+      //   isNewUser,
+      //   provider: account?.provider,
+      // });
     },
   },
 };

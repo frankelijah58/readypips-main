@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
       // Try the primary mapped symbol
       result = await yahooFinance.historical(mappedSymbol, queryOptions);
       // console.log(
-        `📊 [Harmonic Analysis] Successfully fetched ${result.length} bars for ${mappedSymbol} (${validInterval} timeframe)`
-      );
+      //   `📊 [Harmonic Analysis] Successfully fetched ${result.length} bars for ${mappedSymbol} (${validInterval} timeframe)`
+      // );
     } catch (error) {
       console.warn(
         `⚠️ [Harmonic Analysis] Primary symbol ${mappedSymbol} failed, trying alternatives...`
@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
           result = await yahooFinance.historical(altSymbol, queryOptions);
           usedSymbol = altSymbol;
           // console.log(
-            `✅ [Harmonic Analysis] Successfully fetched ${result.length} bars using alternative symbol ${altSymbol}`
-          );
+          //   `✅ [Harmonic Analysis] Successfully fetched ${result.length} bars using alternative symbol ${altSymbol}`
+          // );
           success = true;
           break;
         } catch (altError) {
@@ -179,8 +179,8 @@ export async function POST(request: NextRequest) {
     }
 
     // console.log(
-      `✅ Harmonic analysis complete: ${patterns.length} patterns found`
-    );
+    //   `✅ Harmonic analysis complete: ${patterns.length} patterns found`
+    // );
 
     return NextResponse.json({
       success: true,

@@ -127,23 +127,23 @@ export async function POST(request: NextRequest) {
     // console.log("🔍 [AI Insights] Analysis request received:");
     // console.log("📊 [AI Insights] Symbol:", symbol);
     // console.log(
-      "📊 [AI Insights] Market Data:",
-      JSON.stringify(marketData, null, 2)
-    );
+    //   "📊 [AI Insights] Market Data:",
+    //   JSON.stringify(marketData, null, 2)
+    // );
     // console.log(
-      "📊 [AI Insights] Primary Indicators:",
-      JSON.stringify(primaryIndicators, null, 2)
-    );
+      // "📊 [AI Insights] Primary Indicators:",
+    //   JSON.stringify(primaryIndicators, null, 2)
+    // );
     // console.log("📊 [AI Insights] Timeframes:", timeframes);
     // console.log("📊 [AI Insights] Primary Timeframe:", primaryTimeframe);
     // console.log(
-      "📊 [AI Insights] Analysis Context:",
-      JSON.stringify(analysisContext, null, 2)
-    );
+    //   "📊 [AI Insights] Analysis Context:",
+    //   JSON.stringify(analysisContext, null, 2)
+    // );
     // console.log(
-      "📊 [AI Insights] All Indicators Keys:",
-      Object.keys(allIndicators)
-    );
+    //   "📊 [AI Insights] All Indicators Keys:",
+    //   Object.keys(allIndicators)
+    // );
 
     if (!symbol || !marketData) {
       return NextResponse.json(
@@ -446,9 +446,9 @@ Respond ONLY with valid JSON in the exact format above. Ensure all price levels 
     // console.log("🤖 [AI Insights] Gemini API Response (defensive logging):");
     // console.log("🤖 [AI Insights] Raw Response Length:", generatedText.length || rawResponseText.length);
     // console.log(
-      "🤖 [AI Insights] Raw Response Preview:",
-      (generatedText || rawResponseText).substring(0, 1000) + "..."
-    );
+    //   "🤖 [AI Insights] Raw Response Preview:",
+    //   (generatedText || rawResponseText).substring(0, 1000) + "..."
+    // );
 
     // Parse the JSON response
     let analysis: any;
@@ -464,25 +464,25 @@ Respond ONLY with valid JSON in the exact format above. Ensure all price levels 
         // Log parsed analysis
         // console.log("✅ [AI Insights] Successfully parsed AI analysis:");
         // console.log(
-          "📊 [AI Insights] Analysis Structure:",
-          JSON.stringify(analysis, null, 2)
-        );
+        //   "📊 [AI Insights] Analysis Structure:",
+        //   JSON.stringify(analysis, null, 2)
+        // );
         // console.log("📊 [AI Insights] Analysis Keys:", Object.keys(analysis));
 
         if (analysis.meta) {
-          // console.log(
+          console.log(
             "📊 [AI Insights] Meta Data:",
             JSON.stringify(analysis.meta, null, 2)
           );
         }
         if (analysis.analysis) {
-          // console.log(
+          console.log(
             "📊 [AI Insights] Analysis Categories:",
             Object.keys(analysis.analysis)
           );
         }
         if (analysis.simulation_strategy) {
-          // console.log(
+          console.log(
             "📊 [AI Insights] Simulation Strategy:",
             JSON.stringify(analysis.simulation_strategy, null, 2)
           );
@@ -558,7 +558,7 @@ Respond ONLY with valid JSON in the exact format above. Ensure all price levels 
     };
 
     // console.log("✅ [AI Insights] Analysis completed successfully");
-    // console.log(
+    console.log(
       "✅ [AI Insights] Response data keys:",
       Object.keys(responseData)
     );

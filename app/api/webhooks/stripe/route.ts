@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     case "checkout.session.completed":
       const session = event.data.object as Stripe.Checkout.Session;
       // console.log(
-        "🔍 [Stripe Webhook] Checkout session completed:",
-        session.id
-      );
+      //   "🔍 [Stripe Webhook] Checkout session completed:",
+      //   session.id
+      // );
 
       try {
         const db = await getDatabase();
@@ -67,9 +67,9 @@ export async function POST(request: NextRequest) {
         );
 
         // console.log(
-          "✅ [Stripe Webhook] User subscription updated:",
-          result.modifiedCount
-        );
+        //   "✅ [Stripe Webhook] User subscription updated:",
+        //   result.modifiedCount
+        // );
 
         return NextResponse.json({ received: true });
       } catch (error) {

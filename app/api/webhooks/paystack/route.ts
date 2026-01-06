@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         subscriptionEndDate,
       });
 
-      // console.log(
+      console.log(
         `Paystack subscription activated for user ${user._id}, plan: ${planId}`
       );
     }

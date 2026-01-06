@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     // Check cache first
     const cachedNews = await getCachedNews(symbol, 60); // 60 minutes cache
     if (cachedNews) {
-      // console.log(
+      console.log(
         `✅ Returning cached news for ${symbol}:`,
         cachedNews.length,
         "articles"
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
         const alphaData: AlphaVantageNewsResponse = await alphaResponse.json();
 
         if (alphaData.feed && alphaData.feed.length > 0) {
-          // console.log(
+          console.log(
             `✅ Alpha Vantage returned ${alphaData.feed.length} articles for ${searchSymbol}`
           );
 
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json(newsItems);
         }
       } catch (alphaError) {
-        // console.log(
+        console.log(
           `❌ Alpha Vantage failed for ${searchSymbol}, trying NewsAPI`
         );
       }
@@ -138,16 +138,16 @@ export async function GET(request: NextRequest) {
     if (NEWS_API_KEY) {
       const url = `${NEWS_API_BASE_URL}?q=${searchSymbol}&language=en&sortBy=publishedAt&pageSize=10&apiKey=${NEWS_API_KEY}`;
       // console.log(
-        `🌐 Fetching news from NewsAPI: ${url.replace(NEWS_API_KEY, "***")}`
-      );
+      //   `🌐 Fetching news from NewsAPI: ${url.replace(NEWS_API_KEY, "***")}`
+      // );
 
       const response = await fetch(url);
       const data: NewsAPIResponse = await response.json();
 
       if (data.status === "ok" && data.articles && data.articles.length > 0) {
         // console.log(
-          `✅ NewsAPI returned ${data.articles.length} articles for ${searchSymbol}`
-        );
+        //   `✅ NewsAPI returned ${data.articles.length} articles for ${searchSymbol}`
+        // );
 
         const newsItems: NewsItem[] = data.articles
           .slice(0, 5)
@@ -236,10 +236,10 @@ export async function GET(request: NextRequest) {
     ];
 
     // console.log(
-      `✅ Returning error fallback mock news for ${symbol}:`,
-      mockNewsItems.length,
-      "articles"
-    );
+    //   `✅ Returning error fallback mock news for ${symbol}:`,
+    //   mockNewsItems.length,
+    //   "articles"
+    // );
     return NextResponse.json(mockNewsItems);
   }
 }

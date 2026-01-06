@@ -9,11 +9,11 @@ export async function POST(request: NextRequest) {
     
     const body = await request.json();
     // console.log('🔐 [Reset Password] Request body:', {
-      hasToken: !!body.token,
-      tokenLength: body.token?.length,
-      hasPassword: !!body.password,
-      passwordLength: body.password?.length
-    });
+    //   hasToken: !!body.token,
+    //   tokenLength: body.token?.length,
+    //   hasPassword: !!body.password,
+    //   passwordLength: body.password?.length
+    // });
     
     const { token, password } = body;
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // console.log('🔐 [Reset Password] Reset record found:', !!resetRecord);
     if (resetRecord) {
-      // console.log('🔐 [Reset Password] Reset record details:', {
+      console.log('🔐 [Reset Password] Reset record details:', {
         email: resetRecord.email,
         expiresAt: resetRecord.expiresAt
       });
@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
     );
     
     // console.log('🔐 [Reset Password] Update result:', {
-      matchedCount: updateResult.matchedCount,
-      modifiedCount: updateResult.modifiedCount
-    });
+    //   matchedCount: updateResult.matchedCount,
+    //   modifiedCount: updateResult.modifiedCount
+    // });
 
     // Delete used reset token
     // console.log('🔐 [Reset Password] Deleting used reset token...');

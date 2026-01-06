@@ -133,8 +133,8 @@ export class SignalService {
         // Try the primary mapped symbol
         result = await yahooFinance.historical(mappedSymbol, queryOptions);
         // console.log(
-          `📊 [Signal Service] Successfully fetched ${result.length} bars for ${mappedSymbol} (${validInterval} timeframe)`
-        );
+        //   `📊 [Signal Service] Successfully fetched ${result.length} bars for ${mappedSymbol} (${validInterval} timeframe)`
+        // );
       } catch (error) {
         console.warn(
           `⚠️ [Signal Service] Primary symbol ${mappedSymbol} failed, trying alternatives...`
@@ -149,8 +149,8 @@ export class SignalService {
             result = await yahooFinance.historical(altSymbol, queryOptions);
             usedSymbol = altSymbol;
             // console.log(
-              `✅ [Signal Service] Successfully fetched ${result.length} bars using alternative symbol ${altSymbol}`
-            );
+            //   `✅ [Signal Service] Successfully fetched ${result.length} bars using alternative symbol ${altSymbol}`
+            // );
             success = true;
             break;
           } catch (altError) {
@@ -173,8 +173,8 @@ export class SignalService {
       }
 
       // console.log(
-        `📊 Analyzed ${result.length} bars for ${usedSymbol} (${validInterval} timeframe)`
-      );
+      //   `📊 Analyzed ${result.length} bars for ${usedSymbol} (${validInterval} timeframe)`
+      // );
 
       return result.map((candle) => ({
         symbol: usedSymbol,
@@ -478,8 +478,8 @@ export class SignalService {
     let totalBarsAnalyzed = 0;
 
     // console.log(
-      `🚀 Starting signal generation for ${this.symbols.length} symbols...`
-    );
+    //   `🚀 Starting signal generation for ${this.symbols.length} symbols...`
+    // );
 
     for (const symbol of this.symbols) {
       try {
@@ -490,8 +490,8 @@ export class SignalService {
 
           if (marketData.length < 50) {
             // console.log(
-              `⚠️  Insufficient data for ${symbol} (${timeframe}): ${marketData.length} bars, skipping...`
-            );
+            //   `⚠️  Insufficient data for ${symbol} (${timeframe}): ${marketData.length} bars, skipping...`
+            // );
             continue;
           }
 
@@ -502,8 +502,8 @@ export class SignalService {
           if (analysis.confidence >= 60) {
             signals.push(analysis);
             // console.log(
-              `✅ Generated ${analysis.signal} signal for ${symbol} (${timeframe}) - Confidence: ${analysis.confidence}%`
-            );
+            //   `✅ Generated ${analysis.signal} signal for ${symbol} (${timeframe}) - Confidence: ${analysis.confidence}%`
+            // );
           }
         }
       } catch (error) {

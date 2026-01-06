@@ -75,8 +75,8 @@ export async function GET(request: NextRequest) {
     // Fallback to Yahoo Finance
     const yahooSymbol = mapSymbolToYahoo(symbol);
     // console.log(
-      `🔄 Converted ${symbol} to Yahoo Finance format: ${yahooSymbol}`
-    );
+    //   `🔄 Converted ${symbol} to Yahoo Finance format: ${yahooSymbol}`
+    // );
 
     // Fetch fresh data from Yahoo Finance
     const url = `${YAHOO_FINANCE_BASE_URL}/${yahooSymbol}?interval=1d&range=1d`;
@@ -86,9 +86,9 @@ export async function GET(request: NextRequest) {
     const data: YahooFinanceResponse = await response.json();
 
     // console.log(
-      `📊 Yahoo Finance response for ${symbol}:`,
-      JSON.stringify(data, null, 2)
-    );
+    //   `📊 Yahoo Finance response for ${symbol}:`,
+    //   JSON.stringify(data, null, 2)
+    // );
 
     if (
       data.chart.error ||
@@ -168,9 +168,9 @@ export async function GET(request: NextRequest) {
     mockData.changePercent = (mockData.change / mockData.open) * 100;
 
     // console.log(
-      `✅ Returning error fallback mock data for ${symbol}:`,
-      mockData
-    );
+    //   `✅ Returning error fallback mock data for ${symbol}:`,
+    //   mockData
+    // );
     return NextResponse.json(mockData);
   }
 }

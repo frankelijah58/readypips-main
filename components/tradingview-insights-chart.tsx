@@ -60,8 +60,8 @@ export default function TradingViewInsightsChart() {
   const [chartReady, setChartReady] = useState(false);
   const [settings, setSettings] = useState<TradingViewSettings>(() => {
     // console.log(
-      "📂 [TradingView] Loading settings from localStorage (lazy init)"
-    );
+    //   "📂 [TradingView] Loading settings from localStorage (lazy init)"
+    // );
     return loadSettings();
   });
   const settingsRef = useRef(settings);
@@ -101,9 +101,9 @@ export default function TradingViewInsightsChart() {
   // Update theme
   const updateTheme = useCallback((isDarkMode: boolean) => {
     // console.log(
-      "🔄 [TradingView] Updating theme to:",
-      isDarkMode ? "Dark" : "Light"
-    );
+    //   "🔄 [TradingView] Updating theme to:",
+    //   isDarkMode ? "Dark" : "Light"
+    // );
     settingsRef.current.isDarkMode = isDarkMode;
 
     if (widgetRef.current && isInitializedRef.current) {
@@ -129,9 +129,9 @@ export default function TradingViewInsightsChart() {
       window.addEventListener("changeMarket", (event: any) => {
         const { symbol: newSymbol } = event.detail;
         // console.log(
-          "📈 [TradingView] Received changeMarket event with symbol:",
-          newSymbol
-        );
+        //   "📈 [TradingView] Received changeMarket event with symbol:",
+        //   newSymbol
+        // );
 
         if (widget) {
           widget.setSymbol(newSymbol, settingsRef.current.interval);
@@ -144,9 +144,9 @@ export default function TradingViewInsightsChart() {
       window.addEventListener("toggleDarkMode", (event: any) => {
         const { isDarkMode } = event.detail;
         // console.log(
-          "🎨 [TradingView] Received toggleDarkMode event:",
-          isDarkMode ? "dark" : "light"
-        );
+        //   "🎨 [TradingView] Received toggleDarkMode event:",
+        //   isDarkMode ? "dark" : "light"
+        // );
         updateTheme(isDarkMode);
       });
 
@@ -192,9 +192,9 @@ export default function TradingViewInsightsChart() {
           settingsRef.current.symbol;
 
         // console.log(
-          "🔧 [TradingView] Setting actualResolution to:",
-          settingsRef.current.interval
-        );
+        //   "🔧 [TradingView] Setting actualResolution to:",
+        //   settingsRef.current.interval
+        // );
 
         // Initialize datafeed
         const datafeed = initDatafeed();
@@ -306,9 +306,9 @@ export default function TradingViewInsightsChart() {
         };
 
         // console.log(
-          "⚙️ [TradingView] Creating widget with options:",
-          widgetOptions
-        );
+        //   "⚙️ [TradingView] Creating widget with options:",
+        //   widgetOptions
+        // );
         const tvWidget = new window.TradingView.widget(widgetOptions);
         widgetRef.current = tvWidget;
 
@@ -334,11 +334,11 @@ export default function TradingViewInsightsChart() {
               (window as any).TradingView.actualResolution = numericInterval;
 
               // console.log(
-                "🔧 [TradingView] Updating actualResolution to:",
-                numericInterval,
-                "from:",
-                newInterval
-              );
+              //   "🔧 [TradingView] Updating actualResolution to:",
+              //   numericInterval,
+              //   "from:",
+              //   newInterval
+              // );
 
               settingsRef.current.interval = numericInterval;
               saveSettings(settingsRef.current);
@@ -352,11 +352,11 @@ export default function TradingViewInsightsChart() {
               const newSymbol = symbolInfo.name;
               const newType = symbolInfo.type;
               // console.log(
-                "📊 [TradingView] Symbol changed to:",
-                newSymbol,
-                "Type:",
-                newType
-              );
+              //   "📊 [TradingView] Symbol changed to:",
+              //   newSymbol,
+              //   "Type:",
+              //   newType
+              // );
 
               (window as any).TradingView.currentlyDisplayedSymbol = newSymbol;
               settingsRef.current.symbol = newSymbol;
@@ -367,10 +367,10 @@ export default function TradingViewInsightsChart() {
                 detail: { symbol: newSymbol, type: newType },
               });
               // console.log(
-                "📡 [TradingView] Dispatching marketChange event:",
-                newSymbol,
-                newType
-              );
+              //   "📡 [TradingView] Dispatching marketChange event:",
+              //   newSymbol,
+              //   newType
+              // );
               window.dispatchEvent(marketChangeEvent);
             });
 

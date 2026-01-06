@@ -89,13 +89,13 @@ export async function POST(request: NextRequest) {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         paymentData = session;
         // console.log('🔍 [Verify Session] Stripe session retrieved:', {
-          id: session.id,
-          payment_status: session.payment_status,
-          status: session.status,
-          metadata: session.metadata,
-          amount_total: session.amount_total,
-          currency: session.currency
-        });
+        //   id: session.id,
+        //   payment_status: session.payment_status,
+        //   status: session.status,
+        //   metadata: session.metadata,
+        //   amount_total: session.amount_total,
+        //   currency: session.currency
+        // });
 
         if (session.payment_status === "paid") {
           status = "completed";
@@ -215,11 +215,11 @@ export async function POST(request: NextRequest) {
           pesapalData.status_code === 1;
 
         // console.log('🔍 [Verify Session] Payment completed check:', {
-          payment_status: pesapalData.payment_status,
-          payment_status_description: pesapalData.payment_status_description,
-          status_code: pesapalData.status_code,
-          isCompleted
-        });
+        //   payment_status: pesapalData.payment_status,
+        //   payment_status_description: pesapalData.payment_status_description,
+        //   status_code: pesapalData.status_code,
+        //   isCompleted
+        // });
 
         if (isCompleted) {
           status = "completed";
@@ -233,9 +233,9 @@ export async function POST(request: NextRequest) {
             planId = existingPayment.planId || "";
             planName = existingPayment.planName || "Subscription";
             // console.log('🔍 [Verify Session] Found existing payment record:', {
-              planId: existingPayment.planId,
-              planName: existingPayment.planName
-            });
+            //   planId: existingPayment.planId,
+            //   planName: existingPayment.planName
+            // });
           } else {
             // Fallback: try to extract from merchant reference
             planId = pesapalData.merchant_reference?.split('_')[1] || "";
@@ -280,11 +280,11 @@ export async function POST(request: NextRequest) {
                 currentEndDate > now;
 
               // console.log('🔍 [Verify Session] Current subscription status:', {
-                currentType,
-                currentEndDate: currentEndDate?.toISOString(),
-                isOnActivePaidPlan,
-                newPlan: planConfig.type
-              });
+              //   currentType,
+              //   currentEndDate: currentEndDate?.toISOString(),
+              //   isOnActivePaidPlan,
+              //   newPlan: planConfig.type
+              // });
 
               if (isOnActivePaidPlan) {
                 // User has active paid subscription - schedule new subscription to start after current expires
@@ -376,15 +376,15 @@ export async function POST(request: NextRequest) {
     };
 
     // console.log('🔍 [Verify Session] Payment record created:', {
-      userId: paymentRecord.userId,
-      sessionId: paymentRecord.sessionId,
-      provider: paymentRecord.provider,
-      planId: paymentRecord.planId,
-      planName: paymentRecord.planName,
-      amount: paymentRecord.amount,
-      currency: paymentRecord.currency,
-      status: paymentRecord.status
-    });
+    //   userId: paymentRecord.userId,
+    //   sessionId: paymentRecord.sessionId,
+    //   provider: paymentRecord.provider,
+    //   planId: paymentRecord.planId,
+    //   planName: paymentRecord.planName,
+    //   amount: paymentRecord.amount,
+    //   currency: paymentRecord.currency,
+    //   status: paymentRecord.status
+    // });
 
     // Check if payment already exists
     const existingPayment = await paymentsCollection.findOne({ sessionId });
@@ -418,11 +418,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
     // console.log('✅ [Verify Session] User found:', {
-      id: user._id,
-      email: user.email,
-      subscriptionStatus: user.subscriptionStatus,
-      subscriptionType: user.subscriptionType
-    });
+    //   id: user._id,
+    //   email: user.email,
+    //   subscriptionStatus: user.subscriptionStatus,
+    //   subscriptionType: user.subscriptionType
+    // });
 
     // Calculate subscription dates
     const startDate = new Date();

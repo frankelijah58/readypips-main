@@ -65,15 +65,15 @@ export async function POST(request: NextRequest) {
 
     try {
       // console.log("🔍 [Create Pesapal] Initializing Pesapal transaction with:", {
-        planId,
-        planName: subscriptionPlan.name,
-        priceUSD: subscriptionPlan.price,
-        amountInKes,
-        userEmail: user.email,
-        userPhone: user.phoneNumber || user.phone || "+254700000000",
-        userFirstName: user.firstName || "User",
-        userLastName: user.lastName || "Name",
-      });
+      //   planId,
+      //   planName: subscriptionPlan.name,
+      //   priceUSD: subscriptionPlan.price,
+      //   amountInKes,
+      //   userEmail: user.email,
+      //   userPhone: user.phoneNumber || user.phone || "+254700000000",
+      //   userFirstName: user.firstName || "User",
+      //   userLastName: user.lastName || "Name",
+      // });
 
       // Initialize Pesapal transaction
       const pesapalResponse = await initializePesapal(

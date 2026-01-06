@@ -371,8 +371,8 @@ export class NewsService {
       const processedArticles: NewsItem[] = articles.map(
         (article: any, index: number) => {
           // console.log(
-            `📰 Processing article ${index + 1}: ${article.title}...`
-          );
+          //   `📰 Processing article ${index + 1}: ${article.title}...`
+          // );
 
           const sentiment = this.analyzeSentiment(
             article.title + " " + (article.summary || "")
@@ -405,21 +405,21 @@ export class NewsService {
           };
 
           // console.log(`📰 Processed article ${index + 1}:`, {
-            title: processedArticle.title,
-            category: processedArticle.category,
-            impact: processedArticle.impact,
-            sentiment: processedArticle.sentiment,
-            sentimentScore: processedArticle.sentimentScore,
-            symbols: processedArticle.symbols,
-          });
+          //   title: processedArticle.title,
+          //   category: processedArticle.category,
+          //   impact: processedArticle.impact,
+          //   sentiment: processedArticle.sentiment,
+          //   sentimentScore: processedArticle.sentimentScore,
+          //   symbols: processedArticle.symbols,
+          // });
 
           return processedArticle;
         }
       );
 
       // console.log(
-        `✅ Successfully processed ${processedArticles.length} news articles`
-      );
+      //   `✅ Successfully processed ${processedArticles.length} news articles`
+      // );
       return processedArticles;
     } catch (error) {
       console.error("❌ Error fetching market news:", error);
@@ -575,8 +575,8 @@ export class NewsService {
 
         const insertResult = await newsCollection.insertMany(newsToInsert);
         // console.log(
-          `✅ Successfully saved ${insertResult.insertedCount} news articles to database`
-        );
+        //   `✅ Successfully saved ${insertResult.insertedCount} news articles to database`
+        // );
       } else {
         // console.log("📰 No news articles to save");
       }

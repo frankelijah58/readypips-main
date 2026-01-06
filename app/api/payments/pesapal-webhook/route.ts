@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
     }
 
     // console.log('🔍 [Pesapal Webhook] Processing payment:', {
-      order_tracking_id,
-      payment_status,
-      merchant_reference,
-      OrderNotificationType
-    });
+    //   order_tracking_id,
+    //   payment_status,
+    //   merchant_reference,
+    //   OrderNotificationType
+    // });
 
     const db = await getDatabase();
     const paymentsCollection = db.collection("payments");
@@ -148,13 +148,13 @@ export async function POST(request: NextRequest) {
               });
 
               // console.log('✅ [Pesapal Webhook] User subscription activated immediately:', {
-                userId,
-                planId,
-                subscriptionType,
-                subscriptionStartDate: subscriptionStartDate.toISOString(),
-                subscriptionEndDate: subscriptionEndDate.toISOString(),
-                daysRemaining: planDuration
-              });
+              //   userId,
+              //   planId,
+              //   subscriptionType,
+              //   subscriptionStartDate: subscriptionStartDate.toISOString(),
+              //   subscriptionEndDate: subscriptionEndDate.toISOString(),
+              //   daysRemaining: planDuration
+              // });
             }
           }
         }

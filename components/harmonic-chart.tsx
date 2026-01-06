@@ -152,8 +152,8 @@ export function HarmonicChart({
     const initWidget = async () => {
       try {
         // console.log(
-          "🚀 [TradingView] Initializing harmonic analysis widget..."
-        );
+        //   "🚀 [TradingView] Initializing harmonic analysis widget..."
+        // );
         isInitializedRef.current = true;
 
         await loadScripts();
@@ -333,8 +333,8 @@ export function HarmonicChart({
             addChartAnnotations(result.patterns, result.fibLevels);
 
             // console.log(
-              `🔍 Found ${result.patterns.length} harmonic patterns for ${symbolToAnalyze}`
-            );
+            //   `🔍 Found ${result.patterns.length} harmonic patterns for ${symbolToAnalyze}`
+            // );
           }
         }
       } catch (error) {

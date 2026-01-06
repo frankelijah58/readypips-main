@@ -40,14 +40,14 @@ export function useSubscriptionAccess(): SubscriptionAccessResult {
       const currentDate = new Date();
       
       // console.log('🔍 Checking subscription access for user:', {
-        email: user.email,
-        subscriptionType: user.subscriptionType,
-        subscriptionStatus: user.subscriptionStatus,
-        freeTrialEndDate: user.freeTrialEndDate,
-        freeTrialEndDateType: typeof user.freeTrialEndDate,
-        subscriptionEndDate: user.subscriptionEndDate,
-        hasFreeTrial: !!(user.freeTrialEndDate),
-      });
+      //   email: user.email,
+      //   subscriptionType: user.subscriptionType,
+      //   subscriptionStatus: user.subscriptionStatus,
+      //   freeTrialEndDate: user.freeTrialEndDate,
+      //   freeTrialEndDateType: typeof user.freeTrialEndDate,
+      //   subscriptionEndDate: user.subscriptionEndDate,
+      //   hasFreeTrial: !!(user.freeTrialEndDate),
+      // });
       
       // Check if user is on free trial (no paid subscription)
       const isFreeTrial = user.subscriptionType === 'free' || !user.subscriptionType;
@@ -63,12 +63,12 @@ export function useSubscriptionAccess(): SubscriptionAccessResult {
           const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
           
           // console.log('📅 Free Trial Check:', {
-            trialEndDate: trialEndDate.toISOString(),
-            currentDate: currentDate.toISOString(),
-            timeDiff,
-            daysRemaining,
-            hasAccess: daysRemaining > 0,
-          });
+          //   trialEndDate: trialEndDate.toISOString(),
+          //   currentDate: currentDate.toISOString(),
+          //   timeDiff,
+          //   daysRemaining,
+          //   hasAccess: daysRemaining > 0,
+          // });
           
           if (daysRemaining > 0) {
             // Free trial is still active

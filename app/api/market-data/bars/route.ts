@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "250");
 
   // console.log(
-    `📊 Bars API called for symbol: ${symbol}, timeframe: ${timeframe}, limit: ${limit}`
-  );
+  //   `📊 Bars API called for symbol: ${symbol}, timeframe: ${timeframe}, limit: ${limit}`
+  // );
 
   if (!symbol) {
     return NextResponse.json({ error: "Symbol is required" }, { status: 400 });
@@ -46,8 +46,8 @@ export async function GET(request: NextRequest) {
     // Convert symbol to Yahoo Finance format
     const yahooSymbol = mapSymbolToYahoo(symbol);
     // console.log(
-      `🔄 Converted ${symbol} to Yahoo Finance format: ${yahooSymbol}`
-    );
+    //   `🔄 Converted ${symbol} to Yahoo Finance format: ${yahooSymbol}`
+    // );
 
     // Map timeframes to Yahoo Finance intervals
     const interval = getYahooInterval(timeframe);
@@ -61,9 +61,9 @@ export async function GET(request: NextRequest) {
     const data: YahooFinanceResponse = await response.json();
 
     // console.log(
-      `📊 Yahoo Finance bars response for ${symbol}:`,
-      JSON.stringify(data, null, 2)
-    );
+    //   `📊 Yahoo Finance bars response for ${symbol}:`,
+    //   JSON.stringify(data, null, 2)
+    // );
 
     if (
       data.chart.error ||
@@ -71,8 +71,8 @@ export async function GET(request: NextRequest) {
       data.chart.result.length === 0
     ) {
       // console.log(
-        `❌ No bars data found for ${symbol}, falling back to mock data`
-      );
+      //   `❌ No bars data found for ${symbol}, falling back to mock data`
+      // );
       const bars = generateMockBars(symbol, timeframe, limit);
       return NextResponse.json({
         symbol,

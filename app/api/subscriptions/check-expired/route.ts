@@ -91,9 +91,9 @@ export async function POST(request: NextRequest) {
     }
 
     // console.log(`✅ [Check Expired] Processed ${updateResults.total} expired subscriptions:`, {
-      activatedPending: updateResults.activatedPending,
-      revertedToFree: updateResults.revertedToFree
-    });
+    //   activatedPending: updateResults.activatedPending,
+    //   revertedToFree: updateResults.revertedToFree
+    // });
 
     // Log details of expired subscriptions
     const expiredDetails = expiredUsers.map(user => ({
