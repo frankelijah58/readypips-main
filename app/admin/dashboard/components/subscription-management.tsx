@@ -148,48 +148,6 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
     // Call your handleBulkAction logic here
     setBulkConfirmData(null);
   };
-
-  
-    const handlePaymentActionv2 = async (id: string, action: 'approve' | 'reject') => {
-      setProcessingId(id);
-      try {
-        const res = await fetch('/api/admin/payments/action', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', ...authHeaders() },
-          body: JSON.stringify({ intentId: id, action }),
-        });
-        if (!res.ok) throw new Error();
-        toast({ title: `Successfully ${action}ed` });
-        fetchData();
-      } catch {
-        toast({ title: 'Action failed', variant: 'destructive' });
-      } finally {
-        setProcessingId(null);
-      }
-    };
-  
-    const handleUpdateSubscriptionv2 = async (id: string, updates: { endDate?: string; status?: string }) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/subscriptions/update', {
-        method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ subscriptionId: id, ...updates }),
-      });
-  
-      if (!res.ok) throw new Error();
-  
-      toast({ title: 'Success', description: 'User status updated.' });
-      fetchData(); // Refresh the table
-    } catch (err) {
-      toast({ title: 'Error', description: 'Failed to update subscription.', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
   
   // Example usage for an "Extend 7 Days" button:
   const extendSevenDays = (sub: any) => {
@@ -591,7 +549,7 @@ function PendingCard({ pay, onAction, processingId }: any) {
         <Button 
           variant="outline"
           onClick={() => onAction(pay._id, 'reject')}
-          className="flex-1 h-8 text-[10px] font-bold hover:bg-rose-50 text-rose-600 border-rose-200"
+          className="flex-1 h-8 text-[10px] font-bold hover:bg-rose-250 text-rose-600 border-rose-200"
           disabled={!!processingId}
         >
           Decline
