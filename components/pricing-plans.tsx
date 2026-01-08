@@ -14,6 +14,7 @@ import { CheckCircle, ArrowRight } from "lucide-react";
 import { PLANS } from "@/lib/plans";
 import PaymentProviderModal from "@/components/PaymentProviderModal";
 import { useState } from "react";
+import { set } from "date-fns";
 
 interface PricingPlansProps {
   showGetStarted?: boolean;
@@ -41,11 +42,13 @@ export default function PricingPlans({
   // --- ADD STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<any>(null);
+  const [loadingState, setLoadingState] = useState<boolean>(false);
 
   const handlePlanAction = (plan: any) => {
     if (onPlanSelect) {
       setSelectedPlanForPayment(plan);
       setIsModalOpen(true);
+      setLoadingState(true);
     } else {
       // console.log("No onPlanSelect handler provided");
     }
@@ -53,6 +56,7 @@ export default function PricingPlans({
 
   const handleProviderSelect = (provider: "whop" | "binance") => {
     if (onPlanSelect && selectedPlanForPayment) {
+      setLoadingState(true);
       onPlanSelect({ ...selectedPlanForPayment, provider });
       setIsModalOpen(false);
     }
@@ -134,18 +138,30 @@ export default function PricingPlans({
                   </Button>
                 </Link>
               ) : (
+                loadingState && currentPlan === "active" ? (
+                  <Button
+                    className="w-full bg-gray-400 text-white font-semibold cursor-not-allowed"
+                    disabled
+                  >
+                    Processing...
+                  </Button>
+                ) : (
                 <Button
                   className={`w-full ${
                     plan.popular
                       ? "bg-green-600 hover:bg-green-700"
                       : "bg-gray-600 hover:bg-gray-700"
                   } text-white font-semibold`}
-                  onClick={() => handlePlanAction({
-                    planId: plan.name.toLowerCase().replace(" ", ""),
-                    name: plan.name,
-                    price: plan.price,
-                    duration: (plan as any).duration,
-                  })}
+                  onClick={() => {
+                      setLoadingState(true);
+                      handlePlanAction({
+                      planId: plan.name.toLowerCase().replace(" ", ""),
+                      name: plan.name,
+                      price: plan.price,
+                      duration: (plan as any).duration,
+                    })
+                  }
+                }
                   disabled={loading || currentPlan === "active"}
                 >
                   {loading
@@ -157,6 +173,7 @@ export default function PricingPlans({
                     <ArrowRight className="ml-2 w-4 h-4" />
                   )}
                 </Button>
+                )
               )}
             </CardContent>
           </Card>
