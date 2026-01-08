@@ -196,6 +196,30 @@ const handleBulkAction = async (updates: { status?: string; extendDays?: number 
   }
 };
 
+// Track what we are about to do
+const [bulkConfirmData, setBulkConfirmData] = useState<{
+  type: 'status' | 'extend';
+  value: string | number;
+  label: string;
+} | null>(null);
+
+// Triggered by the Floating Bar buttons
+const initiateBulkConfirm = (type: 'status' | 'extend', value: string | number, label: string) => {
+  setBulkConfirmData({ type, value, label });
+};
+
+// The actual execution
+const confirmAndExecute = () => {
+  if (!bulkConfirmData) return;
+  
+  const updates = bulkConfirmData.type === 'status' 
+    ? { status: bulkConfirmData.value as string }
+    : { extendDays: bulkConfirmData.value as number };
+
+  handleBulkAction(updates);
+  setBulkConfirmData(null); // Close modal
+};
+
   return (
     <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-8 bg-[#F8FAFC] min-h-screen font-sans text-slate-900">
       
@@ -234,9 +258,7 @@ const handleBulkAction = async (updates: { status?: string; extendDays?: number 
       </div>
 
       <div className="gap-10 items-start ">
-        {/* grid grid-cols-1 xl:grid-cols-12  */}
-
-        {/* 4. MAIN DATABASE (RIGHT CONTENT) */}
+        {/* 3. MAIN DATABASE */}
         {/* xl:col-span-8  */}
         <div className="space-y-4">
           <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
@@ -351,6 +373,39 @@ const handleBulkAction = async (updates: { status?: string; extendDays?: number 
                   </span>
                   
                   <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        className="bg-emerald-600"
+                        onClick={() => initiateBulkConfirm('status', 'active', 'Set to Active')}
+                      >
+                        Activate All
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="text-white border-slate-700"
+                        onClick={() => initiateBulkConfirm('status', 'expired', 'Mark as Expired')}
+                      >
+                        Expire All
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-white border-slate-700"
+                        onClick={() => initiateBulkConfirm('extend', 7, 'Extend by 7 Days')}
+                      >
+                        +7 Days Access
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-slate-400"
+                        onClick={() => setSelectedIds([])}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  {/* <div className="flex gap-2">
                     <Button 
                       size="sm" 
                       className="bg-emerald-600 hover:bg-emerald-700"
@@ -383,7 +438,7 @@ const handleBulkAction = async (updates: { status?: string; extendDays?: number 
                     >
                       Cancel
                     </Button>
-                  </div>
+                  </div> */}
                 </div>
               )}
             </div>
@@ -420,61 +475,172 @@ const handleBulkAction = async (updates: { status?: string; extendDays?: number 
           </div>
         </div>
 
-          {/* 3. PENDING ACTIONS (LEFT SIDEBAR) */}
-          {/* xl:col-span-4  */}
-        <div className="space-y-4 mt-8 ">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-500" /> 
-              Verification Queue
-              <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px]">{stats.pending}</span>
-            </h3>
+          {/* 4. PENDING ACTIONS  */}
+       <div className="space-y-6 mt-8">
+          {/* Header with Glass Effect Label */}
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-100 shadow-sm">
+                <ShieldAlert className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-tight text-slate-800">
+                  Verification Queue
+                </h3>
+                <p className="text-[10px] text-slate-500 font-medium">Pending manual approval</p>
+              </div>
+            </div>
+            <span className="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-lg shadow-slate-200">
+              {stats.pending} Requests
+            </span>
           </div>
 
-          <div className="space-y-3">
-            {pendingPayments.map((pay) => (
-              <div key={pay._id} className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-1 h-full bg-amber-400" />
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-bold text-slate-900">{pay.userName || 'Guest'}</h4>
-                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">{pay.provider} • {pay.planId}</span>
-                  </div>
-                  <span className="text-lg font-black">${pay.amount}</span>
-                </div>
-                
-                <div className="text-xs text-slate-500 space-y-1 mb-4">
-                  <div className="flex items-center gap-2"><Mail className="w-3 h-3" /> {pay.email}</div>
-                  {pay.phoneNumber && <div className="flex items-center gap-2"><Phone className="w-3 h-3" /> {pay.phoneNumber}</div>}
-                </div>
+          {/* Scrollable Card Container */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+            {pendingPayments.length > 0 ? (
+              pendingPayments.map((pay) => (
+                <div 
+                  key={pay._id} 
+                  className="group relative bg-white border border-slate-200 rounded-[1.5rem] p-5 transition-all duration-300 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50/50 overflow-hidden"
+                >
+                  {/* Status Indicator Bar */}
+                  <div className="absolute top-0 left-0 w-full h-1 bg-slate-50 group-hover:bg-indigo-50 transition-colors" />
+                  <div className="absolute top-0 left-0 h-1 bg-amber-400 w-1/3 group-hover:w-full transition-all duration-500" />
 
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => handlePaymentAction(pay._id, 'approve')}
-                    className="flex-1 bg-slate-900 hover:bg-black text-white rounded-xl h-9 text-xs"
-                    disabled={!!processingId}
-                  >
-                    {processingId === pay._id ? <RefreshCw className="animate-spin w-3 h-3" /> : 'Confirm Payment'}
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => handlePaymentAction(pay._id, 'reject')}
-                    className="rounded-xl h-9 px-3 border-slate-200 hover:bg-red-50 hover:text-red-600"
-                    disabled={!!processingId}
-                  >
-                    Reject
-                  </Button>
+                  {/* User & Amount Info */}
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs border border-slate-200 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        {pay.userName?.charAt(0) || 'G'}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm">{pay.userName || 'Guest'}</h4>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-1.5 py-0.5 rounded">
+                            {pay.planId}
+                          </span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                            via {pay.provider}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-lg font-black text-slate-900 leading-none">${pay.amount}</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase">Settlement</span>
+                    </div>
+                  </div>
+
+                  {/* Contact Metadata Box */}
+                  <div className="bg-slate-50/50 rounded-xl p-3 mb-5 space-y-2 border border-slate-100 group-hover:bg-white group-hover:border-indigo-50 transition-colors">
+                    <div className="flex items-center gap-2 text-[11px] text-slate-600 font-medium">
+                      <Mail className="w-3 h-3 text-slate-400" />
+                      {pay.email}
+                    </div>
+                    {pay.phoneNumber && (
+                      <div className="flex items-center gap-2 text-[11px] text-slate-600 font-medium">
+                        <Phone className="w-3 h-3 text-slate-400" />
+                        {pay.phoneNumber}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => handlePaymentAction(pay._id, 'approve')}
+                      className="flex-[2] bg-slate-900 hover:bg-indigo-600 text-white rounded-xl h-10 text-[11px] font-bold transition-all shadow-md active:scale-95"
+                      disabled={!!processingId}
+                    >
+                      {processingId === pay._id ? <RefreshCw className="animate-spin w-3 h-3" /> : 'Confirm Release'}
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => handlePaymentAction(pay._id, 'reject')}
+                      className="flex-1 rounded-xl h-10 px-3 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 text-[11px] font-bold transition-all"
+                      disabled={!!processingId}
+                    >
+                      Decline
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {pendingPayments.length === 0 && (
-              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center text-slate-400 text-sm">
-                Queue is empty
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 px-6 border-2 border-dashed border-slate-200 rounded-[2rem] bg-slate-50/50">
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-3 shadow-sm">
+                  <RefreshCw className="w-5 h-5 text-slate-300" />
+                </div>
+                <p className="text-sm font-bold text-slate-400">All cleared</p>
+                <p className="text-[10px] text-slate-300 uppercase tracking-tighter">No pending verifications</p>
               </div>
             )}
           </div>
+
+          {/* Pagination: Modern Mini-style */}
+          {pendingTotalPages > 1 && (
+            <div className="flex items-center justify-between bg-white/50 border border-slate-200/60 p-2 rounded-2xl">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="h-8 w-8 p-0 rounded-xl hover:bg-white shadow-sm"
+                disabled={pendingPage === 1}
+                onClick={() => setPendingPage(p => p - 1)}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              
+              <div className="text-[10px] font-black text-slate-400 tracking-widest uppercase">
+                Page <span className="text-slate-900">{pendingPage}</span> / {pendingTotalPages}
+              </div>
+
+              <Button
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 rounded-xl hover:bg-white shadow-sm"
+                disabled={pendingPage === pendingTotalPages}
+                onClick={() => setPendingPage(p => p + 1)}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
+
+
+      {bulkConfirmData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
+              <AlertCircle className="w-6 h-6 text-amber-600" />
+            </div>
+            
+            <h3 className="text-xl font-black text-slate-900 mb-2">Are you absolutely sure?</h3>
+            <p className="text-slate-500 text-sm leading-relaxed mb-8">
+              You are about to <span className="font-bold text-slate-900">{bulkConfirmData.label}</span> for 
+              <span className="font-bold text-indigo-600"> {selectedIds.length} users</span>. 
+              This action will update the database immediately.
+            </p>
+
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1 rounded-xl h-12 font-bold border-slate-200 text-slate-600"
+                onClick={() => setBulkConfirmData(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 rounded-xl h-12 font-bold bg-slate-900 hover:bg-black text-white"
+                onClick={confirmAndExecute}
+                disabled={loading}
+              >
+                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Yes, Proceed'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
