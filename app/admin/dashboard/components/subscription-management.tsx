@@ -580,10 +580,10 @@ function PendingCard({ pay, onAction, processingId }: any) {
       <div className="text-[11px] text-slate-500 mb-4 bg-slate-50 p-2 rounded-lg truncate">
         {pay.email}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 ">
         <Button 
           onClick={() => onAction(pay._id, 'approve')}
-          className="flex-1 h-8 text-[10px] font-bold bg-slate-900"
+          className="flex-1 h-8 text-[10px] font-bold bg-slate-900 hover:bg-black text-white"
           disabled={!!processingId}
         >
           {processingId === pay._id ? <RefreshCw className="animate-spin w-3 h-3" /> : 'Approve'}
@@ -591,7 +591,7 @@ function PendingCard({ pay, onAction, processingId }: any) {
         <Button 
           variant="outline"
           onClick={() => onAction(pay._id, 'reject')}
-          className="flex-1 h-8 text-[10px] font-bold hover:bg-rose-50"
+          className="flex-1 h-8 text-[10px] font-bold hover:bg-rose-50 text-rose-600 border-rose-200"
           disabled={!!processingId}
         >
           Decline
