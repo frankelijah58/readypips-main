@@ -52,7 +52,7 @@ export default function PartnerDrillDown() {
           </div>
           <div className="text-right">
             <p className="text-zinc-500 text-xs uppercase tracking-widest">Total Referred</p>
-            <p className="text-3xl font-black">{data.referrals.length}</p>
+            <p className="text-3xl font-black">{data.referrals?.length || 0}</p>
           </div>
         </div>
 
@@ -60,12 +60,12 @@ export default function PartnerDrillDown() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <User className="w-5 h-5 text-zinc-500" />
-            Referred Users ({data.referrals.length})
+            Referred Users ({data.referrals?.length || 0})
           </h2>
 
           <div className="grid grid-cols-1 gap-3">
-            {data.referrals.length > 0 ? (
-              data.referrals.map((user: any) => (
+            {data.referrals?.length > 0 ? (
+              data.referrals?.map((user: any) => (
                 <div 
                       key={user._id} 
                       className="flex items-center justify-between p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl"
