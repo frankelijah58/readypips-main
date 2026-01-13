@@ -154,7 +154,7 @@ export default function PartnerDashboard() {
             <div className="space-y-6 flex-1">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Recent Activity</h3>
-                <button onClick={() => router.push(`/admin/partners/${user?._id}`)} className="text-xs text-indigo-400 hover:underline">
+                <button onClick={() => router.push(`/admin/partner-dashbaord/${user?._id}`)} className="text-xs text-indigo-400 hover:underline">
                     View All
                 </button>
               </div>
