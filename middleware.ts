@@ -3,6 +3,10 @@ import type { NextRequest } from 'next/server';
 
 
 export function middleware(request: NextRequest) {
+   if (request.nextUrl.pathname.startsWith('/api/webhooks/whop')) {
+    return NextResponse.next();
+  }
+
   const { pathname } = request.nextUrl;
 
 
@@ -10,6 +14,8 @@ export function middleware(request: NextRequest) {
 
   // Get the pathname of the request (e.g. /, /protected, /api/auth)
   const path = request.nextUrl.pathname;
+
+
 
   // Define protected routes
   const protectedRoutes = [
@@ -30,6 +36,10 @@ export function middleware(request: NextRequest) {
     '/reset-password',
     '/verify-email',
   ];
+
+  // if (request.nextUrl.pathname.startsWith('/api/whop')) {
+  //   return NextResponse.next();
+  // }
 
   // Check if the current path is a protected route
   // const isProtectedRoute = protectedRoutes.some(route => 
@@ -77,19 +87,26 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 } 
 
-
-
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
     '/ref/:path*',
+    '/((?!api/whop|api|_next/static|_next/image|favicon.ico|public).*)',
   ],
 };
+
+
+// export const config = {
+//   matcher: [
+//     /*
+//      * Match all request paths except for the ones starting with:
+//      * - api (API routes)
+//      * - _next/static (static files)
+//      * - _next/image (image optimization files)
+//      * - favicon.ico (favicon file)
+//      * - public folder
+//      */
+//     // '/((?!api|_next/static|_next/image|favicon.ico|public).*)',
+//     // '/ref/:path*',
+//     // "/((?!api/whop).*)"
+//   ],
+// };
