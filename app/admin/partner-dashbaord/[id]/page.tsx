@@ -11,6 +11,8 @@ export default function PartnerDrillDown() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const totalPartnerRevenue = data.referrals.reduce((acc: number, curr: any) => acc + curr.commissionGenerated, 0);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -65,41 +67,78 @@ export default function PartnerDrillDown() {
             {data.referrals.length > 0 ? (
               data.referrals.map((user: any) => (
                 <div 
-                  key={user._id} 
-                  className="flex items-center justify-between p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-all"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
-                      <Mail className="w-4 h-4 text-zinc-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{user.email}</p>
-                      <div className="flex items-center gap-3 text-[10px] text-zinc-500 mt-1">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" /> 
-                          Joined {new Date(user.createdAt).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> 
-                          ID: {user._id.substring(0, 8)}...
-                        </span>
+                      key={user._id} 
+                      className="flex items-center justify-between p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
+                          <User className="w-4 h-4 text-zinc-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{user.email}</p>
+                          <p className="text-[10px] text-zinc-500">Joined {new Date(user.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-8">
+                        {/* Status Indicator */}
+                        <div className="hidden md:block">
+                          {user.isPaid ? (
+                            <span className="text-[10px] text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 uppercase font-bold">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded uppercase font-bold">
+                              Free
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Financials */}
+                        <div className="text-right min-w-[100px]">
+                          <p className="text-xs text-zinc-500 uppercase font-bold tracking-tighter">Commission</p>
+                          <p className={`text-sm font-mono ${user.commissionGenerated > 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                            ${user.commissionGenerated.toFixed(2)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                // <div 
+                //   key={user._id} 
+                //   className="flex items-center justify-between p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-all"
+                // >
+                //   <div className="flex items-center gap-4">
+                //     <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
+                //       <Mail className="w-4 h-4 text-zinc-400" />
+                //     </div>
+                //     <div>
+                //       <p className="font-medium text-sm">{user.email}</p>
+                //       <div className="flex items-center gap-3 text-[10px] text-zinc-500 mt-1">
+                //         <span className="flex items-center gap-1">
+                //           <Calendar className="w-3 h-3" /> 
+                //           Joined {new Date(user.createdAt).toLocaleDateString()}
+                //         </span>
+                //         <span className="flex items-center gap-1">
+                //           <Clock className="w-3 h-3" /> 
+                //           ID: {user._id.substring(0, 8)}...
+                //         </span>
+                //       </div>
+                //     </div>
+                //   </div>
 
-                  {/* Optional: Check if user is active/paid */}
-                  <div>
-                    {user.hasPaid ? (
-                      <span className="flex items-center gap-1 text-emerald-400 text-xs font-medium bg-emerald-400/10 px-2 py-1 rounded-full">
-                        <CheckCircle2 className="w-3 h-3" /> Active Payer
-                      </span>
-                    ) : (
-                      <span className="text-zinc-600 text-xs px-2 py-1 bg-zinc-800/50 rounded-full">
-                        Free User
-                      </span>
-                    )}
-                  </div>
-                </div>
+                //   {/* Optional: Check if user is active/paid */}
+                //   <div>
+                //     {user.hasPaid ? (
+                //       <span className="flex items-center gap-1 text-emerald-400 text-xs font-medium bg-emerald-400/10 px-2 py-1 rounded-full">
+                //         <CheckCircle2 className="w-3 h-3" /> Active Payer
+                //       </span>
+                //     ) : (
+                //       <span className="text-zinc-600 text-xs px-2 py-1 bg-zinc-800/50 rounded-full">
+                //         Free User
+                //       </span>
+                //     )}
+                //   </div>
+                // </div>
               ))
             ) : (
               <div className="text-center py-20 bg-zinc-900/20 rounded-2xl border border-dashed border-zinc-800">
