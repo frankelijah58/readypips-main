@@ -207,6 +207,15 @@ export default function PartnerDashboard() {
                 {filteredReferrals.slice(0, 6).map((r: any) => (
                   <div key={r._id} className="flex justify-between items-center">
                     <div>
+                      <p className="font-medium">{`${r.firstName} ${r.lastName}`}</p>
+                      {/* show a part of the email and not the whole email */}
+                      <p className="text-xs text-zinc-500">
+                        {r.email.length > 6
+                          ? r.email.slice(0, 6) + "..."
+                          : r.email}
+                      </p>
+                    </div>
+                    <div className="text-right mr-4">
                       <p className="text-sm">
                         {r.hasPaid ? "Subscription Active" : "Signed Up"}
                       </p>

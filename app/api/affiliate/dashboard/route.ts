@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
 
     if (
       !partner ||
-      partner.role !== "partner" ||
-      !partner.partnerProfile?.referralCode
+      partner.role !== "affiliate" ||
+      !partner.affiliateProfile?.referralCode
     ) {
       return NextResponse.json(
         { error: "Partner profile not found" },

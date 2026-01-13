@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
         _id: r._id,
         firstName: r.firstName,
         lastName: r.lastName,
-        // email: r.email,
+        email: r.email,
         hasPaid: r.hasPaid,
         commission: r.commission,
         subscription: r.subscription,
