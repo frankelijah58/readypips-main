@@ -3,8 +3,11 @@ import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET( req: NextRequest,  { params }: { params: Promise<{ id: string }> }) {
   try {
+
+    const { id } = await params;
+  
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
     const decoded = verifyToken(token || "");
 
@@ -15,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const db = await getDatabase();
     
     // 1. Get the Partner
-    const partner = await db.collection("users").findOne({ _id: new ObjectId(params.id) });
+    const partner = await db.collection("users").findOne({ _id: new ObjectId(id) });
     if (!partner) return NextResponse.json({ error: "Partner not found" }, { status: 404 });
 
     const referralCode = partner.partnerProfile?.referralCode;
