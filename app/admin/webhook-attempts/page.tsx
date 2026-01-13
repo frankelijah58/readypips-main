@@ -43,7 +43,7 @@ export default function AdminWebhookAttempts() {
 
       if (!res.ok) throw new Error("Unauthorized");
 
-      const data = await res.json();
+      const data = (await res.json()).data as WebhookAttempt[];
       setAttempts(data || []);
     } catch {
       toast.error("Failed to load webhook attempts");
