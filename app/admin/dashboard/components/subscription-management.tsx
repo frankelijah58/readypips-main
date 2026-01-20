@@ -397,7 +397,7 @@ useEffect(() => {
                     <td className="px-6 py-4 text-xs text-slate-600">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        {new Date(sub.endDate).toLocaleDateString()}
+                        {new Date(sub.startDate).toLocaleDateString()}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right font-mono font-bold text-slate-700">
