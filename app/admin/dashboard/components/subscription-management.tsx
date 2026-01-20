@@ -338,36 +338,6 @@ useEffect(() => {
           </div>
         )}
       </section>
-
-      {/* 3. PENDING ACTIONS (Now a full-width section) */}
-      {/* <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-100">
-              <ShieldAlert className="w-5 h-5 text-amber-600" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-800 tracking-tight">Verification Queue</h3>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase mr-2">{stats.pending} Pending</span>
-            <Button variant="outline" className={"text-white"} size="sm" disabled={pendingPage === 1} onClick={() => setPendingPage(p => p - 1)}><ChevronLeft className="w-4 h-4"/></Button>
-            <Button variant="outline" className={"text-white"} size="sm" disabled={pendingPage === pendingTotalPages} onClick={() => setPendingPage(p => p + 1)}><ChevronRight className="w-4 h-4"/></Button>
-          </div>
-        </div>
-
-        {pendingPayments.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {pendingPayments.map((pay) => (
-              <PendingCard key={pay._id} pay={pay} onAction={handlePaymentAction} processingId={processingId} />
-            ))}
-          </div>
-        ) : (
-          <div className="py-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
-            <p className="text-sm font-medium text-slate-400 uppercase tracking-widest">No pending verifications</p>
-          </div>
-        )}
-      </section> */}
-
       {/* 4. MAIN DATABASE (Now a full-width section) */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
@@ -415,8 +385,8 @@ useEffect(() => {
                         </div>
                         <div>
                           <div className="font-bold text-slate-900 text-sm">{sub.userName}</div>
-                          <div className="flex items-center gap-1">{sub.phoneNumber}</div>
-                          <div className="flex items-center gap-1">{sub.tradingviewUsername}</div>
+                          <div className="flex items-center gap-1 text-slate-600 text-xs">{sub.phoneNumber}</div>
+                          <div className="flex items-center gap-1 text-slate-600 text-xs">{sub.tradingviewUsername}</div>
                           <div className="text-[10px] text-indigo-600 font-bold uppercase">{sub.plan}</div>
                         </div>
                       </div>
@@ -435,8 +405,6 @@ useEffect(() => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
-                          {/* <MoreVertical className="w-4 h-4" /> */}
-                          {/* // Add this inside your table row (tr) under the "MoreVertical" button */}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm"><MoreVertical className="w-4 h-4" /></Button>
@@ -451,15 +419,6 @@ useEffect(() => {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </button>
-                      {/* <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm"><MoreVertical className="w-4 h-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {}}>Extend 7 Days</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">Revoke Access</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu> */}
                     </td>
                   </tr>
                 ))}
@@ -519,52 +478,8 @@ useEffect(() => {
                       Cancel
                     </Button>
                   </div>
-                {/* <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => handleBulkAction({ status: 'active' })}
-                  >
-                    Activate All
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="text-white border-slate-700 hover:bg-slate-800"
-                    onClick={() => handleBulkAction({ status: 'expired' })}
-                  >
-                    Expire All
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="text-white border-slate-700 hover:bg-slate-800"
-                    onClick={() => handleBulkAction({ extendDays: 7 })}
-                  >
-                    +7 Days Access
-                  </Button>
-                  
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="text-slate-400 hover:text-white"
-                    onClick={() => setSelectedIds([])}
-                  >
-                    Cancel
-                  </Button>
-                </div> */}
-              </div>
+                             </div>
             )}
-      {/* {selectedIds.length > 0 && (
-         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 z-50 animate-in slide-in-from-bottom-4">
-            <span className="text-sm font-bold border-r border-slate-700 pr-6">{selectedIds.length} Selected</span>
-            <div className="flex gap-2">
-              <Button size="sm" className="bg-emerald-600">Activate All</Button>
-              <Button size="sm" variant="outline" className="text-white border-slate-700" onClick={() => setSelectedIds([])}>Cancel</Button>
-            </div>
-         </div>
-      )} */}
-
 
       {bulkConfirmData && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
