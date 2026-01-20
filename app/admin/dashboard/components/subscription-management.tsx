@@ -19,6 +19,7 @@ import {
   Calendar,
   CreditCard,
   ChevronDown,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -41,6 +42,8 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   // const [isQueueOpen, setIsQueueOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -78,9 +81,12 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      
+      const dateFilters = `&startDate=${startDate}&endDate=${endDate}`;
+
       const statusFilter = activeTab === 'all' ? '' : `&status=${activeTab}`;
       const [subRes, revRes, pendRes] = await Promise.all([
-        fetch(`/api/admin/subscriptions?page=${currentPage}&limit=10&search=${encodeURIComponent(searchTerm)}${statusFilter}`, { headers: authHeaders() }),
+        fetch(`/api/admin/subscriptions?page=${currentPage}&limit=10&search=${encodeURIComponent(searchTerm)}${statusFilter}${dateFilters}`, { headers: authHeaders() }),
         fetch('/api/admin/revenuev2', { headers: authHeaders() }),
         fetch(`/api/admin/payments/pending?page=${pendingPage}&limit=4`, { headers: authHeaders() }) // Adjusted limit for vertical flow
       ]);
@@ -105,7 +111,7 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, activeTab, pendingPage, authHeaders, toast]);
+  }, [currentPage, searchTerm, activeTab, pendingPage, startDate, endDate, authHeaders, toast]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 400);
@@ -236,6 +242,19 @@ useEffect(() => {
           </h1>
           <p className="text-slate-500 text-sm mt-1">Manage user access and verify incoming payments.</p>
         </div>
+
+        {/* Date Picker Group */}
+        {/* <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+          <Calendar className="w-4 h-4 text-slate-400 ml-2" />
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none text-slate-600" />
+          <span className="text-slate-300">-</span>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none text-slate-600" />
+          {(startDate || endDate) && (
+            <button onClick={() => {setStartDate(''); setEndDate('')}} className="p-1 hover:bg-slate-200 rounded-md">
+              <X className="w-3 h-3 text-slate-500" />
+            </button>
+          )}
+        </div> */}
 
         <div className="flex items-center gap-3">
           <div className="relative group">
