@@ -15,14 +15,10 @@ export async function GET(req: NextRequest) {
     const db = await getDatabase();
     const partnerId = new ObjectId(decoded.userId);
 
-    /* 1️⃣ Load partner */
+    /* 1️⃣ Load partner profile */
     const partner = await db.collection("users").findOne({ _id: partnerId });
 
-    if (
-      !partner ||
-      partner.role !== "partner" ||
-      !partner.partnerProfile?.referralCode
-    ) {
+    if (!partner || !partner.partnerProfile?.referralCode) {
       return NextResponse.json(
         { error: "Partner profile not found" },
         { status: 404 }
@@ -31,20 +27,14 @@ export async function GET(req: NextRequest) {
 
     const { referralCode, revenueShare } = partner.partnerProfile;
 
-    /* 2️⃣ Aggregate referrals */
+    /* 2️⃣ Aggregate Referrals & Gross Commissions */
     const referrals = await db
       .collection("users")
       .aggregate([
-        // ✅ FIX #1: correct field name
         { $match: { refereer: referralCode } },
-
-        // ✅ FIX #2: cast _id → string
         {
-          $addFields: {
-            userIdStr: { $toString: "$_id" },
-          },
+          $addFields: { userIdStr: { $toString: "$_id" } },
         },
-
         {
           $lookup: {
             from: "subscriptions",
@@ -53,7 +43,6 @@ export async function GET(req: NextRequest) {
             as: "subscriptions",
           },
         },
-
         {
           $addFields: {
             subscription: {
@@ -67,7 +56,6 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-
         {
           $addFields: {
             hasPaid: { $cond: [{ $ifNull: ["$subscription", false] }, true, false] },
@@ -80,98 +68,74 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-
         {
           $project: {
             password: 0,
             subscriptions: 0,
             userIdStr: 0,
-            partnerProfile: 0,
           },
         },
-
         { $sort: { createdAt: -1 } },
       ])
       .toArray();
 
-    /* 3️⃣ Stats */
+    /* 3️⃣ Calculate Ledger (The Balance Logic) */
+    
+    // Total gross amount earned from all paid referrals
     const paid = referrals.filter(r => r.hasPaid);
-    const pending = referrals.filter(r => !r.hasPaid);
+    const grossEarnings = paid.reduce((sum, r) => sum + r.commission, 0);
 
-    const totalRevenue = paid.reduce((sum, r) => sum + r.commission, 0);
+    // Total amount already processed/approved by Admin
+    const approvedWithdrawals = await db.collection("withdrawals")
+      .find({ userId: partnerId, status: "approved" })
+      .toArray();
+    
+    const totalWithdrawn = approvedWithdrawals.reduce((sum, w) => sum + w.amount, 0);
+
+    // The current balance available for withdrawal
+    const availableBalance = grossEarnings - totalWithdrawn;
+
+    /* 4️⃣ Fetch Latest Withdrawal for UI Status */
+    const latestWithdrawal = await db.collection("withdrawals")
+      .findOne({ userId: partnerId }, { sort: { createdAt: -1 } });
 
     return NextResponse.json({
       referralCode: `https://readypips.com/ref/${referralCode}`,
       stats: {
         totalReferrals: referrals.length,
         paidReferrals: paid.length,
-        pendingReferrals: pending.length,
-        totalRevenue,
+        pendingReferrals: referrals.length - paid.length,
+        totalRevenue: availableBalance, // This updates the "Available" text in UI
+        allTimeEarnings: grossEarnings, // Good for a secondary stat
         conversionRate:
           referrals.length > 0
             ? `${((paid.length / referrals.length) * 100).toFixed(1)}%`
             : "0%",
       },
       referrals: referrals.map(r => ({
+        ...r,
         _id: r._id,
-        firstName: r.firstName,
-        lastName: r.lastName,
-        email: r.email,
-        hasPaid: r.hasPaid,
-        commission: r.commission,
-        subscription: r.subscription,
-        createdAt: r.createdAt,
-        // "firstName": "rof",
-        //     "lastName": "ozds",
-        //     "email": "etest@gmail.com",
-        //     "phoneNumber": "0708988769",
-        //     "subscriptionStatus": "active",
-        //     "subscriptionType": "monthly",
-        //     "subscriptionEndDate": "2026-02-04T08:26:25.273Z",
-        //     "refereer": "rp-98fd17",
-        //     "freeTrialEndDate": "2026-01-01T15:23:38.961Z",
-        //     "createdAt": "2025-12-29T15:23:38.961Z",
-        //     "updatedAt": "2026-01-05T06:52:04.026Z",
-        //     "emailVerified": true,
-        //     "isAdmin": true,
-        //     "emailVerifiedAt": "2025-12-29T15:25:51.922Z",
-        //     "role": "affiliate",
-        //     "hasPaid": false,
-        //     "commission": 0
       })),
       revenueChart: aggregateByDay(paid),
+      withdrawalStatus: latestWithdrawal?.status || 'none',
     });
   } catch (err) {
     console.error("Referral dashboard error:", err);
-    return NextResponse.json(
-      { error: "Failed to load referral dashboard" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to load dashboard" }, { status: 500 });
   }
 }
 
-/* 🔹 Revenue grouped by subscription start date */
 function aggregateByDay(referrals: any[]) {
   const map: Record<string, number> = {};
-
   referrals.forEach(r => {
     if (!r.subscription?.startDate) return;
-
     const key = new Date(r.subscription.startDate).toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
+      month: "2-digit", day: "2-digit",
     });
-
     map[key] = (map[key] || 0) + r.commission;
   });
-
-  return Object.entries(map).map(([name, revenue]) => ({
-    name,
-    revenue,
-  }));
+  return Object.entries(map).map(([name, revenue]) => ({ name, revenue }));
 }
-
-
 
 // import { verifyToken } from "@/lib/auth";
 // import { getDatabase } from "@/lib/mongodb";
@@ -181,78 +145,179 @@ function aggregateByDay(referrals: any[]) {
 // export async function GET(req: NextRequest) {
 //   try {
 //     const token = req.headers.get("authorization")?.replace("Bearer ", "");
-//     const decoded = verifyToken(token!);
+//     const decoded = verifyToken(token || "");
 
-//     if (!decoded) {
+//     if (!decoded?.userId) {
 //       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 //     }
 
 //     const db = await getDatabase();
-//     const userId = new ObjectId(decoded.userId);
+//     const partnerId = new ObjectId(decoded.userId);
 
-//     // 1️⃣ Load partner
-//     const partner = await db.collection("users").findOne({ _id: userId });
+//     /* 1️⃣ Load partner */
+//     const partner = await db.collection("users").findOne({ _id: partnerId });
 
-//     if (!partner?.partnerProfile?.referralCode) {
-//       return NextResponse.json({ error: "Partner profile not found" }, { status: 404 });
+//     if (
+//       !partner ||
+//       partner.role !== "partner" ||
+//       !partner.partnerProfile?.referralCode
+//     ) {
+//       return NextResponse.json(
+//         { error: "Partner profile not found" },
+//         { status: 404 }
+//       );
 //     }
 
-//     const referralCode = partner.partnerProfile.referralCode;
+//     const { referralCode, revenueShare } = partner.partnerProfile;
 
-//     // 2️⃣ Load referred users
+//     /* 2️⃣ Aggregate referrals */
 //     const referrals = await db
 //       .collection("users")
-//       .find({ refereer: referralCode })
-//       .sort({ createdAt: -1 })
+//       .aggregate([
+//         // ✅ FIX #1: correct field name
+//         { $match: { refereer: referralCode } },
+
+//         // ✅ FIX #2: cast _id → string
+//         {
+//           $addFields: {
+//             userIdStr: { $toString: "$_id" },
+//           },
+//         },
+
+//         {
+//           $lookup: {
+//             from: "subscriptions",
+//             localField: "userIdStr",
+//             foreignField: "userId",
+//             as: "subscriptions",
+//           },
+//         },
+
+//         {
+//           $addFields: {
+//             subscription: {
+//               $first: {
+//                 $filter: {
+//                   input: "$subscriptions",
+//                   as: "sub",
+//                   cond: { $eq: ["$$sub.status", "active"] },
+//                 },
+//               },
+//             },
+//           },
+//         },
+
+//         {
+//           $addFields: {
+//             hasPaid: { $cond: [{ $ifNull: ["$subscription", false] }, true, false] },
+//             commission: {
+//               $cond: [
+//                 { $ifNull: ["$subscription", false] },
+//                 { $multiply: ["$subscription.amount", revenueShare] },
+//                 0,
+//               ],
+//             },
+//           },
+//         },
+
+//         {
+//           $project: {
+//             password: 0,
+//             subscriptions: 0,
+//             userIdStr: 0,
+//             partnerProfile: 0,
+//           },
+//         },
+
+//         { $sort: { createdAt: -1 } },
+//       ])
 //       .toArray();
 
-//     // 3️⃣ Paid vs unpaid
-//     const paidReferrals = referrals.filter(r => r.subscriptionStatus === "active");
-//     const unpaidReferrals = referrals.filter(r => r.subscriptionStatus !== "active");
+//     /* 3️⃣ Stats */
+//     const paid = referrals.filter(r => r.hasPaid);
+//     const pending = referrals.filter(r => !r.hasPaid);
 
-//     // 4️⃣ Revenue (simple flat example — adjust if tiered)
-//     const totalRevenue = paidReferrals.length * 20; // example $20/month
+//     const totalRevenue = paid.reduce((sum, r) => sum + r.commission, 0);
+
+//     /* Inside your Dashboard GET function */
+//     const latestWithdrawal = await db.collection("withdrawals")
+//       .findOne({ userId: partnerId }, { sort: { createdAt: -1 } });
+//     // const now = new Date();
+//     // const WITHDRAWAL_COOLDOWN_HOURS = 24;
+//     // let canRequestWithdrawal = true;
+//     // if (latestWithdrawal) {
+//     //   const hoursSinceLast = (now.getTime() - latestWithdrawal.createdAt.getTime()) / (1000 * 60 * 60);
+//     //   if (hoursSinceLast < WITHDRAWAL_COOLDOWN_HOURS) {
+//     //     canRequestWithdrawal = false;
+//     //   }
+//     // }
+
+
 
 //     return NextResponse.json({
 //       referralCode: `https://readypips.com/ref/${referralCode}`,
 //       stats: {
+//         totalReferrals: referrals.length,
+//         paidReferrals: paid.length,
+//         pendingReferrals: pending.length,
 //         totalRevenue,
-//         activeReferrals: referrals.length,
-//         paidReferrals: paidReferrals.length,
-//         unpaidReferrals: unpaidReferrals.length,
 //         conversionRate:
 //           referrals.length > 0
-//             ? `${((paidReferrals.length / referrals.length) * 100).toFixed(1)}%`
+//             ? `${((paid.length / referrals.length) * 100).toFixed(1)}%`
 //             : "0%",
 //       },
-//       revenueChart: aggregateByDay(paidReferrals),
 //       referrals: referrals.map(r => ({
-//         id: r._id,
+//         _id: r._id,
+//         firstName: r.firstName,
+//         lastName: r.lastName,
 //         email: r.email,
-//         hasPaid: r.subscriptionStatus === "active",
-//         amount: r.subscriptionStatus === "active" ? 20 : 0,
+//         hasPaid: r.hasPaid,
+//         commission: r.commission,
+//         subscription: r.subscription,
 //         createdAt: r.createdAt,
+//         // "firstName": "rof",
+//         //     "lastName": "ozds",
+//         //     "email": "etest@gmail.com",
+//         //     "phoneNumber": "0708988769",
+//         //     "subscriptionStatus": "active",
+//         //     "subscriptionType": "monthly",
+//         //     "subscriptionEndDate": "2026-02-04T08:26:25.273Z",
+//         //     "refereer": "rp-98fd17",
+//         //     "freeTrialEndDate": "2026-01-01T15:23:38.961Z",
+//         //     "createdAt": "2025-12-29T15:23:38.961Z",
+//         //     "updatedAt": "2026-01-05T06:52:04.026Z",
+//         //     "emailVerified": true,
+//         //     "isAdmin": true,
+//         //     "emailVerifiedAt": "2025-12-29T15:25:51.922Z",
+//         //     "role": "affiliate",
+//         //     "hasPaid": false,
+//         //     "commission": 0
 //       })),
+//       revenueChart: aggregateByDay(paid),
+//       withdrawalStatus: latestWithdrawal?.status || 'none',
 //     });
 //   } catch (err) {
-//     console.error(err);
-//     return NextResponse.json({ error: "Dashboard load failed" }, { status: 500 });
+//     console.error("Referral dashboard error:", err);
+//     return NextResponse.json(
+//       { error: "Failed to load referral dashboard" },
+//       { status: 500 }
+//     );
 //   }
 // }
 
-// /**
-//  * Aggregates paid revenue per day
-//  */
-// function aggregateByDay(users: any[]) {
+// /* 🔹 Revenue grouped by subscription start date */
+// function aggregateByDay(referrals: any[]) {
 //   const map: Record<string, number> = {};
 
-//   users.forEach(u => {
-//     const key = new Date(u.createdAt).toLocaleDateString("en-US", {
+//   referrals.forEach(r => {
+//     if (!r.subscription?.startDate) return;
+
+//     const key = new Date(r.subscription.startDate).toLocaleDateString("en-US", {
 //       month: "2-digit",
 //       day: "2-digit",
 //     });
 
-//     map[key] = (map[key] || 0) + 20;
+//     map[key] = (map[key] || 0) + r.commission;
 //   });
 
 //   return Object.entries(map).map(([name, revenue]) => ({
@@ -261,136 +326,226 @@ function aggregateByDay(referrals: any[]) {
 //   }));
 // }
 
-// import { verifyToken } from '@/lib/auth';
-// import { getDatabase } from '@/lib/mongodb';
-// import { ObjectId } from 'mongodb';
-// import { NextRequest, NextResponse } from 'next/server';
-// import nodemailer from 'nodemailer';
 
-// // Configure your email service
-// const transporter = nodemailer.createTransport({
-//   service: 'gmail',
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASSWORD,
-//   },
-// });
 
-// // /api/partner/dashboard/route.ts
-// export async function GET(req: NextRequest) {
-//   try {
-//     const token = req.headers.get("authorization")?.replace("Bearer ", "");
-//     const decoded = verifyToken(token!);
-    
-//     if (!decoded) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-//     const db = await getDatabase();
-//     const userId = new ObjectId(decoded.userId);
-
-//     // 1. Fetch the user to get their stored referralCode
-//     const user = await db.collection("users").findOne({ _id: userId });
-    
-//     if (!user || !user.partnerProfile) {
-//       return NextResponse.json({ error: "Partner profile not found" }, { status: 404 });
-//     }
-
-//     const { referralCode } = user.partnerProfile;
-
-//     // 2. Fetch referrals (assumes your 'referrals' collection uses partnerId or referralCode)
-//     const referrals = await db.collection("referrals")
-//       .find({ partnerId: userId }) 
-//       .sort({ createdAt: -1 })
-//       .toArray();
-
-//     // 3. Analytics Calculations
-//     const totalRevenue = referrals.reduce((sum, r) => sum + (r.revenue || 0), 0);
-    
-//     return NextResponse.json({
-//       // Combines the base URL with the unique rp-xxxxxx code
-//       referralCode: `https://readypips.com/ref/${referralCode}`,
-//       stats: {
-//         totalRevenue,
-//         activeReferrals: referrals.length,
-//         conversionRate: referrals.length > 0 ? "3.2%" : "0%",
-//       },
-//       revenueChart: aggregateByDay(referrals),
-//       recentConversions: referrals.slice(0, 5).map(r => ({
-//         id: r._id,
-//         amount: r.revenue,
-//         createdAt: r.createdAt || r.date,
-//       })),
-//     });
-//   } catch (error) {
-//     return NextResponse.json({ error: "Dashboard load failed" }, { status: 500 });
-//   }
-// }
-
-// /**
-//  * Aggregates revenue by date for the Recharts component
-//  * Returns: { name: "MM/DD", revenue: number }[]
-//  */
-// function aggregateByDay(referrals: any[]) {
-//   const dailyMap: { [key: string]: number } = {};
-
-//   // Group by local date string
-//   referrals.forEach((ref) => {
-//     const date = new Date(ref.createdAt || ref.date);
-//     const dateKey = date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' });
-    
-//     dailyMap[dateKey] = (dailyMap[dateKey] || 0) + (ref.revenue || 0);
-//   });
-
-//   // Convert map to sorted array for the chart
-//   return Object.keys(dailyMap)
-//     .map((date) => ({
-//       name: date, // "name" maps to XAxis dataKey in the UI
-//       revenue: dailyMap[date],
-//     }))
-//     .reverse(); // Ensure chronological order
-// }
+// // import { verifyToken } from "@/lib/auth";
+// // import { getDatabase } from "@/lib/mongodb";
+// // import { ObjectId } from "mongodb";
+// // import { NextRequest, NextResponse } from "next/server";
 
 // // export async function GET(req: NextRequest) {
-// //   const decoded = verifyToken(req.headers.get("authorization")?.replace("Bearer ", "")!);
-// //   const db = await getDatabase();
+// //   try {
+// //     const token = req.headers.get("authorization")?.replace("Bearer ", "");
+// //     const decoded = verifyToken(token!);
 
-// //   if (!decoded) {
-// //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-// //   }
-
-// //   const partnerId = new ObjectId(decoded.userId);
-
-// //   const referrals = await db.collection("referrals").find({ partnerId }).toArray();
-
-// //   const totalRevenue = referrals.reduce((sum, r) => sum + r.revenue, 0);
-
-// //   return NextResponse.json({
-// //     referralCode: `https://readypips.com/ref/${decoded.userId}`,
-// //     stats: {
-// //       totalRevenue,
-// //       activeReferrals: referrals.length,
-// //       conversionRate: referrals.length ? "3.2%" : "0%",
-// //     },
-// //     revenueChart: aggregateByDay(referrals),
-// //     recentConversions: referrals.slice(-5),
-// //   });
-// // }
-
-
-// // function aggregateByDay(referrals: any[]) {
-// //   const dailyData: { [key: string]: number } = {};
-
-// //   referrals.forEach((referral) => {
-// //     const dateKey = new Date(referral.date).toISOString().split('T')[0];
-// //     if (!dailyData[dateKey]) {
-// //       dailyData[dateKey] = 0;
+// //     if (!decoded) {
+// //       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 // //     }
-// //     dailyData[dateKey] += referral.revenue;
+
+// //     const db = await getDatabase();
+// //     const userId = new ObjectId(decoded.userId);
+
+// //     // 1️⃣ Load partner
+// //     const partner = await db.collection("users").findOne({ _id: userId });
+
+// //     if (!partner?.partnerProfile?.referralCode) {
+// //       return NextResponse.json({ error: "Partner profile not found" }, { status: 404 });
+// //     }
+
+// //     const referralCode = partner.partnerProfile.referralCode;
+
+// //     // 2️⃣ Load referred users
+// //     const referrals = await db
+// //       .collection("users")
+// //       .find({ refereer: referralCode })
+// //       .sort({ createdAt: -1 })
+// //       .toArray();
+
+// //     // 3️⃣ Paid vs unpaid
+// //     const paidReferrals = referrals.filter(r => r.subscriptionStatus === "active");
+// //     const unpaidReferrals = referrals.filter(r => r.subscriptionStatus !== "active");
+
+// //     // 4️⃣ Revenue (simple flat example — adjust if tiered)
+// //     const totalRevenue = paidReferrals.length * 20; // example $20/month
+
+// //     return NextResponse.json({
+// //       referralCode: `https://readypips.com/ref/${referralCode}`,
+// //       stats: {
+// //         totalRevenue,
+// //         activeReferrals: referrals.length,
+// //         paidReferrals: paidReferrals.length,
+// //         unpaidReferrals: unpaidReferrals.length,
+// //         conversionRate:
+// //           referrals.length > 0
+// //             ? `${((paidReferrals.length / referrals.length) * 100).toFixed(1)}%`
+// //             : "0%",
+// //       },
+// //       revenueChart: aggregateByDay(paidReferrals),
+// //       referrals: referrals.map(r => ({
+// //         id: r._id,
+// //         email: r.email,
+// //         hasPaid: r.subscriptionStatus === "active",
+// //         amount: r.subscriptionStatus === "active" ? 20 : 0,
+// //         createdAt: r.createdAt,
+// //       })),
+// //     });
+// //   } catch (err) {
+// //     console.error(err);
+// //     return NextResponse.json({ error: "Dashboard load failed" }, { status: 500 });
+// //   }
+// // }
+
+// // /**
+// //  * Aggregates paid revenue per day
+// //  */
+// // function aggregateByDay(users: any[]) {
+// //   const map: Record<string, number> = {};
+
+// //   users.forEach(u => {
+// //     const key = new Date(u.createdAt).toLocaleDateString("en-US", {
+// //       month: "2-digit",
+// //       day: "2-digit",
+// //     });
+
+// //     map[key] = (map[key] || 0) + 20;
 // //   });
 
-// //   const result = Object.keys(dailyData).map((date) => ({
-// //     date,
-// //     revenue: dailyData[date],
+// //   return Object.entries(map).map(([name, revenue]) => ({
+// //     name,
+// //     revenue,
 // //   }));
-
-// //   return result;
 // // }
+
+// // import { verifyToken } from '@/lib/auth';
+// // import { getDatabase } from '@/lib/mongodb';
+// // import { ObjectId } from 'mongodb';
+// // import { NextRequest, NextResponse } from 'next/server';
+// // import nodemailer from 'nodemailer';
+
+// // // Configure your email service
+// // const transporter = nodemailer.createTransport({
+// //   service: 'gmail',
+// //   auth: {
+// //     user: process.env.EMAIL_USER,
+// //     pass: process.env.EMAIL_PASSWORD,
+// //   },
+// // });
+
+// // // /api/partner/dashboard/route.ts
+// // export async function GET(req: NextRequest) {
+// //   try {
+// //     const token = req.headers.get("authorization")?.replace("Bearer ", "");
+// //     const decoded = verifyToken(token!);
+    
+// //     if (!decoded) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+// //     const db = await getDatabase();
+// //     const userId = new ObjectId(decoded.userId);
+
+// //     // 1. Fetch the user to get their stored referralCode
+// //     const user = await db.collection("users").findOne({ _id: userId });
+    
+// //     if (!user || !user.partnerProfile) {
+// //       return NextResponse.json({ error: "Partner profile not found" }, { status: 404 });
+// //     }
+
+// //     const { referralCode } = user.partnerProfile;
+
+// //     // 2. Fetch referrals (assumes your 'referrals' collection uses partnerId or referralCode)
+// //     const referrals = await db.collection("referrals")
+// //       .find({ partnerId: userId }) 
+// //       .sort({ createdAt: -1 })
+// //       .toArray();
+
+// //     // 3. Analytics Calculations
+// //     const totalRevenue = referrals.reduce((sum, r) => sum + (r.revenue || 0), 0);
+    
+// //     return NextResponse.json({
+// //       // Combines the base URL with the unique rp-xxxxxx code
+// //       referralCode: `https://readypips.com/ref/${referralCode}`,
+// //       stats: {
+// //         totalRevenue,
+// //         activeReferrals: referrals.length,
+// //         conversionRate: referrals.length > 0 ? "3.2%" : "0%",
+// //       },
+// //       revenueChart: aggregateByDay(referrals),
+// //       recentConversions: referrals.slice(0, 5).map(r => ({
+// //         id: r._id,
+// //         amount: r.revenue,
+// //         createdAt: r.createdAt || r.date,
+// //       })),
+// //     });
+// //   } catch (error) {
+// //     return NextResponse.json({ error: "Dashboard load failed" }, { status: 500 });
+// //   }
+// // }
+
+// // /**
+// //  * Aggregates revenue by date for the Recharts component
+// //  * Returns: { name: "MM/DD", revenue: number }[]
+// //  */
+// // function aggregateByDay(referrals: any[]) {
+// //   const dailyMap: { [key: string]: number } = {};
+
+// //   // Group by local date string
+// //   referrals.forEach((ref) => {
+// //     const date = new Date(ref.createdAt || ref.date);
+// //     const dateKey = date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' });
+    
+// //     dailyMap[dateKey] = (dailyMap[dateKey] || 0) + (ref.revenue || 0);
+// //   });
+
+// //   // Convert map to sorted array for the chart
+// //   return Object.keys(dailyMap)
+// //     .map((date) => ({
+// //       name: date, // "name" maps to XAxis dataKey in the UI
+// //       revenue: dailyMap[date],
+// //     }))
+// //     .reverse(); // Ensure chronological order
+// // }
+
+// // // export async function GET(req: NextRequest) {
+// // //   const decoded = verifyToken(req.headers.get("authorization")?.replace("Bearer ", "")!);
+// // //   const db = await getDatabase();
+
+// // //   if (!decoded) {
+// // //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+// // //   }
+
+// // //   const partnerId = new ObjectId(decoded.userId);
+
+// // //   const referrals = await db.collection("referrals").find({ partnerId }).toArray();
+
+// // //   const totalRevenue = referrals.reduce((sum, r) => sum + r.revenue, 0);
+
+// // //   return NextResponse.json({
+// // //     referralCode: `https://readypips.com/ref/${decoded.userId}`,
+// // //     stats: {
+// // //       totalRevenue,
+// // //       activeReferrals: referrals.length,
+// // //       conversionRate: referrals.length ? "3.2%" : "0%",
+// // //     },
+// // //     revenueChart: aggregateByDay(referrals),
+// // //     recentConversions: referrals.slice(-5),
+// // //   });
+// // // }
+
+
+// // // function aggregateByDay(referrals: any[]) {
+// // //   const dailyData: { [key: string]: number } = {};
+
+// // //   referrals.forEach((referral) => {
+// // //     const dateKey = new Date(referral.date).toISOString().split('T')[0];
+// // //     if (!dailyData[dateKey]) {
+// // //       dailyData[dateKey] = 0;
+// // //     }
+// // //     dailyData[dateKey] += referral.revenue;
+// // //   });
+
+// // //   const result = Object.keys(dailyData).map((date) => ({
+// // //     date,
+// // //     revenue: dailyData[date],
+// // //   }));
+
+// // //   return result;
+// // // }

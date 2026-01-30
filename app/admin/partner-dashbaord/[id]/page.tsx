@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, User, Search, Mail, Filter, TrendingUp, DollarSign, ExternalLink } from "lucide-react";
+import { ArrowLeft, User, Search, Mail, Filter, TrendingUp, DollarSign, ExternalLink, ShieldCheck, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 
 export default function PartnerDrillDown() {
@@ -11,6 +11,7 @@ export default function PartnerDrillDown() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "paid" | "free">("paid");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,13 +31,21 @@ export default function PartnerDrillDown() {
     fetchData();
   }, [id]);
 
-  // Search logic
+  // Combined Search and Payment Filtering logic
   const filteredReferrals = useMemo(() => {
     if (!data?.referrals) return [];
-    return data.referrals.filter((u: any) =>
-      u.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery, data]);
+    
+    return data.referrals.filter((u: any) => {
+      const matchesSearch = u.email.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesPayment = 
+        paymentFilter === "all" ? true :
+        paymentFilter === "paid" ? u.isPaid === true :
+        u.isPaid === false;
+
+      return matchesSearch && matchesPayment;
+    });
+  }, [searchQuery, paymentFilter, data]);
 
   const totalCommission = useMemo(() => {
     return data?.referrals?.reduce((acc: number, curr: any) => acc + (curr.commissionGenerated || 0), 0) || 0;
@@ -103,13 +112,27 @@ export default function PartnerDrillDown() {
         </section>
 
         {/* List Controls */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-xl font-bold flex items-center gap-3">
-            Referral Network
-            <span className="text-xs font-normal text-zinc-500 bg-zinc-900 px-2 py-1 rounded-full border border-zinc-800">
-                {filteredReferrals.length} Results
-            </span>
-          </h2>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <h2 className="text-xl font-bold">Referral Network</h2>
+            
+            {/* Payment Filter Segmented Control */}
+            <div className="flex bg-zinc-900/80 p-1 rounded-xl border border-zinc-800 w-fit">
+              {(['all', 'paid', 'free'] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setPaymentFilter(type)}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                    paymentFilter === type 
+                      ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' 
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
           
           <div className="relative group w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
@@ -132,21 +155,26 @@ export default function PartnerDrillDown() {
                 className="group flex flex-col md:flex-row md:items-center justify-between p-5 bg-zinc-900/20 border border-zinc-800/50 rounded-2xl hover:bg-zinc-800/20 hover:border-zinc-700 transition-all"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm ${user.isPaid ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-500'}`}>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+                    user.isPaid 
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                      : 'bg-zinc-800 text-zinc-500 border border-zinc-700/50'
+                  }`}>
                     {user.email.substring(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    {/* show only a small amount of the email */}
-                    <p className="font-semibold text-zinc-200">{user.email.slice(0, 12)}...</p>
+                    <p className="font-semibold text-zinc-200">{user.email}</p>
                     <div className="flex items-center gap-3 mt-1">
                         <span className="flex items-center gap-1 text-[10px] text-zinc-500 italic">
                             Joined {new Date(user.createdAt).toLocaleDateString()}
                         </span>
-                        {user.isPaid && (
-                            <span className="w-1 h-1 rounded-full bg-zinc-700" />
-                        )}
-                        <span className={`text-[10px] font-bold uppercase tracking-tight ${user.isPaid ? 'text-emerald-500' : 'text-zinc-600'}`}>
-                            {user.isPaid ? 'Premium Subscription' : 'Free Tier'}
+                        <span className="w-1 h-1 rounded-full bg-zinc-700" />
+                        <span className={`text-[10px] font-bold uppercase tracking-tight flex items-center gap-1 ${user.isPaid ? 'text-emerald-500' : 'text-zinc-600'}`}>
+                            {user.isPaid ? (
+                              <><ShieldCheck className="w-3 h-3" /> Premium Subscription</>
+                            ) : (
+                              <><UserMinus className="w-3 h-3" /> Free Tier</>
+                            )}
                         </span>
                     </div>
                   </div>
@@ -170,12 +198,15 @@ export default function PartnerDrillDown() {
               <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center mb-4">
                  <Filter className="w-6 h-6 text-zinc-700" />
               </div>
-              <p className="text-zinc-500 font-medium">No results match your search criteria</p>
+              <p className="text-zinc-500 font-medium">No {paymentFilter !== 'all' ? paymentFilter : ''} results match your criteria</p>
               <button 
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  setPaymentFilter("all");
+                }}
                 className="mt-2 text-sm text-indigo-400 hover:text-indigo-300 underline"
               >
-                Clear search
+                Clear all filters
               </button>
             </div>
           )}

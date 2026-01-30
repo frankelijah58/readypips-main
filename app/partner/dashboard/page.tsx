@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Copy, DollarSign, TrendingUp, Users, Zap, Inbox, ExternalLink, ArrowUpRight } from "lucide-react";
+import { Copy, DollarSign, TrendingUp, Users, Zap, Inbox, ExternalLink, ArrowUpRight, Wallet, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-context";
 import { Navigation } from "@/components/navigation";
@@ -14,36 +14,70 @@ export default function PartnerDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<any>(null);
+  const [requesting, setRequesting] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
   const router = useRouter();
 
+  
+  const WITHDRAWAL_MIN = 50;
+  const WITHDRAWAL_FEE = 0.06;
+
   useEffect(() => {
     if (!user) return;
-    const fetchDashboard = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const endpoint = user.role === "affiliate" ? "/api/affiliate/dashboard" : "/api/partner/dashboard";
-        const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-        setDashboard(data);
-      } catch (err) {
-        toast.error("Failed to load dashboard");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDashboard();
   }, [user]);
+
+  const fetchDashboard = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const endpoint = user?.role === "affiliate" ? "/api/affiliate/dashboard" : "/api/partner/dashboard";
+      const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setDashboard(data);
+    } catch (err) {
+      toast.error("Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const copyToClipboard = () => {
     if (!dashboard?.referralCode) return;
     navigator.clipboard.writeText(dashboard.referralCode);
     toast.success("Link copied to clipboard");
   };
+  
+  const handleWithdraw = async () => {
+    const balance = dashboard?.stats?.totalRevenue || 0;
+    if (balance < WITHDRAWAL_MIN) {
+      return toast.error(`Minimum withdrawal is $${WITHDRAWAL_MIN}`);
+    }
 
-  const { stats, revenueChart, referrals = [], referralCode } = dashboard || {};
+    setRequesting(true);
+    try {
+      const res = await fetch("/api/partner/withdraw", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}` 
+        },
+        body: JSON.stringify({ amount: balance }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast.success("Withdrawal request submitted!");
+      fetchDashboard(); // Refresh to show pending status
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setRequesting(false);
+    }
+  };
 
+  const { stats, revenueChart, referrals = [], referralCode, withdrawalStatus } = dashboard || {};
+
+  
   const filteredReferrals = useMemo(() => {
     if (filter === "paid") return referrals.filter((r: any) => r.hasPaid);
     if (filter === "pending") return referrals.filter((r: any) => !r.hasPaid);
@@ -64,6 +98,7 @@ export default function PartnerDashboard() {
     );
   }
 
+
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 selection:bg-indigo-500/30">
       <Navigation />
@@ -80,6 +115,22 @@ export default function PartnerDashboard() {
               Welcome back, <span className="text-zinc-200">{user?.email?.split('@')[0]}</span>
             </p>
           </div>
+
+          {/* Withdrawal Section */}
+            <div className="bg-zinc-900 border border-zinc-800 p-1.5 pr-4 rounded-2xl flex items-center gap-4">
+               <div className="pl-3">
+                  <p className="text-[10px] uppercase font-bold text-zinc-500">Available</p>
+                  <p className="text-sm font-bold text-emerald-400">${stats?.totalRevenue?.toFixed(2)}</p>
+               </div>
+               <button 
+                disabled={requesting || withdrawalStatus === 'pending'}
+                onClick={handleWithdraw}
+                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all flex items-center gap-2"
+               >
+                 {withdrawalStatus === 'pending' ? <Clock className="w-3 h-3"/> : <Wallet className="w-3 h-3" />}
+                 {withdrawalStatus === 'pending' ? 'Pending Approval' : 'Withdraw'}
+               </button>
+            </div>
 
           <div className="group relative">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
@@ -98,9 +149,32 @@ export default function PartnerDashboard() {
           </div>
         </header>
 
+        {/* Info Alert */}
+        <div className="bg-indigo-500/5 border border-indigo-500/10 p-4 rounded-2xl flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+          <div className="text-xs text-zinc-400 leading-relaxed">
+            <p className="font-bold text-indigo-300 uppercase tracking-wider mb-1">Withdrawal Policy</p>
+            Withdrawals incur a <span className="text-zinc-200 font-bold">6% processing fee</span>. 
+            Minimum withdrawal amount is <span className="text-zinc-200 font-bold">$50.00</span>. 
+            Estimated payout: <span className="text-emerald-400 font-bold">${(stats?.totalRevenue * (1 - WITHDRAWAL_FEE)).toFixed(2)}</span> after fees.
+          </div>
+        </div>
+
         {/* High-Level Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <StatCard title="Revenue" value={`$${stats?.totalRevenue?.toFixed(0)}`} icon={DollarSign} color="text-emerald-400" />
+          <StatCard 
+            title="Available" 
+            value={`$${stats?.totalRevenue?.toFixed(2)}`} 
+            icon={Wallet} 
+            color="text-emerald-400" 
+          />
+          <StatCard 
+            title="All Time" 
+            value={`$${stats?.allTimeEarnings?.toFixed(0)}`} 
+            icon={TrendingUp} 
+            color="text-zinc-500" 
+          />
+          {/* <StatCard title="Revenue" value={`$${stats?.totalRevenue?.toFixed(0)}`} icon={DollarSign} color="text-emerald-400" /> */}
           <StatCard title="Referrals" value={stats?.totalReferrals} icon={Users} color="text-blue-400" />
           <StatCard title="Conversions" value={stats?.paidReferrals} icon={Zap} color="text-indigo-400" />
           <StatCard title="Pending" value={stats?.pendingReferrals} icon={Inbox} color="text-zinc-500" />

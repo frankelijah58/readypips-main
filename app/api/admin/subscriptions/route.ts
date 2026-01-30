@@ -33,15 +33,27 @@ export async function GET(req: Request) {
     }
 
     // DATE FILTER LOGIC
+    // if (startDateParam || endDateParam) {
+    //   matchStage.startDate = {};
+    //   if (startDateParam) {
+    //     matchStage.startDate.$gte = new Date(startDateParam);
+    //   }
+    //   if (endDateParam) {
+    //     const end = new Date(endDateParam);
+    //     end.setHours(23, 59, 59, 999); // Ensure it includes the entire end day
+    //     matchStage.startDate.$lte = end;
+    //   }
+    // }
+    // 1. Update the Date Filter Logic to use updatedAt instead of startDate
     if (startDateParam || endDateParam) {
-      matchStage.startDate = {};
+      matchStage.updatedAt = {}; // Change from startDate to updatedAt
       if (startDateParam) {
-        matchStage.startDate.$gte = new Date(startDateParam);
+        matchStage.updatedAt.$gte = new Date(startDateParam);
       }
       if (endDateParam) {
         const end = new Date(endDateParam);
         end.setHours(23, 59, 59, 999); // Ensure it includes the entire end day
-        matchStage.startDate.$lte = end;
+        matchStage.updatedAt.$lte = end;
       }
     }
 
@@ -62,7 +74,8 @@ export async function GET(req: Request) {
           metadata: [{ $count: "total" }],
           data: [
             // SORTING HERE: -1 is Newest to Oldest
-            { $sort: { startDate: -1, _id: -1 } }, 
+            // { $sort: { startDate: -1, _id: -1 } }, 
+            { $sort: { updatedAt: -1, _id: -1 } },
             { $skip: skip },
             { $limit: limit },
             {
