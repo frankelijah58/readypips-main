@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Wallet, Check } from "lucide-react";
+import { CreditCard, Wallet, Check, Landmark } from "lucide-react";
 
 interface PaymentProviderModalProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ interface PaymentProviderModalProps {
   setLoading?: (loading: boolean) => void;
   onClose: () => void;
   plan: any;
-  onSelect: (provider: "whop" | "binance") => void;
+  onSelect: (provider: "whop" | "binance" | "pesapal") => void;
 }
 
 export default function PaymentProviderModal({
@@ -61,7 +61,7 @@ export default function PaymentProviderModal({
           </button>
 
           {/* Binance Provider */}
-          {/* <button
+          { <button
             onClick={() => onSelect("binance")}
             className="group relative flex items-center justify-between p-4 border rounded-xl hover:border-yellow-500 hover:bg-yellow-50/50 dark:hover:bg-yellow-950/10 transition-all text-left"
           >
@@ -75,7 +75,31 @@ export default function PaymentProviderModal({
               </div>
             </div>
             <div className="h-2 w-2 rounded-full bg-gray-300 group-hover:bg-yellow-500" />
-          </button> */}
+          </button> }
+          
+            {/* Pesapal Provider */}
+<button
+  onClick={() => onSelect("pesapal")}
+  className="group relative flex items-center justify-between p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/10 transition-all text-left"
+>
+  <div className="flex items-center gap-4">
+    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg group-hover:scale-110 transition-transform">
+      <Landmark className="w-6 h-6 text-blue-600" />
+    </div>
+
+    <div>
+      <p className="font-semibold text-gray-900 dark:text-gray-100">
+        Pesapal
+      </p>
+      <p className="text-xs text-gray-500">
+        Pay via M-Pesa, Visa, Mastercard
+      </p>
+    </div>
+  </div>
+
+  <div className="h-2 w-2 rounded-full bg-gray-300 group-hover:bg-blue-500" />
+</button>
+          
         </div>
 
         <div className="flex items-center justify-center gap-2 text-[10px] text-gray-400 uppercase tracking-widest">

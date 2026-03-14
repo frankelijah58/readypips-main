@@ -14,7 +14,7 @@ export default function TermsConditionsPage() {
             Terms & Conditions
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Last updated: October 2025
+            Last updated: Jan 2026
           </p>
         </section>
 
@@ -123,8 +123,8 @@ export default function TermsConditionsPage() {
               If you have any questions about these Terms and Conditions, please contact us at:
             </p>
             <ul className="list-disc list-inside space-y-2 mt-4">
-              <li>Email: briancreatives@gmail.com</li>
-              <li>WhatsApp: +254 728 747 441</li>
+              <li>Instagram: Readypips</li>
+              <li>Support: Enter Your query on the support page</li>
             </ul>
           </div>
 
