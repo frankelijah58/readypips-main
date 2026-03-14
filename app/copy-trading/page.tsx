@@ -48,8 +48,8 @@ const brokers = [
     ],
     minDeposit: "$100",
     leverage: "Up to 1:1000",
-    copyTradingLink: "https://my.hfm.com/en/copy-trading/provider-details.html?provider=69185730",
-    signupLink: "https://register.hfm.com/ke/en/new-live-account/?refid=30374049",
+    copyTradingLink: "https://my.hfm.com/en/copy-trading/provider-details?provider=147026543",
+    signupLink: "https://www.hfm.com/ke/en/?refid=30374049",
     recommended: true,
   },
   {
@@ -65,15 +65,15 @@ const brokers = [
     ],
     minDeposit: "$100",
     leverage: "Up to 1:1000",
-    copyTradingLink: "https://justmarkets.com/spa/copytrading/leaderboard/52812",
+    copyTradingLink: "https://justmarkets.com/spa/copytrading/leaderboard/66116",
     signupLink: "https://one.justmarkets.link/a/f2fxc0kmhk",
     recommended: false,
   },
   {
-    id: "exness",
-    name: "Exness",
-    logo: "/exness-icon.jpeg",
-    description: "Global leader in online trading with Social Trading platform (Coming Soon)",
+    id: "fxpro",
+    name: "FxPro",
+    logo: "/fxpro.png",
+    description: "Global leader in online trading with Social Trading platform (Copy Coming Soon)",
     features: [
       "Social Trading platform",
       "Instant withdrawals",
@@ -82,8 +82,8 @@ const brokers = [
     ],
     minDeposit: "$10",
     leverage: "Up to 1:2000",
-    copyTradingLink: "https://social.exness.com/copy-trading?ref=readypips",
-    signupLink: "https://www.exness.com/accounts/register/?ref=readypips",
+    copyTradingLink: "https://direct-fxpro.com/en/partner/FKBP99Jk",
+    signupLink: "https://www.readypips.com/trade",
     recommended: false,
   },
 ];
@@ -120,7 +120,7 @@ export default function CopyTradingPage() {
       </div>
     );
   }
-
+/*
   if (!subscriptionAccess.hasAccess) {
     return (
       <div className="min-h-screen bg-white dark:bg-black">
@@ -183,7 +183,7 @@ export default function CopyTradingPage() {
       </div>
     );
   }
-
+*}*/
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <Navigation />
@@ -213,11 +213,15 @@ export default function CopyTradingPage() {
                 <Info className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">How It Works</h3>
-                <p className="text-blue-800 dark:text-blue-300 text-sm">
-                  We primarily use HFM for copy trading. Create an account with HFM using our referral link, 
-                  then connect to our copy trading service. Your account will automatically mirror our professional traders' positions.
-                </p>
+               <h3 className="font-semibold text-blue-900 text-center dark:text-blue-200 mb-2">How It Works</h3>
+                <p className="text-blue-800 dark:text-blue-300 text-center text-sm">
+                 
+               Copy trading allows you to automatically mirror the strategies of experienced traders.
+Instead of trading alone, you can follow proven strategies and learn from real market activity.
+Explore the platforms below and see how copy trading works.
+
+                  </p>
+                  <i> <center>Always trade responsibly and manage your risk.</center></i>
               </div>
             </div>
           </div>
@@ -267,7 +271,8 @@ export default function CopyTradingPage() {
               Choose Your Broker
             </h2>
             <p className="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
-              We primarily recommend HFM for copy trading. Select from our partner brokers below. 
+              <b>We primarily recommend Just Markets for copy trading. </b> 
+              <br></br>Select from our partner brokers below. 
               Don't have an account? Create one using our referral links for exclusive benefits.
             </p>
           </div>
@@ -399,7 +404,7 @@ export default function CopyTradingPage() {
                   Choose Your Broker
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                  We primarily recommend HFM for copy trading. Select one of our partner brokers based on 
+                   Select one of our partner brokers based on 
                   reliability, features, and copy trading capabilities that best suit your needs.
                 </p>
               </div>
