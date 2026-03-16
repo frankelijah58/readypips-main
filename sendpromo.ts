@@ -74,7 +74,7 @@ async function sendPromo() {
             firstName: 1,
             lastName: 1,
           })
-          .limit(10) // start with 10 first, then increase or remove
+          .limit(1) // start with 10 first, then increase or remove
           .toArray();
 
     if (!users.length) {
@@ -85,7 +85,7 @@ async function sendPromo() {
     console.log(`Preparing to send emails to ${users.length} user(s)...`);
 
     const logoUrl =
-      process.env.EMAIL_LOGO_URL || "https://readypips.com/logo.png";
+      process.env.EMAIL_LOGO_URL || "https://readypips.com/pipslogo.png";
 
     let successCount = 0;
     let failedCount = 0;
