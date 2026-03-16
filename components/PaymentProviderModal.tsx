@@ -68,10 +68,9 @@ export default function PaymentProviderModal({
 
               <div>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  Card / Apple Pay
-                </p>
+                  Whop                 </p>
                 <p className="text-xs text-gray-500">
-                  Secure checkout via Whop
+                  Secure checkout via Whop(Card / Apple Pay)
                 </p>
               </div>
             </div>
@@ -93,10 +92,10 @@ export default function PaymentProviderModal({
 
               <div>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  Crypto / Binance Pay
+                  Binance
                 </p>
                 <p className="text-xs text-gray-500">
-                  Instant USDT & Crypto payment
+                  Instant USDT & Crypto payment(Crypto / Binance Pay)
                 </p>
               </div>
             </div>
