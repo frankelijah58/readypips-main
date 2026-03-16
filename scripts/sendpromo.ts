@@ -28,35 +28,14 @@ if (
 const client = new MongoClient(mongoUri);
 
 async function sendPromo() {
+  let connected = false;
+
   try {
     await client.connect();
+    connected = true;
     console.log("MongoDB connected");
 
     const db = client.db(dbName);
-
-    // Test with one email first.
-    // Replace this with your own inbox during testing.
-    const users = [
-      {
-        email: "yourtestemail@example.com",
-        name: "Test User",
-      },
-    ];
-
-    // For production, use this instead:
-    // const users = await db
-    //   .collection("users")
-    //   .find({
-    //     email: { $exists: true, $ne: null, $ne: "" },
-    //   })
-    //   .project({ email: 1, name: 1 })
-    //   .limit(50)
-    //   .toArray();
-
-    if (!users.length) {
-      console.log("No users found to email.");
-      return;
-    }
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -70,6 +49,30 @@ async function sendPromo() {
 
     await transporter.verify();
     console.log("SMTP connection successful");
+
+    // TEST MODE
+    const testMode = process.env.TEST_MODE === "true";
+
+    const users = testMode
+      ? [
+          {
+            email: "yourtestemail@example.com",
+            name: "Test User",
+          },
+        ]
+      : await db
+          .collection("users")
+          .find({
+            email: { $exists: true, $nin: [null, ""] },
+          })
+          .project({ email: 1, name: 1 })
+          .limit(50)
+          .toArray();
+
+    if (!users.length) {
+      console.log("No users found to email.");
+      return;
+    }
 
     for (const user of users) {
       if (!user.email) continue;
@@ -121,7 +124,7 @@ async function sendPromo() {
                   <div style="padding:18px 30px;background:#f8fafc;border-top:1px solid #e2e8f0;">
                     <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b;">
                       This email was sent by ReadyPips from
-                      <strong> no-reply@readypips.com</strong>.
+                      <strong> ${process.env.SMTP_FROM_EMAIL}</strong>.
                     </p>
                   </div>
                 </div>
@@ -141,8 +144,10 @@ async function sendPromo() {
     console.error("Promo send failed:", error.message);
     process.exitCode = 1;
   } finally {
-    await client.close();
-    console.log("MongoDB connection closed");
+    if (connected) {
+      await client.close();
+      console.log("MongoDB connection closed");
+    }
   }
 }
 

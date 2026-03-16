@@ -164,6 +164,12 @@ export default function AdminSidebar({
               Partner Dashboard
             </Link>
             <Link
+              href="/admin/send-emails"
+              className="block w-full text-center px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors text-sm"
+            >
+              Send Emails
+            </Link>
+            <Link
               href="/admin/withdrawals"
               className="block w-full text-center px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors text-sm"
             >
