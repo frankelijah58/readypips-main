@@ -3,9 +3,9 @@ import nodemailer from "nodemailer";
 import { MongoClient } from "mongodb";
 import jwt from "jsonwebtoken";
 
-const mongoUri = process.env.MONGODB_URI;
-const dbName = process.env.MONGODB_DB_NAME;
-const jwtSecret = process.env.JWT_SECRET;
+const mongoUri = process.env.MONGODB_URI as string;
+const dbName = process.env.MONGODB_DB_NAME as string;
+const jwtSecret = process.env.JWT_SECRET as string;
 
 if (!mongoUri) {
   throw new Error("MONGODB_URI is missing");
@@ -38,11 +38,20 @@ type JwtPayload = {
 };
 
 type UserDoc = {
-  _id: string;
+  _id?: string;
   email?: string;
   firstName?: string;
   lastName?: string;
 };
+
+function escapeHtml(text: string) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 function getHtmlTemplate(params: {
   fullName: string;
@@ -60,10 +69,12 @@ function getHtmlTemplate(params: {
 
   const formattedMessage = params.message
     .split("\n")
-    .filter(Boolean)
+    .filter((line) => line.trim() !== "")
     .map(
       (line) =>
-        `<p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#334155;">${line}</p>`
+        `<p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#334155;">${escapeHtml(
+          line
+        )}</p>`
     )
     .join("");
 
@@ -71,7 +82,6 @@ function getHtmlTemplate(params: {
     <div style="margin:0;padding:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
       <div style="max-width:620px;margin:0 auto;padding:30px 20px;">
         <div style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
-
           <div style="background:#071533;padding:28px 30px;text-align:center;">
             <img
               src="${logoUrl}"
@@ -88,11 +98,11 @@ function getHtmlTemplate(params: {
 
           <div style="padding:34px 30px;">
             <h2 style="margin:0 0 18px;font-size:22px;color:#0f172a;">
-              Hello ${params.fullName},
+              Hello ${escapeHtml(params.fullName)},
             </h2>
 
             <h3 style="margin:0 0 18px;font-size:18px;color:#0f172a;">
-              ${params.subject}
+              ${escapeHtml(params.subject)}
             </h3>
 
             ${formattedMessage}
@@ -130,6 +140,7 @@ function getHtmlTemplate(params: {
 
 function parseManualEmails(value: string | null) {
   if (!value) return [];
+
   return value
     .split(",")
     .map((email) => email.trim().toLowerCase())
@@ -161,7 +172,7 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
 
-    const mode = String(formData.get("mode") || "");
+    const mode = String(formData.get("mode") || "").trim();
     const subject = String(formData.get("subject") || "").trim();
     const message = String(formData.get("message") || "").trim();
     const manualEmails = String(formData.get("emails") || "").trim();
@@ -191,7 +202,11 @@ export async function POST(req: NextRequest) {
       const users = await db
         .collection<UserDoc>("users")
         .find({
-          email: { $exists: true, $nin: [null, ""] },
+          email: {
+            $exists: true,
+            $type: "string",
+            $ne: "",
+          },
         })
         .project({
           email: 1,
@@ -238,10 +253,7 @@ export async function POST(req: NextRequest) {
 
       recipients = [...users, ...fallbackRecipients];
     } else {
-      return NextResponse.json(
-        { message: "Invalid mode" },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: "Invalid mode" }, { status: 400 });
     }
 
     if (!recipients.length) {
@@ -289,9 +301,7 @@ export async function POST(req: NextRequest) {
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Trader";
 
         await transporter.sendMail({
-          from: `"${process.env.SMTP_FROM_NAME || "ReadyPips"}" <${
-            process.env.SMTP_FROM_EMAIL
-          }>`,
+          from: `"${process.env.SMTP_FROM_NAME || "ReadyPips"}" <${process.env.SMTP_FROM_EMAIL}>`,
           to: user.email,
           subject,
           html: getHtmlTemplate({
