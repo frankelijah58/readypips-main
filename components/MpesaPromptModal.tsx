@@ -10,11 +10,13 @@ import {
 } from "@/components/ui/dialog";
 import { Smartphone, Loader2 } from "lucide-react";
 
+
 interface Plan {
-  id?: string;
-  name: string;
-  price: string | number;
-}
+    id?: string;
+    name: string;
+    price: string | number;
+    kesPrice?: number;
+  }
 
 interface MpesaPromptModalProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ interface MpesaPromptModalProps {
   loading?: boolean;
   onSubmit: (phone: string) => Promise<void> | void;
 }
+
 
 export default function MpesaPromptModal({
   isOpen,
@@ -50,12 +53,12 @@ export default function MpesaPromptModal({
           </DialogTitle>
 
           <DialogDescription className="text-center pt-2">
-            Enter your Safaricom number to pay for{" "}
-            <span className="font-semibold text-green-600">{plan.name}</span>{" "}
-            at <span className="font-semibold">{plan.price}</span>.
+          Enter your Safaricom number to pay for{" "}
+<span className="font-semibold text-green-600">{plan.name}</span>{" "}
+at <span className="font-semibold">KES {(plan.kesPrice ?? 0).toLocaleString()}</span>.
           </DialogDescription>
         </DialogHeader>
-
+ 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div>
             <label className="block text-sm font-medium mb-2">

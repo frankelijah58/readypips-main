@@ -86,6 +86,17 @@ export default function PricingPlans({
       setLoadingState(false);
     }
   };
+  const USD_TO_KES = 130; // you can adjust (130–140 depending on rate)
+
+  const convertToKes = (price: string | number) => {
+    const amount =
+      typeof price === "number"
+        ? price
+        : Number(String(price).replace(/[^0-9.]/g, ""));
+  
+    return Math.round(amount * USD_TO_KES);
+  };
+
 
   const plans = PLANS;
 
@@ -213,14 +224,17 @@ export default function PricingPlans({
         plan={selectedPlanForPayment}
         onSelect={handleProviderSelect}
       />
-
-      <MpesaPromptModal
-        isOpen={isMpesaPromptOpen}
-        onClose={() => setIsMpesaPromptOpen(false)}
-        plan={selectedPlanForPayment}
-        loading={loadingState}
-        onSubmit={handleMpesaSubmit}
-      />
+<MpesaPromptModal
+  isOpen={isMpesaPromptOpen}
+  onClose={() => setIsMpesaPromptOpen(false)}
+  plan={{
+    ...selectedPlanForPayment,
+    kesPrice: convertToKes(selectedPlanForPayment?.price || 0),
+  }}
+  loading={loadingState}
+  onSubmit={handleMpesaSubmit}
+/>
+    
 
       {loadingState && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
