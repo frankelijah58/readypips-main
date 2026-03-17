@@ -7,12 +7,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { CreditCard, Wallet, Check, Landmark } from "lucide-react";
+import { CreditCard, Wallet, Check, Smartphone } from "lucide-react";
 
 interface Plan {
   name: string;
   price: string;
 }
+
+type PaymentProvider = "whop" | "binance" | "mpesa";
 
 interface PaymentProviderModalProps {
   isOpen: boolean;
@@ -20,7 +22,7 @@ interface PaymentProviderModalProps {
   setLoading?: (loading: boolean) => void;
   onClose: () => void;
   plan: Plan | null;
-  onSelect: (provider: "whop" | "binance" | "pesapal") => void;
+  onSelect: (provider: PaymentProvider) => void;
 }
 
 export default function PaymentProviderModal({
@@ -33,7 +35,7 @@ export default function PaymentProviderModal({
 }: PaymentProviderModalProps) {
   if (!plan) return null;
 
-  const handleSelect = (provider: "whop" | "binance" | "pesapal") => {
+  const handleSelect = (provider: PaymentProvider) => {
     onSelect(provider);
     if (setLoading) setLoading(true);
   };
@@ -68,9 +70,10 @@ export default function PaymentProviderModal({
 
               <div>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  Whop                 </p>
+                  Whop
+                </p>
                 <p className="text-xs text-gray-500">
-                  Secure checkout via Whop(Card / Apple Pay)
+                  Secure checkout via Whop (Card / Apple Pay)
                 </p>
               </div>
             </div>
@@ -95,7 +98,7 @@ export default function PaymentProviderModal({
                   Binance
                 </p>
                 <p className="text-xs text-gray-500">
-                  Instant USDT & Crypto payment(Crypto / Binance Pay)
+                  Instant USDT & Crypto payment (Crypto / Binance Pay)
                 </p>
               </div>
             </div>
@@ -103,29 +106,29 @@ export default function PaymentProviderModal({
             <div className="h-2 w-2 rounded-full bg-gray-300 group-hover:bg-yellow-500 transition-colors" />
           </button>
 
-          {/* Pesapal */}
+          {/* M-Pesa */}
           <button
             type="button"
-            onClick={() => handleSelect("pesapal")}
+            onClick={() => handleSelect("mpesa")}
             disabled={loading}
-            className="group relative flex items-center justify-between p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/10 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group relative flex items-center justify-between p-4 border rounded-xl hover:border-green-500 hover:bg-green-50/50 dark:hover:bg-green-950/10 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg group-hover:scale-110 transition-transform">
-                <Landmark className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg group-hover:scale-110 transition-transform">
+                <Smartphone className="w-6 h-6 text-green-600" />
               </div>
 
               <div>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  Pesapal
+                  M-Pesa
                 </p>
                 <p className="text-xs text-gray-500">
-                  Pay via Pesapal secure gateway
+                  Pay directly with Safaricom M-Pesa
                 </p>
               </div>
             </div>
 
-            <div className="h-2 w-2 rounded-full bg-gray-300 group-hover:bg-blue-500 transition-colors" />
+            <div className="h-2 w-2 rounded-full bg-gray-300 group-hover:bg-green-500 transition-colors" />
           </button>
         </div>
 

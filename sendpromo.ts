@@ -85,7 +85,7 @@ async function sendPromo() {
     console.log(`Preparing to send emails to ${users.length} user(s)...`);
 
     const logoUrl =
-      process.env.EMAIL_LOGO_URL || "https://readypips.com/pipslogo.png";
+      process.env.EMAIL_LOGO_URL || "https://readypips.com/readypips/logo-light.png";
 
     let successCount = 0;
     let failedCount = 0;
