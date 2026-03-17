@@ -21,7 +21,7 @@ interface PricingPlansProps {
     name: string;
     price: string;
     duration: number;
-    provider?: "whop" | "binance" | "pesapal";
+    provider?: "whop" | "binance" | "mpesa";
   }) => void;
   className?: string;
   loading?: boolean;
@@ -46,7 +46,7 @@ export default function PricingPlans({
     }
   };
 
-  const handleProviderSelect = (provider: "whop" | "binance" | "pesapal") => {
+  const handleProviderSelect = (provider: "whop" | "binance" | "mpesa") => {
     if (onPlanSelect && selectedPlanForPayment) {
       onPlanSelect({ ...selectedPlanForPayment, provider });
       setIsModalOpen(false);
@@ -185,7 +185,7 @@ export default function PricingPlans({
           <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg flex flex-col items-center">
             <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16 mb-4"></div>
             <p className="text-gray-900 dark:text-gray-100">
-              Processing your subscription...
+              Processing your subscription you guy...
             </p>
           </div>
         </div>
