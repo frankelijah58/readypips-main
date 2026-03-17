@@ -70,7 +70,7 @@ at <span className="font-semibold">KES {(plan.kesPrice ?? 0).toLocaleString()}</
               placeholder="07XXXXXXXX or 2547XXXXXXXX"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              disabled={loading}
+              disabled={false}
               className="w-full rounded-xl border px-4 py-3 bg-white dark:bg-gray-800 outline-none focus:ring-2 focus:ring-green-500"
             />
             <p className="text-xs text-gray-500 mt-2">
