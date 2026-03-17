@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { PLANS } from "@/lib/plans";
 import PaymentProviderModal from "@/components/PaymentProviderModal";
+import MpesaPromptModal from "@/components/MpesaPromptModal";
 import { useState } from "react";
 
 interface PricingPlansProps {
@@ -22,6 +23,7 @@ interface PricingPlansProps {
     price: string;
     duration: number;
     provider?: "whop" | "binance" | "mpesa";
+    phone?: string;
   }) => void;
   className?: string;
   loading?: boolean;
@@ -36,6 +38,7 @@ export default function PricingPlans({
   currentPlan = null,
 }: PricingPlansProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMpesaPromptOpen, setIsMpesaPromptOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<any>(null);
   const [loadingState, setLoadingState] = useState<boolean>(false);
 
@@ -47,9 +50,40 @@ export default function PricingPlans({
   };
 
   const handleProviderSelect = (provider: "whop" | "binance" | "mpesa") => {
-    if (onPlanSelect && selectedPlanForPayment) {
-      onPlanSelect({ ...selectedPlanForPayment, provider });
+    if (!onPlanSelect || !selectedPlanForPayment) return;
+
+    if (provider === "mpesa") {
       setIsModalOpen(false);
+      setIsMpesaPromptOpen(true);
+      return;
+    }
+
+    setLoadingState(true);
+
+    onPlanSelect({
+      ...selectedPlanForPayment,
+      provider,
+    });
+
+    setIsModalOpen(false);
+    setLoadingState(false);
+  };
+
+  const handleMpesaSubmit = async (phone: string) => {
+    if (!onPlanSelect || !selectedPlanForPayment) return;
+
+    try {
+      setLoadingState(true);
+
+      onPlanSelect({
+        ...selectedPlanForPayment,
+        provider: "mpesa",
+        phone,
+      });
+
+      setIsMpesaPromptOpen(false);
+    } finally {
+      setLoadingState(false);
     }
   };
 
@@ -148,7 +182,7 @@ export default function PricingPlans({
                   } text-white font-semibold`}
                   onClick={() =>
                     handlePlanAction({
-                      planId: plan.name.toLowerCase().replace(" ", ""),
+                      planId: plan.name.toLowerCase().replace(/\s+/g, ""),
                       name: plan.name,
                       price: plan.price,
                       duration: (plan as any).duration,
@@ -180,12 +214,20 @@ export default function PricingPlans({
         onSelect={handleProviderSelect}
       />
 
+      <MpesaPromptModal
+        isOpen={isMpesaPromptOpen}
+        onClose={() => setIsMpesaPromptOpen(false)}
+        plan={selectedPlanForPayment}
+        loading={loadingState}
+        onSubmit={handleMpesaSubmit}
+      />
+
       {loadingState && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg flex flex-col items-center">
-            <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16 mb-4"></div>
-            <p className="text-gray-900 dark:text-gray-100">
-              Processing your subscription you guy...
+            <div className="animate-spin rounded-full border-4 border-gray-200 border-t-green-600 h-16 w-16 mb-4"></div>
+            <p className="text-gray-900 dark:text-gray-100 text-center">
+              Processing your subscription...
             </p>
           </div>
         </div>
