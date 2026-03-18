@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateReference, initiateStkPush } from "@/lib/mpesa";
+import { generateReference, initiateStkPush, normalizePhoneNumber } from "@/lib/mpesa";
+import { PLANS } from "@/lib/plans";
+import { getDatabase } from "@/lib/mongodb";
+import { verifyToken, findUserById } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,14 +11,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log("STK request body:", body);
 
-    const {
-      phoneNumber,
-      amount,
-      planId,
-      planName,
-      duration,
-      userId,
-    } = body;
+    const { phoneNumber, amount, planId, planName, duration } = body;
 
     if (!phoneNumber || !amount || !planId) {
       return NextResponse.json(
@@ -27,8 +23,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const numericAmount = Number(amount);
+    const authHeader = req.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : null;
 
+    if (!token) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized. No token provided.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized. Invalid token.",
+        },
+        { status: 401 }
+      );
+    }
+
+    const planConfig = PLANS.find((p) => p.id === planId);
+    if (!planConfig) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid plan selected.",
+        },
+        { status: 400 }
+      );
+    }
+
+    let userEmail = decoded.email || "";
+    if (!userEmail && decoded.userId) {
+      const user = await findUserById(decoded.userId);
+      userEmail = user?.email || "";
+    }
+
+    const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return NextResponse.json(
         {
@@ -39,23 +77,57 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const normalizedPhone = normalizePhoneNumber(phoneNumber);
     const accountReference = generateReference("READYPIPS");
+    const db = await getDatabase();
+
+    await db.collection("payment_intents").insertOne({
+      reference: accountReference,
+      userId: decoded.userId,
+      email: userEmail,
+      planId,
+      planName: planName || planConfig.name,
+      duration: duration || planConfig.duration,
+      provider: "mpesa",
+      amount: Math.round(numericAmount),
+      currency: "KES",
+      phoneNumber: normalizedPhone,
+      status: "pending",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     const stk = await initiateStkPush({
       amount: Math.round(numericAmount),
-      phoneNumber,
+      phoneNumber: normalizedPhone,
       accountReference,
       transactionDesc: planName
         ? `${planName} subscription`
-        : "ReadyPips subscription",
+        : `${planConfig.name} subscription`,
     });
 
     console.log("STK Safaricom response:", stk);
+
+    await db.collection("payment_intents").updateOne(
+      { reference: accountReference },
+      {
+        $set: {
+          merchantRequestId: stk.MerchantRequestID || null,
+          checkoutRequestId: stk.CheckoutRequestID || null,
+          responseCode: stk.ResponseCode || null,
+          responseDescription: stk.ResponseDescription || null,
+          customerMessage: stk.CustomerMessage || null,
+          rawStkResponse: stk,
+          updatedAt: new Date(),
+        },
+      }
+    );
 
     return NextResponse.json({
       success: true,
       message: stk.CustomerMessage || "STK Push sent successfully.",
       data: {
+        reference: accountReference,
         MerchantRequestID: stk.MerchantRequestID,
         CheckoutRequestID: stk.CheckoutRequestID,
         ResponseCode: stk.ResponseCode,
