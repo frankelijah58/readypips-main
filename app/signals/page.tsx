@@ -63,7 +63,6 @@ export default function SignalsPage() {
         : Number(String(price).replace(/[^0-9.]/g, ""));
     return Math.round(amount * USD_TO_KES);
   };
-
   const handlePlanSelect = async (plan: {
     planId: string;
     name: string;
@@ -72,18 +71,21 @@ export default function SignalsPage() {
     provider?: "whop" | "binance" | "mpesa";
     phone?: string;
   }) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+  
     try {
       setLoading(true);
-
+  
       const token = localStorage.getItem("token");
-
+  
       if (!token) {
         throw new Error("You need to login first.");
       }
-
+  
       if (plan.provider === "mpesa") {
         const amountKES = convertToKes(plan.price);
-
+  
         const res = await fetch("/api/mpesa/stkpush", {
           method: "POST",
           headers: {
@@ -91,30 +93,31 @@ export default function SignalsPage() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            phone: plan.phone,
+            phoneNumber: plan.phone,
             amount: amountKES,
             planId: plan.planId,
             userId: user?._id,
             duration: plan.duration,
             planName: plan.name,
           }),
+          signal: controller.signal,
         });
-
+  
         const data = await res.json();
-
+  
         if (!res.ok || !data.success) {
           throw new Error(data.message || "M-Pesa payment failed");
         }
-
+  
         toast({
           title: "M-Pesa Prompt Sent",
           description: `Check ${plan.phone} and enter your M-Pesa PIN to complete payment.`,
           duration: 5000,
         });
-
+  
         return;
       }
-
+  
       const res = await fetch("/api/payments/create", {
         method: "POST",
         headers: {
@@ -126,32 +129,42 @@ export default function SignalsPage() {
           provider: plan.provider,
           userId: user?._id,
         }),
+        signal: controller.signal,
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok) {
         throw new Error(data.error || "Payment failed");
       }
-
+  
       if (data.checkoutUrl) {
         toast({
           title: "Redirecting to Payment Provider",
           description: `You are being redirected to ${plan.provider} to complete your purchase.`,
           duration: 5000,
         });
-
+  
         window.location.href = data.checkoutUrl;
       }
     } catch (err: any) {
       console.error(err);
+  
+      const message =
+        err?.name === "AbortError"
+          ? "The request timed out. Please try again."
+          : err.message || "Unable to start payment. Please try again.";
+  
       toast({
         title: "Payment Error",
-        description: err.message || "Unable to start payment. Please try again.",
+        description: message,
         duration: 5000,
         variant: "destructive",
       });
+  
+      throw new Error(message);
     } finally {
+      clearTimeout(timeout);
       setLoading(false);
     }
   };
@@ -242,7 +255,12 @@ export default function SignalsPage() {
               </div>
             </div>
 
-            <PricingPlans showGetStarted={!user} onPlanSelect={handlePlanSelect} />
+            <PricingPlans
+  showGetStarted={!user}
+  onPlanSelect={handlePlanSelect}
+  loading={loading}
+  currentPlan={subscriptionStatus}
+/>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in zoom-in-95 duration-700">

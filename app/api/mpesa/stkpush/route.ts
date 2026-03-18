@@ -1,35 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateReference, initiateStkPush } from "@/lib/mpesa";
 
-type PlanMap = {
-  [key: string]: {
-    name: string;
-    amount: number;
-  };
-};
-
-const plans: PlanMap = {
-  monthly: { name: "Monthly", amount: 6370 },
-  quarterly: { name: "Quarterly", amount: 15999 },
-  lifetime: { name: "Lifetime", amount: 39999 },
-};
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { phoneNumber, planId, userId } = body;
 
-    if (!phoneNumber || !planId) {
+    const {
+      phoneNumber,
+      amount,
+      planId,
+      planName,
+      duration,
+      userId,
+    } = body;
+
+    if (!phoneNumber || !amount || !planId) {
       return NextResponse.json(
-        { success: false, message: "Phone number and plan are required." },
+        {
+          success: false,
+          message: "Phone number, amount, and plan are required.",
+        },
         { status: 400 }
       );
     }
 
-    const plan = plans[planId];
-    if (!plan) {
+    const numericAmount = Number(amount);
+
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return NextResponse.json(
-        { success: false, message: "Invalid plan selected." },
+        {
+          success: false,
+          message: "Invalid payment amount.",
+        },
         { status: 400 }
       );
     }
@@ -37,25 +39,42 @@ export async function POST(req: NextRequest) {
     const accountReference = generateReference("READYPIPS");
 
     const stk = await initiateStkPush({
-      amount: plan.amount,
+      amount: Math.round(numericAmount),
       phoneNumber,
       accountReference,
-      transactionDesc: `${plan.name} subscription`,
+      transactionDesc: planName
+        ? `${planName} subscription`
+        : "ReadyPips subscription",
     });
 
     /**
      * Save pending payment to your DB here
-     * Example fields:
+     *
+     * Suggested fields:
      * - userId
      * - planId
+     * - planName
+     * - duration
      * - amount
      * - phoneNumber
      * - accountReference
      * - MerchantRequestID
      * - CheckoutRequestID
      * - status: "pending"
-     * - rawRequest / rawResponse
+     * - rawResponse: stk
      */
+
+    console.log("STK Push success:", {
+      userId,
+      planId,
+      planName,
+      duration,
+      amount: numericAmount,
+      phoneNumber,
+      accountReference,
+      MerchantRequestID: stk.MerchantRequestID,
+      CheckoutRequestID: stk.CheckoutRequestID,
+    });
 
     return NextResponse.json({
       success: true,
@@ -69,6 +88,8 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
+    console.error("STK Push route error:", error);
+
     return NextResponse.json(
       {
         success: false,

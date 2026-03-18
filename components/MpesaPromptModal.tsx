@@ -34,11 +34,13 @@ export default function MpesaPromptModal({
 }: MpesaPromptModalProps) {
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setPhone("");
       setError("");
+      setSubmitting(false);
     }
   }, [isOpen, plan?.id, plan?.name]);
 
@@ -46,7 +48,6 @@ export default function MpesaPromptModal({
 
   const amount = useMemo(() => {
     if (typeof plan.kesPrice === "number") return plan.kesPrice;
-
     if (typeof plan.price === "number") return plan.price;
 
     const parsed = Number(String(plan.price).replace(/[^0-9.]/g, ""));
@@ -56,17 +57,9 @@ export default function MpesaPromptModal({
   const normalizePhone = (value: string) => {
     const cleaned = value.replace(/[^\d+]/g, "").trim();
 
-    if (/^07\d{8}$/.test(cleaned)) {
-      return `254${cleaned.slice(1)}`;
-    }
-
-    if (/^2547\d{8}$/.test(cleaned)) {
-      return cleaned;
-    }
-
-    if (/^\+2547\d{8}$/.test(cleaned)) {
-      return cleaned.slice(1);
-    }
+    if (/^07\d{8}$/.test(cleaned)) return `254${cleaned.slice(1)}`;
+    if (/^2547\d{8}$/.test(cleaned)) return cleaned;
+    if (/^\+2547\d{8}$/.test(cleaned)) return cleaned.slice(1);
 
     return cleaned;
   };
@@ -74,10 +67,7 @@ export default function MpesaPromptModal({
   const validatePhone = (value: string) => {
     const normalized = normalizePhone(value);
 
-    if (!value.trim()) {
-      return "Phone number is required.";
-    }
-
+    if (!value.trim()) return "Phone number is required.";
     if (!/^2547\d{8}$/.test(normalized)) {
       return "Enter a valid Safaricom number like 07XXXXXXXX or 2547XXXXXXXX.";
     }
@@ -87,13 +77,13 @@ export default function MpesaPromptModal({
 
   const handlePhoneChange = (value: string) => {
     setPhone(value);
-    if (error) {
-      setError(validatePhone(value));
-    }
+    if (error) setError(validatePhone(value));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (loading || submitting) return;
 
     const validationError = validatePhone(phone);
     if (validationError) {
@@ -101,15 +91,24 @@ export default function MpesaPromptModal({
       return;
     }
 
-    setError("");
-    await onSubmit(normalizePhone(phone));
+    try {
+      setError("");
+      setSubmitting(true);
+      await onSubmit(normalizePhone(phone));
+    } catch (err: any) {
+      setError(err?.message || "Failed to send M-Pesa prompt.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleOpenChange = (open: boolean) => {
-    if (!open && !loading) {
+    if (!open && !loading && !submitting) {
       onClose();
     }
   };
+
+  const isBusy = loading || submitting;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -126,8 +125,7 @@ export default function MpesaPromptModal({
             at{" "}
             <span className="font-semibold text-gray-900 dark:text-white">
               KES {amount.toLocaleString()}
-            </span>
-            .
+            </span>.
           </DialogDescription>
         </DialogHeader>
 
@@ -145,7 +143,7 @@ export default function MpesaPromptModal({
               placeholder="07XXXXXXXX or 2547XXXXXXXX"
               value={phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
-              disabled={loading}
+              disabled={isBusy}
               className={`w-full rounded-xl border px-4 py-3 outline-none transition ${
                 error
                   ? "border-red-500 bg-red-50 focus:ring-2 focus:ring-red-500 dark:bg-red-950/20"
@@ -164,10 +162,10 @@ export default function MpesaPromptModal({
 
           <button
             type="submit"
-            disabled={loading || !phone.trim()}
+            disabled={isBusy || !phone.trim()}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 py-3 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? (
+            {isBusy ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Sending STK Push...
