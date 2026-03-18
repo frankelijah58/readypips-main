@@ -3,7 +3,10 @@ import { generateReference, initiateStkPush } from "@/lib/mpesa";
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("STK route hit");
+
     const body = await req.json();
+    console.log("STK request body:", body);
 
     const {
       phoneNumber,
@@ -47,34 +50,7 @@ export async function POST(req: NextRequest) {
         : "ReadyPips subscription",
     });
 
-    /**
-     * Save pending payment to your DB here
-     *
-     * Suggested fields:
-     * - userId
-     * - planId
-     * - planName
-     * - duration
-     * - amount
-     * - phoneNumber
-     * - accountReference
-     * - MerchantRequestID
-     * - CheckoutRequestID
-     * - status: "pending"
-     * - rawResponse: stk
-     */
-
-    console.log("STK Push success:", {
-      userId,
-      planId,
-      planName,
-      duration,
-      amount: numericAmount,
-      phoneNumber,
-      accountReference,
-      MerchantRequestID: stk.MerchantRequestID,
-      CheckoutRequestID: stk.CheckoutRequestID,
-    });
+    console.log("STK Safaricom response:", stk);
 
     return NextResponse.json({
       success: true,
@@ -93,7 +69,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to send STK push.",
+        message: error?.message || "Failed to send STK push.",
       },
       { status: 500 }
     );

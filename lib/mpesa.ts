@@ -18,6 +18,20 @@ function getTimestamp() {
   return `${year}${month}${day}${hours}${minutes}${seconds}`;
 }
 
+async function parseJsonSafely(res: Response, fallbackMessage: string) {
+  const rawText = await res.text();
+
+  if (!rawText) {
+    throw new Error(`${fallbackMessage}: empty response body`);
+  }
+
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    throw new Error(`${fallbackMessage}: ${rawText}`);
+  }
+}
+
 export function normalizePhoneNumber(phone: string): string {
   const cleaned = phone.replace(/\s+/g, "").replace(/[^\d+]/g, "");
 
@@ -28,7 +42,11 @@ export function normalizePhoneNumber(phone: string): string {
   throw new Error("Invalid Safaricom number. Use 07XXXXXXXX or 2547XXXXXXXX.");
 }
 
-export function buildMpesaPassword(shortcode: string, passkey: string, timestamp: string) {
+export function buildMpesaPassword(
+  shortcode: string,
+  passkey: string,
+  timestamp: string
+) {
   return Buffer.from(`${shortcode}${passkey}${timestamp}`).toString("base64");
 }
 
@@ -53,10 +71,15 @@ export async function getMpesaAccessToken(): Promise<string> {
     }
   );
 
-  const data = await res.json();
+  const data = await parseJsonSafely(res, "Invalid access token response from M-Pesa");
 
-  if (!res.ok || !data.access_token) {
-    throw new Error(data.errorMessage || "Failed to get M-Pesa access token");
+  if (!res.ok || !data?.access_token) {
+    throw new Error(
+      data?.errorMessage ||
+        data?.error ||
+        data?.message ||
+        "Failed to get M-Pesa access token"
+    );
   }
 
   return data.access_token;
@@ -86,7 +109,7 @@ export async function initiateStkPush(params: {
     Password: password,
     Timestamp: timestamp,
     TransactionType: "CustomerPayBillOnline",
-    Amount: params.amount,
+    Amount: Math.round(params.amount),
     PartyA: normalizedPhone,
     PartyB: shortcode,
     PhoneNumber: normalizedPhone,
@@ -94,6 +117,11 @@ export async function initiateStkPush(params: {
     AccountReference: params.accountReference,
     TransactionDesc: params.transactionDesc,
   };
+
+  console.log("M-Pesa STK payload:", {
+    ...payload,
+    Password: "[REDACTED]",
+  });
 
   const res = await fetch(`${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`, {
     method: "POST",
@@ -105,10 +133,24 @@ export async function initiateStkPush(params: {
     cache: "no-store",
   });
 
-  const data = await res.json();
+  const data = await parseJsonSafely(res, "Invalid STK Push response from M-Pesa");
 
   if (!res.ok) {
-    throw new Error(data.errorMessage || data.ResponseDescription || "STK Push failed");
+    throw new Error(
+      data?.errorMessage ||
+        data?.ResponseDescription ||
+        data?.responseDescription ||
+        data?.message ||
+        "STK Push failed"
+    );
+  }
+
+  if (data?.ResponseCode && data.ResponseCode !== "0") {
+    throw new Error(
+      data?.ResponseDescription ||
+        data?.CustomerMessage ||
+        "M-Pesa rejected the STK push request"
+    );
   }
 
   return data;
@@ -145,10 +187,16 @@ export async function queryStkPush(params: {
     cache: "no-store",
   });
 
-  const data = await res.json();
+  const data = await parseJsonSafely(res, "Invalid STK Query response from M-Pesa");
 
   if (!res.ok) {
-    throw new Error(data.errorMessage || data.ResponseDescription || "STK query failed");
+    throw new Error(
+      data?.errorMessage ||
+        data?.ResponseDescription ||
+        data?.responseDescription ||
+        data?.message ||
+        "STK query failed"
+    );
   }
 
   return data;

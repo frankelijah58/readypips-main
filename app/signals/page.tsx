@@ -81,11 +81,9 @@ export default function SignalsPage() {
   
       if (!token) {
         throw new Error("You need to login first.");
-      }
-  
-      if (plan.provider === "mpesa") {
+      }if (plan.provider === "mpesa") {
         const amountKES = convertToKes(plan.price);
-  
+      
         const res = await fetch("/api/mpesa/stkpush", {
           method: "POST",
           headers: {
@@ -102,19 +100,26 @@ export default function SignalsPage() {
           }),
           signal: controller.signal,
         });
-  
-        const data = await res.json();
-  
-        if (!res.ok || !data.success) {
-          throw new Error(data.message || "M-Pesa payment failed");
+      
+        const rawText = await res.text();
+      
+        let data: any = null;
+        try {
+          data = rawText ? JSON.parse(rawText) : null;
+        } catch {
+          throw new Error(rawText || "Server returned an invalid response.");
         }
-  
+      
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.message || "M-Pesa payment failed");
+        }
+      
         toast({
           title: "M-Pesa Prompt Sent",
           description: `Check ${plan.phone} and enter your M-Pesa PIN to complete payment.`,
           duration: 5000,
         });
-  
+      
         return;
       }
   
