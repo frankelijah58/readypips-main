@@ -44,15 +44,15 @@ export default function MpesaPromptModal({
     }
   }, [isOpen, plan?.id, plan?.name]);
 
-  if (!plan) return null;
-
   const amount = useMemo(() => {
+    if (!plan) return 0;
+
     if (typeof plan.kesPrice === "number") return plan.kesPrice;
     if (typeof plan.price === "number") return plan.price;
 
     const parsed = Number(String(plan.price).replace(/[^0-9.]/g, ""));
     return Number.isFinite(parsed) ? parsed : 0;
-  }, [plan.kesPrice, plan.price]);
+  }, [plan]);
 
   const normalizePhone = (value: string) => {
     const cleaned = value.replace(/[^\d+]/g, "").trim();
@@ -109,6 +109,8 @@ export default function MpesaPromptModal({
   };
 
   const isBusy = loading || submitting;
+
+  if (!plan) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>

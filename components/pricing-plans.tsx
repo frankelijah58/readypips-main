@@ -53,12 +53,23 @@ export default function PricingPlans({
     return Math.round(amount * USD_TO_KES);
   };
 
+ 
   const handlePlanAction = (plan: any) => {
-    if (!onPlanSelect) return;
-
-    setSelectedPlanForPayment(plan);
-    setIsModalOpen(true);
-    setIsMpesaPromptOpen(false);
+    try {
+      if (!onPlanSelect) return;
+  
+      const safePlan = {
+        ...plan,
+        id: plan.planId || plan.id || plan.name?.toLowerCase().replace(/\s+/g, ""),
+        kesPrice: convertToKes(plan.price || 0),
+      };
+  
+      setSelectedPlanForPayment(safePlan);
+      setIsMpesaPromptOpen(false);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("handlePlanAction error:", error);
+    }
   };
 
   const handleProviderSelect = async (provider: "whop" | "binance" | "mpesa") => {
@@ -229,16 +240,18 @@ export default function PricingPlans({
         ))}
       </div>
 
-      <PaymentProviderModal
-        isOpen={isModalOpen}
-        loading={loadingState}
-        setLoading={setLoadingState}
-        onClose={() => {
-          if (!loadingState) setIsModalOpen(false);
-        }}
-        plan={selectedPlanForPayment}
-        onSelect={handleProviderSelect}
-      />
+     
+
+<PaymentProviderModal
+  isOpen={isModalOpen}
+  loading={loadingState}
+  setLoading={setLoadingState}
+  onClose={() => {
+    if (!loadingState) setIsModalOpen(false);
+  }}
+  plan={selectedPlanForPayment || null}
+  onSelect={handleProviderSelect}
+/>
 
       <MpesaPromptModal
         isOpen={isMpesaPromptOpen}
