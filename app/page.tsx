@@ -26,13 +26,154 @@ import {
   Target,
 } from "lucide-react";
 import PricingPlans from "@/components/pricing-plans";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  useEffect(() => {
+    document.title =
+      "Ready Pips | Forex Trading, TradingView Analysis, MT5 Strategy & Crypto Insights";
+
+    const setMeta = (
+      name: string,
+      content: string,
+      attr: "name" | "property" = "name"
+    ) => {
+      let tag = document.head.querySelector(`meta[${attr}="${name}"]`);
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute(attr, name);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute("content", content);
+    };
+
+    const setLink = (rel: string, href: string) => {
+      let tag = document.head.querySelector(`link[rel="${rel}"]`);
+      if (!tag) {
+        tag = document.createElement("link");
+        tag.setAttribute("rel", rel);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute("href", href);
+    };
+
+    setMeta(
+      "description",
+      "Ready Pips helps traders learn forex, analyze TradingView charts, improve MT5 execution, understand trading indicators, and trade forex and crypto with structured market insights and risk management."
+    );
+
+    setMeta(
+      "keywords",
+      "Ready Pips, BabyPips, TradingView, MT5, MetaTrader 5, trading indicator, best strategy, Swift Algo, LuxAlgo, traders, learn trading, learn forex, forex trading, crypto trading, forex signals, trading signals"
+    );
+
+    setMeta("robots", "index, follow");
+    setMeta(
+      "og:title",
+      "Ready Pips | Forex Trading, TradingView Analysis, MT5 Strategy & Crypto Insights",
+      "property"
+    );
+    setMeta(
+      "og:description",
+      "Smart forex and crypto trading insights with TradingView analysis, MT5 support, trading indicators, and structured strategy guidance.",
+      "property"
+    );
+    setMeta("og:type", "website", "property");
+    setMeta("og:url", "https://readypips.com", "property");
+
+    setMeta(
+      "twitter:title",
+      "Ready Pips | Forex Trading, TradingView Analysis, MT5 Strategy & Crypto Insights"
+    );
+    setMeta(
+      "twitter:description",
+      "Smart forex and crypto trading insights with TradingView analysis, MT5 support, trading indicators, and structured strategy guidance."
+    );
+    setMeta("twitter:card", "summary_large_image");
+
+    setLink("canonical", "https://readypips.com");
+  }, []);
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://readypips.com/#organization",
+        name: "Ready Pips",
+        url: "https://readypips.com",
+        logo: "https://readypips.com/logo-dark.png",
+        description:
+          "Ready Pips is a smart trading platform that helps traders analyze forex and crypto markets using structured strategy, TradingView-aligned market analysis, trading indicators, and risk management."
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://readypips.com/#website",
+        url: "https://readypips.com",
+        name: "Ready Pips",
+        description:
+          "Forex trading, crypto trading, TradingView analysis, MT5 strategy support, trader education, and trading indicators."
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://readypips.com/#app",
+        name: "Ready Pips",
+        applicationCategory: "FinanceApplication",
+        operatingSystem: "Web",
+        url: "https://readypips.com",
+        description:
+          "Ready Pips helps traders learn forex trading, analyze TradingView charts, support MT5 strategies, use trading indicators, and improve forex and crypto decision-making.",
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD"
+        },
+        featureList: [
+          "Forex trading analysis",
+          "Crypto trading insights",
+          "TradingView chart support",
+          "MT5 strategy support",
+          "Trading indicators",
+          "Risk management structure",
+          "Trader education",
+          "Signal-based market analysis"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "What is Ready Pips?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Ready Pips is a trading platform that helps traders analyze forex and crypto markets using TradingView-aligned analysis, structured signal workflows, and risk management support."
+            }
+          },
+          {
+            "@type": "Question",
+            name: "Can Ready Pips help traders using TradingView and MT5?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Yes. Ready Pips is designed for traders who use TradingView for analysis and MT5 for execution and strategy workflows."
+            }
+          },
+          {
+            "@type": "Question",
+            name: "Does Ready Pips help people learn forex trading?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Ready Pips helps traders learn forex with clearer market analysis, indicator support, and structured risk management."
+            }
+          }
+        ]
+      }
+    ]
+  };
 
   const handlePricingPlanSelect = async (plan: any) => {
     try {
@@ -119,7 +260,15 @@ export default function HomePage() {
   // };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
+    
+<div className="min-h-screen bg-white dark:bg-black">
+  <script
+    type="application/ld+json"
+    dangerouslySetInnerHTML={{
+      __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+    }}
+  />
+
       {/* Navigation */}
       <Navigation />
 
@@ -469,6 +618,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      
+
       {/* CTA Section - with trading3.jpg background */}
       <section
         className="py-20 px-4 relative overflow-hidden"
@@ -511,7 +662,21 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <section className="py-16 px-4 bg-white dark:bg-black">
+  <div className="container mx-auto max-w-5xl">
+    <h2 className="text-3xl md:text-4xl font-bold mb-6 text-black dark:text-white">
+      Forex Trading, TradingView Analysis, MT5 Strategy and Crypto Insights
+    </h2>
 
+    <p className="text-lg text-gray-700 dark:text-gray-300 leading-8 mb-8">
+      Ready Pips is built for traders who want a smarter way to approach forex trading and
+      crypto trading. The platform supports traders using TradingView, MT5, trading indicators,
+      and structured risk management to make market analysis more practical and disciplined.
+    </p>
+
+    
+  </div>
+</section>
       {/* Footer */}
       <footer className="py-12 px-4 bg-gray-900 text-white">
         <div className="container mx-auto">

@@ -14,55 +14,54 @@ export default function FAQsPage() {
     {
       question: "What are trading signals?",
       answer:
-        "Trading signals are alerts that suggest when to buy or sell a particular financial asset. Our AI-powered signals analyze market data and patterns to provide you with accurate trading recommendations.",
+        "Trading signals are alerts that suggest when to buy or sell forex or crypto assets. Ready Pips uses TradingView-aligned analysis, market structure, and trading indicators to generate real-time signals for traders.",
     },
     {
       question: "How accurate are the signals?",
       answer:
-        "Our trading signals have demonstrated up to 93% accuracy based on historical data. However, no trading system is 100% accurate, and past performance does not guarantee future results. We recommend using our signals as one tool among many in your trading strategy.",
+        "Ready Pips signals are designed for high-probability setups based on historical data and structured strategy. However, no trading system is 100% accurate, and traders should always apply proper risk management.",
     },
     {
       question: "How do I receive signals?",
-      answer: "Signals are automatically generated on chart in real-time.",
-        // "Signals are delivered through multiple channels depending on your subscription plan: email notifications, in-app alerts, and WhatsApp messages for premium subscribers.",
+      answer:
+        "Signals are generated in real-time and displayed directly on charts. Traders can monitor setups, entry points, stop loss, and take profit levels instantly.",
     },
     {
       question: "Can I use the platform on mobile?",
       answer:
-        "Yes! Ready Pips is fully mobile responsive and works seamlessly on smartphones and tablets. You can access all features and receive notifications on the go.",
+        "Yes, Ready Pips is fully responsive and works on mobile devices. Traders can access TradingView-style analysis and signals from anywhere.",
     },
     {
       question: "What payment methods do you accept?",
       answer:
-        "We accept multiple payment methods including Stripe, Paystack, and Pesapal. Your payment information is securely processed and encrypted.",
+        "We support multiple payment options including M-Pesa, Paystack, Pesapal, and other digital payment systems for global access.",
     },
     {
       question: "Can I cancel my subscription anytime?",
       answer:
-        "Yes, you can cancel your subscription at any time. There are no long-term contracts or hidden fees. Your access will continue until the end of your billing period.",
+        "Yes, subscriptions can be cancelled at any time. There are no long-term contracts, and access continues until the billing period ends.",
     },
     {
       question: "Is my personal data safe?",
       answer:
-        "We take data security very seriously. All personal information is encrypted and stored securely. We comply with international data protection regulations including GDPR.",
+        "Yes. All user data is encrypted and securely stored. Ready Pips follows modern data protection standards to ensure user safety.",
     },
     {
       question: "Do you offer a free trial?",
       answer:
-        "Yes, we offer a limited free trial to new users so you can experience the platform before committing to a subscription.",
+        "Yes, new users can access a limited trial to explore the platform, test trading signals, and understand how the system works.",
     },
     {
-      question: "What assets can I trade with your signals?",
+      question: "What assets can I trade?",
       answer:
-        "Our signals cover forex pairs, cryptocurrencies, and stocks. We continuously expand our coverage to include new trading instruments.",
+        "Ready Pips supports forex trading, crypto trading, and multiple global markets. Traders can analyze pairs and assets using structured signals.",
     },
     {
-      question: "How often are new signals generated?",
+      question: "How often are signals generated?",
       answer:
-        "Signals are generated continuously throughout market hours. Depending on your subscription plan, you can receive up to 35+ signals per day.",
+        "Signals are generated continuously during market hours based on live analysis. Frequency depends on market conditions and strategy alignment.",
     },
   ];
-
   return (
     <>
       <Navigation />
