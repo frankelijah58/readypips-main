@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       userEmail = user?.email || "";
     }
 
-    const numericAmount = 10;
+    const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return NextResponse.json(
         {

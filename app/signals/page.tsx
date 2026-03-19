@@ -20,7 +20,7 @@ export default function SignalsPage() {
   const [subscriptionType, setSubscriptionType] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<"whop" | "binance" | "mpesa">("whop");
   const { toast } = useToast();
-
+  const [checkingPayment, setCheckingPayment] = useState(false);
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
