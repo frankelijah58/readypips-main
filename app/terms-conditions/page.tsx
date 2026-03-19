@@ -2,7 +2,7 @@
 
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
-
+import { Instagram } from "lucide-react";
 export default function TermsConditionsPage() {
   return (
     <>
@@ -122,10 +122,31 @@ export default function TermsConditionsPage() {
             <p>
               If you have any questions about these Terms and Conditions, please contact us at:
             </p>
-            <ul className="list-disc list-inside space-y-2 mt-4">
-              <li>Instagram: Readypips</li>
-              <li>Support: Enter Your query on the support page</li>
-            </ul>
+            <ul className="space-y-3 mt-4">
+  <li className="flex items-center gap-2">
+    <Instagram className="h-4 w-4 text-pink-500" />
+
+    <a
+      href="https://instagram.com/readypips"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-600 hover:underline font-medium"
+    >
+      Instagram: @readypips
+    </a>
+  </li>
+
+  <li className="flex items-center gap-2">
+    <span className="text-gray-500">💬</span>
+
+    <a
+      href="/support"
+      className="text-blue-600 hover:underline font-medium"
+    >
+      Support: Enter your query here
+    </a>
+  </li>
+</ul>
           </div>
 
           <div className="bg-green-50 dark:bg-green-900 p-6 rounded-lg">

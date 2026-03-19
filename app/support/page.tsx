@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, MessageSquare, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { Instagram } from "lucide-react";
 
 interface SupportFormData {
   name: string;
@@ -168,7 +169,40 @@ export default function SupportPage() {
                     </p>
                   </div>
                 </CardContent>
+                
               </Card>
+              <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+  <CardContent className="pt-6 flex items-start space-x-4">
+    <Instagram className="w-6 h-6 text-pink-500 flex-shrink-0 mt-1" />
+    <div>
+      <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
+        Instagram
+      </h3>
+
+      <p className="text-gray-600 dark:text-gray-400">
+        Follow us on{' '}
+        <a
+          href="https://instagram.com/readypips"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-pink-500 hover:text-pink-600 dark:text-pink-400 font-medium"
+        >
+          @readypips
+        </a>
+      </p>
+
+      {/* Optional Button (high conversion) */}
+      <a
+        href="https://instagram.com/readypips"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block mt-3 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition"
+      >
+        Visit Instagram
+      </a>
+    </div>
+  </CardContent>
+</Card>
             </div>
 
             {/* Support Form */}
