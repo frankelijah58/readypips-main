@@ -3,6 +3,7 @@ import { generateReference, initiateStkPush, normalizePhoneNumber } from "@/lib/
 import { PLANS } from "@/lib/plans";
 import { getDatabase } from "@/lib/mongodb";
 import { verifyToken, findUserById } from "@/lib/auth";
+import { sendSms } from "@/lib/sms";
 
 export async function POST(req: NextRequest) {
   try {
@@ -93,6 +94,7 @@ export async function POST(req: NextRequest) {
       currency: "KES",
       phoneNumber: normalizedPhone,
       status: "pending",
+      smsPromptSent: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -122,6 +124,45 @@ export async function POST(req: NextRequest) {
         },
       }
     );
+
+    // Send SMS only after Safaricom accepts the STK request
+    try {
+      if (String(stk.ResponseCode) === "0") {
+        const smsResult = await sendSms({
+          mobile: normalizedPhone,
+          message: `ReadyPips: We have sent an M-Pesa prompt for KES ${Math.round(
+            numericAmount
+          ).toLocaleString()}. Enter your PIN to complete payment for ${
+            planName || planConfig.name
+          }. Ref: ${accountReference}.`,
+        });
+
+        await db.collection("payment_intents").updateOne(
+          { reference: accountReference },
+          {
+            $set: {
+              smsPromptSent: smsResult.ok,
+              smsPromptResponse: smsResult.data,
+              smsPromptSentAt: new Date(),
+              updatedAt: new Date(),
+            },
+          }
+        );
+      }
+    } catch (smsError: any) {
+      console.error("Prompt SMS error:", smsError);
+
+      await db.collection("payment_intents").updateOne(
+        { reference: accountReference },
+        {
+          $set: {
+            smsPromptSent: false,
+            smsPromptError: smsError?.message || "Failed to send prompt SMS",
+            updatedAt: new Date(),
+          },
+        }
+      );
+    }
 
     return NextResponse.json({
       success: true,

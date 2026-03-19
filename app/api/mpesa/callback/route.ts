@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { sendSms } from "@/lib/sms";
 
 function extractCallbackItem(items: any[], name: string) {
   return items?.find((item) => item.Name === name)?.Value ?? null;
@@ -113,7 +114,6 @@ export async function POST(req: NextRequest) {
       const userId = String(paymentIntent.userId || "");
       const durationDays = Number(paymentIntent.duration || 0);
 
-      // decline other pending intents for same user
       await db.collection("payment_intents").updateMany(
         {
           userId: paymentIntent.userId,
@@ -129,7 +129,6 @@ export async function POST(req: NextRequest) {
         }
       );
 
-      // stacking logic
       const existingSub = await db.collection("subscriptions").findOne({
         userId: paymentIntent.userId,
         status: "active",
@@ -146,7 +145,6 @@ export async function POST(req: NextRequest) {
         endDate.setDate(endDate.getDate() + durationDays);
       }
 
-      // update subscriptions collection
       await db.collection("subscriptions").updateOne(
         { userId: paymentIntent.userId },
         {
@@ -199,6 +197,28 @@ export async function POST(req: NextRequest) {
             },
           } as any
         );
+      }
+
+      try {
+        if (finalPhone) {
+          await sendSms({
+            mobile: String(finalPhone),
+            message: `ReadyPips: Payment of KES ${Number(finalAmount || 0).toLocaleString()} received successfully. Receipt ${mpesaReceiptNumber || "-"}. Your ${paymentIntent.planName || "subscription"} access is now active.`,
+          });
+        }
+      } catch (smsError) {
+        console.error("Success SMS error:", smsError);
+      }
+    } else {
+      try {
+        if (finalPhone) {
+          await sendSms({
+            mobile: String(finalPhone),
+            message: `ReadyPips: Your M-Pesa payment was not completed. ${ResultDesc || "Please try again."}`,
+          });
+        }
+      } catch (smsError) {
+        console.error("Failure SMS error:", smsError);
       }
     }
 
