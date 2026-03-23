@@ -2,10 +2,10 @@ import nodemailer from 'nodemailer';
 //refresh dotenv config
 // Force hardcoded Hostinger settings since .env is not loading properly
 const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || 'mail.smtp2go.com',
-  port: Number(process.env.SMTP_PORT) || 2525,
+  host: process.env.SMTP_HOST || 'smtp.hostinger.com',
+  port: Number(process.env.SMTP_PORT) || 587,
   user: process.env.SMTP_USER || 'no-reply@readypips.com',
-  pass: process.env.EMAIL_PASSWORD || '3x11GQY3206U2d3s',
+  pass: process.env.EMAIL_PASSWORD || '',
 };
 
 // console.log('📧 [Email Service] SMTP Configuration (HARDCODED):');

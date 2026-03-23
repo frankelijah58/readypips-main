@@ -30,11 +30,10 @@ interface EmailOptions {
 
 // Create nodemailer transporter
 const getEmailTransporter = () => {
-  const host = process.env.SMTP_HOST || "mail.smtp2go.com";
-  const port = parseInt(process.env.SMTP_PORT || "2525");
-  const user = process.env.SMTP_USER || "no-reply@readypips.com";
-  const pass = process.env.SMTP_PASS || "3x11GQY3206U2d3s";
-
+  const host = process.env.SMTP_HOST || "smtp.hostinger.com";
+  const port = parseInt(process.env.SMTP_PORT || "587");
+  const user = process.env.SMTP_USER || "";
+  const pass = process.env.SMTP_PASS || "";
 
   // console.log('📧 [Email Notifications] SMTP Configuration:');
   // console.log('  Host:', host);
