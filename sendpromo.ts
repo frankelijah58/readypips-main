@@ -59,9 +59,9 @@ async function sendPromo() {
     const users = testMode
       ? [
           {
-            email: "frankelijah58@gmail.com",
-            firstName: "Frank",
-            lastName: "Elijah",
+            email: "codeppai@gmail.com",
+            firstName: "Ken",
+            lastName: "Kuria",
           },
         ]
       : await db
