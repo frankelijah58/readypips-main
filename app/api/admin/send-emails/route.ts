@@ -20,10 +20,10 @@ if (!jwtSecret) {
 }
 
 if (
-  !process.env.SMTP_HOST ||
-  !process.env.SMTP_PORT ||
-  !process.env.SMTP_USER ||
-  !process.env.SMTP_PASS ||
+  !process.env.MAIL_SMTP_HOST ||
+  !process.env.MAIL_SMTP_PORT ||
+  !process.env.MAIL_SMTP_USER ||
+  !process.env.MAIL_SMTP_PASS ||
   !process.env.SMTP_FROM_EMAIL
 ) {
   throw new Error("SMTP variables are missing");
@@ -64,7 +64,7 @@ function getHtmlTemplate(params: {
     process.env.EMAIL_LOGO_URL || "https://readypips.com/logo.png";
 
   const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(
-    params.email
+    params.email,
   )}`;
 
   const formattedMessage = params.message
@@ -73,8 +73,8 @@ function getHtmlTemplate(params: {
     .map(
       (line) =>
         `<p style="margin:0 0 16px;font-size:15px;line-height:1.8;color:#334155;">${escapeHtml(
-          line
-        )}</p>`
+          line,
+        )}</p>`,
     )
     .join("");
 
@@ -156,14 +156,14 @@ export async function POST(req: NextRequest) {
     if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json(
         { message: "Unauthorized: missing token" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
 
-  /*  if (!decoded || decoded.role !== "admin") {
+    /*  if (!decoded || decoded.role !== "admin") {
       return NextResponse.json(
         { message: "Unauthorized: admin access required" },
         { status: 403 }
@@ -180,14 +180,14 @@ export async function POST(req: NextRequest) {
     if (!subject) {
       return NextResponse.json(
         { message: "Subject is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!message) {
       return NextResponse.json(
         { message: "Message is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
       if (!emails.length) {
         return NextResponse.json(
           { message: "Please provide at least one recipient email" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -239,7 +239,7 @@ export async function POST(req: NextRequest) {
         .toArray();
 
       const foundEmails = new Set(
-        users.map((u) => (u.email || "").toLowerCase()).filter(Boolean)
+        users.map((u) => (u.email || "").toLowerCase()).filter(Boolean),
       );
 
       const missingEmails = emails.filter((email) => !foundEmails.has(email));
@@ -259,17 +259,17 @@ export async function POST(req: NextRequest) {
     if (!recipients.length) {
       return NextResponse.json(
         { message: "No recipients found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: Number(process.env.SMTP_PORT) === 465,
+      host: process.env.MAIL_SMTP_HOST,
+      port: Number(process.env.MAIL_SMTP_PORT),
+      secure: Number(process.env.MAIL_SMTP_PORT) === 465,
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: process.env.MAIL_SMTP_USER,
+        pass: process.env.MAIL_SMTP_PASS,
       },
     });
 
@@ -329,7 +329,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     return NextResponse.json(
       { message: error.message || "Server error" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     if (connected) {

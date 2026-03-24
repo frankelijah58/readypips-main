@@ -7,21 +7,30 @@ import { verifyToken, findUserById } from "@/lib/auth"; // Add findUserById
 // Binance configuration
 const BINANCE_PAY_CERT = process.env.BINANCE_PAY_CERT; // API Key
 const BINANCE_PAY_SECRET = process.env.BINANCE_PAY_SECRET; // Secret Key
+const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY;
+const MPESA_PASSKEY = process.env.MPESA_PASSKEY;
+const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET;
+const MPESA_SHORTCODE = process.env.MPESA_SHORTCODE;
+const MPESA_CALLBACK_URL = process.env.MPESA_CALLBACK_URL;
+const MPESA_ENV = process.env.MPESA_ENV;
 
 export async function POST(req: NextRequest) {
   try {
     const { planId, provider } = await req.json();
 
-    const planConfig = PLANS.find(p => p.id === planId);
-    if (!planConfig) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    const planConfig = PLANS.find((p) => p.id === planId);
+    if (!planConfig)
+      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
 
     const authHeader = req.headers.get("authorization");
     const token = authHeader?.substring(7);
-    
-    if (!token) return NextResponse.json({ error: "No token provided" }, { status: 401 });
-    
+
+    if (!token)
+      return NextResponse.json({ error: "No token provided" }, { status: 401 });
+
     const decoded = verifyToken(token);
-    if (!decoded) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!decoded)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     // Fallback: If email isn't in token, fetch from DB
     let userEmail = decoded.email;
@@ -45,29 +54,32 @@ export async function POST(req: NextRequest) {
     });
 
     if (provider === "whop") {
-      // 1. Fetch the Plan ID from your plan config 
+      // 1. Fetch the Plan ID from your plan config
       // You need to find the plan_XXXX ID from your Whop Dashboard -> Checkout Links
-      const planConfig = PLANS.find(p => p.id === planId);
+      const planConfig = PLANS.find((p) => p.id === planId);
       const whopPlanId = planConfig?.whopPlanId; // Ensure this is in your plans.ts
 
       // 2. Request a session from Whop
-      const response = await fetch("https://api.whop.com/api/v2/checkout_sessions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.WHOP_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          plan_id: whopPlanId, 
-          email: decoded.email, // Pre-fills for the user
-          metadata: { 
-            custom_id: reference // This comes back in the webhook later
+      const response = await fetch(
+        "https://api.whop.com/api/v2/checkout_sessions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.WHOP_API_KEY}`,
+            "Content-Type": "application/json",
           },
-          success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing/success`,
-          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing/cancel`,
-          // redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?status=success`
-        }),
-      });
+          body: JSON.stringify({
+            plan_id: whopPlanId,
+            email: decoded.email, // Pre-fills for the user
+            metadata: {
+              custom_id: reference, // This comes back in the webhook later
+            },
+            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing/success`,
+            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing/cancel`,
+            // redirect_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?status=success`
+          }),
+        },
+      );
 
       const session = await response.json();
 
@@ -81,20 +93,20 @@ export async function POST(req: NextRequest) {
       console.log("Whop Checkout URL:", session.purchase_url);
       return NextResponse.json({ checkoutUrl: session.purchase_url });
     }
-    
+
     // if (provider === "whop") {
     //   const whopUrl = new URL(`https://whop.com/checkout/${process.env.NEXT_PUBLIC_WHOP_APP_ID}`);
     //   whopUrl.searchParams.append("custom_id", reference);
     //   // Pre-fill email so the user doesn't have to type it again
-    //   if (userEmail) whopUrl.searchParams.append("email", userEmail); 
+    //   if (userEmail) whopUrl.searchParams.append("email", userEmail);
 
     //   return NextResponse.json({ checkoutUrl: whopUrl.toString() });
     // }
 
-     
     if (provider === "binance") {
-      const endpoint = "https://bpay.binanceapi.com/binancepay/openapi/v2/order";
-  
+      const endpoint =
+        "https://bpay.binanceapi.com/binancepay/openapi/v2/order";
+
       // Binance requires a 32-character random string for the Nonce
       const nonce = crypto.randomBytes(16).toString("hex"); // 32 hex chars
       const timestamp = Date.now().toString();
@@ -116,10 +128,10 @@ export async function POST(req: NextRequest) {
       };
 
       const bodyString = JSON.stringify(orderBody);
-      
+
       // Signature Payload format must be exact: timestamp + \n + nonce + \n + body + \n
       const payload = `${timestamp}\n${nonce}\n${bodyString}\n`;
-      
+
       const signature = crypto
         .createHmac("sha512", process.env.BINANCE_PAY_SECRET!)
         .update(payload)
@@ -159,21 +171,179 @@ export async function POST(req: NextRequest) {
         throw new Error("Binance Order Creation Failed");
       }
     }
-    
 
     if (provider === "1binancev1") {
       return NextResponse.json({
-        checkoutUrl: `https://pay.binance.com/en/checkout?merchantTradeNo=${reference}&totalFee=${planConfig.usd}&currency=USDT&terminalType=WEB`
+        checkoutUrl: `https://pay.binance.com/en/checkout?merchantTradeNo=${reference}&totalFee=${planConfig.usd}&currency=USDT&terminalType=WEB`,
+      });
+    }
+
+    if (provider === "mpesa") {
+      const body = await req.json();
+      const phone = body.phone;
+
+      if (!phone) {
+        return NextResponse.json(
+          { error: "Phone number required" },
+          { status: 400 },
+        );
+      }
+
+      // ✅ Normalize phone properly
+      const formattedPhone = phone.startsWith("0")
+        ? "254" + phone.substring(1)
+        : phone.startsWith("254")
+          ? phone
+          : `254${phone}`;
+
+      const amount = Math.round(planConfig.kes); // ✅ NEVER trust frontend
+
+      // 🛑 Prevent duplicate STK spam (2 min window)
+      const existing = await db.collection("payment_intents").findOne({
+        userId: decoded.userId,
+        provider: "mpesa",
+        status: "pending",
+        createdAt: { $gt: new Date(Date.now() - 2 * 60 * 1000) },
+      });
+
+      if (existing) {
+        return NextResponse.json({
+          error: "You already have a pending payment. Check your phone.",
+        });
+      }
+
+      // 1️⃣ Generate OAuth Token
+      const auth = Buffer.from(
+        `${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`,
+      ).toString("base64");
+
+      const baseUrl = "https://api.safaricom.co.ke";
+      // MPESA_ENV === "production"
+      //   ? "https://api.safaricom.co.ke"
+      //   : "https://sandbox.safaricom.co.ke";
+
+      const tokenRes = await fetch(
+        `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Basic ${auth}`,
+          },
+        },
+      );
+
+      const tokenData = await tokenRes.json();
+      const accessToken = tokenData.access_token;
+
+      if (!accessToken) {
+        console.error("M-Pesa Token Error:", tokenData);
+        throw new Error("Failed to get M-Pesa token");
+      }
+
+      // 2️⃣ Generate Timestamp & Password
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[-:TZ.]/g, "")
+        .slice(0, 14);
+
+      const password = Buffer.from(
+        `${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`,
+      ).toString("base64");
+
+      // 3️⃣ STK PUSH (with timeout protection)
+      const stkResponse = await Promise.race([
+        fetch(`${baseUrl}/mpesa/stkpush/v1/processrequest`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            BusinessShortCode: MPESA_SHORTCODE,
+            Password: password,
+            Timestamp: timestamp,
+            TransactionType: "CustomerPayBillOnline",
+            Amount: amount,
+            PartyA: formattedPhone,
+            PartyB: MPESA_SHORTCODE,
+            PhoneNumber: formattedPhone,
+            CallBackURL: MPESA_CALLBACK_URL,
+            AccountReference: reference,
+            TransactionDesc: `Subscription ${planConfig.name}`,
+          }),
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("STK timeout")), 15000),
+        ),
+      ]);
+
+      const stkData = await (stkResponse as Response).json();
+
+      console.log("M-Pesa STK Response:", stkData);
+
+      if (stkData.ResponseCode !== "0") {
+        console.error("M-Pesa STK Error:", stkData);
+
+        await db.collection("payment_intents").updateOne(
+          { reference },
+          {
+            $set: {
+              status: "failed",
+              failureReason: stkData.ResponseDescription,
+              rawStkResponse: stkData,
+              updatedAt: new Date(),
+            },
+          },
+        );
+
+        throw new Error(stkData.ResponseDescription || "STK Push failed");
+      }
+
+      // ✅ Save STK identifiers
+      await db.collection("payment_intents").updateOne(
+        { reference },
+        {
+          $set: {
+            provider: "mpesa",
+            phone: formattedPhone,
+            planId,
+            amount,
+            paymentIntentId: reference,
+            checkoutRequestID: stkData.CheckoutRequestID,
+            merchantRequestID: stkData.MerchantRequestID,
+            responseCode: stkData.ResponseCode,
+            responseDescription: stkData.ResponseDescription,
+            customerMessage: stkData.CustomerMessage,
+            rawStkResponse: stkData,
+            updatedAt: new Date(),
+          },
+        },
+      );
+
+      // 📲 Optional: SMS hook (recommended)
+      try {
+        // await sendSms({...})
+      } catch (e) {
+        console.error("SMS error:", e);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: stkData.CustomerMessage || "STK Push sent",
+        data: {
+          reference,
+          checkoutRequestID: stkData.CheckoutRequestID,
+        },
       });
     }
 
     return NextResponse.json({ error: "Invalid provider" }, { status: 400 });
-
   } catch (error) {
     console.error("Payment API Error:", error);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
+
 // import crypto from "crypto";
 // import { PLANS } from "@/lib/plans";
 // import { getDatabase } from "@/lib/mongodb";
@@ -209,13 +379,13 @@ export async function POST(req: NextRequest) {
 //     });
 
 //     if (provider === "whop") {
-//       // Instead of a hardcoded product ID, we use the Whop Checkout link 
+//       // Instead of a hardcoded product ID, we use the Whop Checkout link
 //       // with your App ID and pass user details as query params
 //       const whopUrl = new URL(`https://whop.com/checkout/${process.env.NEXT_PUBLIC_WHOP_APP_ID}`);
 //       whopUrl.searchParams.append("custom_id", reference);
 //       whopUrl.searchParams.append("email", decoded.email);
 //       // If your Whop plans are setup, you can map them here:
-//       // whopUrl.searchParams.append("plan", planId); 
+//       // whopUrl.searchParams.append("plan", planId);
 
 //       return NextResponse.json({ checkoutUrl: whopUrl.toString() });
 //     }

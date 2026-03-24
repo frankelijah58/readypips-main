@@ -1,11 +1,11 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 //refresh dotenv config
 // Force hardcoded Hostinger settings since .env is not loading properly
 const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || 'smtp.hostinger.com',
+  host: process.env.SMTP_HOST || "smtp.hostinger.com",
   port: Number(process.env.SMTP_PORT) || 587,
-  user: process.env.SMTP_USER || 'no-reply@readypips.com',
-  pass: process.env.EMAIL_PASSWORD || '',
+  user: process.env.SMTP_USER || "no-reply@readypips.com",
+  pass: process.env.EMAIL_PASSWORD || "",
 };
 
 // console.log('📧 [Email Service] SMTP Configuration (HARDCODED):');
@@ -15,23 +15,52 @@ const SMTP_CONFIG = {
 // console.log('  Pass: ***SET***');
 
 // Email configuration
+// const transporter = nodemailer.createTransport({
+//   host: SMTP_CONFIG.host,
+//   port: SMTP_CONFIG.port,
+//   secure: false, // Use TLS for port 587
+//   auth: {
+//     user: SMTP_CONFIG.user,
+//     pass: SMTP_CONFIG.pass,
+//   },
+//   tls: {
+//     rejectUnauthorized: false, // Accept self-signed certificates
+//   },
+// });
+
+// const transporter = nodemailer.createTransport({
+//   host: process.env.SMTP_HOST,
+//   port: Number(process.env.SMTP_PORT),
+//   secure: Number(process.env.SMTP_PORT) === 465,
+//   auth: {
+//     user: process.env.SMTP_USER,
+//     pass: process.env.SMTP_PASS,
+//   },
+// });
+
+console.log("Checking User:", process.env.SMTP_USER);
+console.log("Password Length:", process.env.SMTP_PASS);
+
 const transporter = nodemailer.createTransport({
-  host: SMTP_CONFIG.host,
-  port: SMTP_CONFIG.port,
-  secure: false, // Use TLS for port 587
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  // true for 465, false for other ports
+  secure: Number(process.env.SMTP_PORT) === 465,
   auth: {
-    user: SMTP_CONFIG.user,
-    pass: SMTP_CONFIG.pass,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
+  // Add this to handle Hostinger's certificate requirements
   tls: {
-    rejectUnauthorized: false // Accept self-signed certificates
-  }
+    rejectUnauthorized: false,
+    // ciphers: "SSLv3",
+  },
 });
 
 // Email templates
 export const emailTemplates = {
   emailVerification: (firstName: string, verificationUrl: string) => ({
-    subject: 'Verify Your Email - Ready Pips',
+    subject: "Verify Your Email - Ready Pips",
     html: `
       <!DOCTYPE html>
       <html>
@@ -82,7 +111,7 @@ export const emailTemplates = {
   }),
 
   passwordReset: (firstName: string, resetUrl: string) => ({
-    subject: 'Reset Your Password - Ready Pips',
+    subject: "Reset Your Password - Ready Pips",
     html: `
       <!DOCTYPE html>
       <html>
@@ -136,24 +165,41 @@ export const emailTemplates = {
 };
 
 // Send email function
-export const sendEmail = async ({ to, subject, html }: { to: string; subject: string; html: string }) => {
+export const sendEmail = async ({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}) => {
   try {
+    if (
+      !process.env.SMTP_HOST ||
+      !process.env.SMTP_PORT ||
+      !process.env.SMTP_USER ||
+      !process.env.SMTP_PASS ||
+      !process.env.SMTP_FROM_EMAIL
+    ) {
+      throw new Error("SMTP variables are missing in .env.local");
+    }
 
-    const fromName = process.env.SMTP_FROM_NAME || 'Ready Pips';
-    const fromEmail = process.env.SMTP_FROM_EMAIL || 'no-reply@readypips.com';
-  
+    const fromName = process.env.SMTP_FROM_NAME || "Ready Pips";
+    const fromEmail = process.env.SMTP_FROM_EMAIL || "no-reply@readypips.com";
+
     // console.log('📧 [Email Service] Preparing to send email...');
     // console.log('  To:', to);
     // console.log('  From Name:', fromName);
     // console.log('  From Email:', fromEmail);
     // console.log('  Subject:', subject);
-    
+
     // console.log('📧 [Email Service] Transporter config being used:');
     // console.log('  Host:', SMTP_CONFIG.host);
     // console.log('  Port:', SMTP_CONFIG.port);
     // console.log('  User:', SMTP_CONFIG.user);
     // console.log('  Pass:', '***17 chars***');
-    
+
     const mailOptions = {
       from: `${fromName} <${fromEmail}>`,
       to,
@@ -167,13 +213,13 @@ export const sendEmail = async ({ to, subject, html }: { to: string; subject: st
     // console.log('✅ Message ID:', result.messageId);
     return true;
   } catch (error: any) {
-    console.error('❌ Email sending failed:', error);
-    console.error('❌ Error details:', {
+    console.error("❌ Email sending failed:", error);
+    console.error("❌ Error details:", {
       code: error.code,
       response: error.response,
       responseCode: error.responseCode,
       command: error.command,
-      message: error.message
+      message: error.message,
     });
     return false;
   }

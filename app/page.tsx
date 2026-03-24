@@ -175,7 +175,128 @@ export default function HomePage() {
     ]
   };
 
-  const handlePricingPlanSelect = async (plan: any) => {
+  const USD_TO_KES = 130;
+
+  const convertToKes = (price: string | number) => {
+    const amount =
+      typeof price === "number"
+        ? price
+        : Number(String(price).replace(/[^0-9.]/g, ""));
+    return Math.round(amount * USD_TO_KES);
+  };
+
+  const handlePlanSelect = async (plan: {
+    planId: string;
+    name: string;
+    price: string;
+    duration: number;
+    provider?: "whop" | "binance" | "mpesa";
+    phone?: string;
+  }) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+  
+    try {
+      setLoading(true);
+  
+      const token = localStorage.getItem("token");
+  
+      if (!token) {
+        throw new Error("You need to login first.");
+      }if (plan.provider === "mpesa") {
+        const amountKES = convertToKes(plan.price);
+      
+        const res = await fetch("/api/mpesa/stkpush", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            phoneNumber: plan.phone,
+            amount: amountKES,
+            planId: plan.planId,
+            userId: user?._id,
+            duration: plan.duration,
+            planName: plan.name,
+          }),
+          signal: controller.signal,
+        });
+      
+        const rawText = await res.text();
+      
+        let data: any = null;
+        try {
+          data = rawText ? JSON.parse(rawText) : null;
+        } catch {
+          throw new Error(rawText || "Server returned an invalid response.");
+        }
+      
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.message || "M-Pesa payment failed");
+        }
+      
+        toast({
+          title: "M-Pesa Prompt Sent",
+          description: `Check ${plan.phone} and enter your M-Pesa PIN to complete payment.`,
+          duration: 5000,
+        });
+      
+        return;
+      }
+  
+      const res = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          planId: plan.planId,
+          provider: plan.provider,
+          userId: user?._id,
+        }),
+        signal: controller.signal,
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        throw new Error(data.error || "Payment failed");
+      }
+  
+      if (data.checkoutUrl) {
+        toast({
+          title: "Redirecting to Payment Provider",
+          description: `You are being redirected to ${plan.provider} to complete your purchase.`,
+          duration: 5000,
+        });
+  
+        window.location.href = data.checkoutUrl;
+      }
+    } catch (err: any) {
+      console.error(err);
+  
+      const message =
+        err?.name === "AbortError"
+          ? "The request timed out. Please try again."
+          : err.message || "Unable to start payment. Please try again.";
+  
+      toast({
+        title: "Payment Error",
+        description: message,
+        duration: 5000,
+        variant: "destructive",
+      });
+  
+      throw new Error(message);
+    } finally {
+      clearTimeout(timeout);
+      setLoading(false);
+    }
+  };
+
+  const handlePricingPlanSelectV1 = async (plan: any) => {
     try {
       setLoading(true);
       
@@ -614,11 +735,9 @@ export default function HomePage() {
             </p> */}
           </div>
 
-          <PricingPlans showGetStarted={user ? false : true} onPlanSelect={(plan) => handlePricingPlanSelect(plan)} />
+          <PricingPlans showGetStarted={user ? false : true} onPlanSelect={(plan) => handlePlanSelect(plan)} />
         </div>
       </section>
-
-      
 
       {/* CTA Section - with trading3.jpg background */}
       <section
@@ -663,20 +782,20 @@ export default function HomePage() {
         </div>
       </section>
       <section className="py-16 px-4 bg-white dark:bg-black">
-  <div className="container mx-auto max-w-5xl">
-    <h2 className="text-3xl md:text-4xl font-bold mb-6 text-black dark:text-white">
-      Forex Trading, TradingView Analysis, MT5 Strategy and Crypto Insights
-    </h2>
+      <div className="container mx-auto max-w-5xl">
+        <h2 className="text-3xl md:text-4xl font-bold mb-6 text-black dark:text-white">
+          Forex Trading, TradingView Analysis, MT5 Strategy and Crypto Insights
+        </h2>
 
-    <p className="text-lg text-gray-700 dark:text-gray-300 leading-8 mb-8">
-      Ready Pips is built for traders who want a smarter way to approach forex trading and
-      crypto trading. The platform supports traders using TradingView, MT5, trading indicators,
-      and structured risk management to make market analysis more practical and disciplined.
-    </p>
+        <p className="text-lg text-gray-700 dark:text-gray-300 leading-8 mb-8">
+          Ready Pips is built for traders who want a smarter way to approach forex trading and
+          crypto trading. The platform supports traders using TradingView, MT5, trading indicators,
+          and structured risk management to make market analysis more practical and disciplined.
+        </p>
 
-    
-  </div>
-</section>
+        
+      </div>
+    </section>
       {/* Footer */}
       <footer className="py-12 px-4 bg-gray-900 text-white">
         <div className="container mx-auto">

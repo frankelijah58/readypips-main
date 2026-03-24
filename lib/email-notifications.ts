@@ -30,16 +30,16 @@ interface EmailOptions {
 
 // Create nodemailer transporter
 const getEmailTransporter = () => {
-  const host = process.env.SMTP_HOST || "smtp.hostinger.com";
-  const port = parseInt(process.env.SMTP_PORT || "587");
-  const user = process.env.SMTP_USER || "no-reply@readypips.com";
-  const pass = process.env.SMTP_PASS || "Readypips#2017";
+  const host = process.env.MAIL_SMTP_HOST || "smtp.hostinger.com";
+  const port = parseInt(process.env.MAIL_SMTP_PORT || "587");
+  const user = process.env.MAIL_SMTP_USER || "no-reply@readypips.com";
+  const pass = process.env.MAIL_SMTP_PASS || "Readypips#2017";
 
-   console.log('📧 [Email Notifications] SMTP Configuration:');
-   console.log('  Host:', host);
-   console.log('  Port:', port);
-   console.log('  User:', user || 'NOT SET');
-   console.log('  Pass:', pass ? '***SET***' : 'NOT SET');
+  console.log("📧 [Email Notifications] SMTP Configuration:");
+  console.log("  Host:", host);
+  console.log("  Port:", port);
+  console.log("  User:", user || "NOT SET");
+  console.log("  Pass:", pass ? "***SET***" : "NOT SET");
 
   if (!user || !pass) {
     console.warn("⚠️ SMTP credentials not configured in environment variables");
@@ -54,8 +54,8 @@ const getEmailTransporter = () => {
       pass,
     },
     tls: {
-      rejectUnauthorized: false // Accept self-signed certificates
-    }
+      rejectUnauthorized: false, // Accept self-signed certificates
+    },
   });
 };
 
@@ -80,7 +80,10 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
     // console.log(`✅ Email sent (${options.type}) to ${options.to}:`, info.messageId);
     return true;
   } catch (error) {
-    console.error(`❌ Error sending email (${options.type}) to ${options.to}:`, error);
+    console.error(
+      `❌ Error sending email (${options.type}) to ${options.to}:`,
+      error,
+    );
     return false;
   }
 };
@@ -91,7 +94,7 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
 export const sendAdminPasswordResetEmail = async (
   email: string,
   resetToken: string,
-  adminName: string
+  adminName: string,
 ): Promise<boolean> => {
   const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/admin/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
@@ -171,7 +174,7 @@ export const sendAdminPasswordResetEmail = async (
 export const sendUserPasswordResetEmail = async (
   email: string,
   resetToken: string,
-  userName: string
+  userName: string,
 ): Promise<boolean> => {
   const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
@@ -244,7 +247,7 @@ export const sendAdminWelcomeEmail = async (
   email: string,
   adminName: string,
   tempPassword: string,
-  role: string
+  role: string,
 ): Promise<boolean> => {
   const loginLink = `${process.env.NEXT_PUBLIC_APP_URL}/admin/login`;
 
@@ -337,7 +340,7 @@ export const sendSubscriptionRenewedEmail = async (
   userName: string,
   planName: string,
   renewalDate: Date,
-  expiryDate: Date
+  expiryDate: Date,
 ): Promise<boolean> => {
   const html = `
     <!DOCTYPE html>
@@ -409,7 +412,7 @@ export const sendSubscriptionExpiringEmail = async (
   userName: string,
   planName: string,
   expiryDate: Date,
-  daysRemaining: number
+  daysRemaining: number,
 ): Promise<boolean> => {
   const renewLink = `${process.env.NEXT_PUBLIC_APP_URL}/subscription`;
 
@@ -484,7 +487,7 @@ export const sendNewToolAnnouncementEmail = async (
   userName: string,
   toolName: string,
   toolDescription: string,
-  planName: string
+  planName: string,
 ): Promise<boolean> => {
   const dashboardLink = `${process.env.NEXT_PUBLIC_APP_URL}/tools`;
 
@@ -556,7 +559,7 @@ export const sendPaymentSuccessEmail = async (
   planName: string,
   amount: number,
   transactionId: string,
-  paymentDate: Date
+  paymentDate: Date,
 ): Promise<boolean> => {
   const html = `
     <!DOCTYPE html>
@@ -624,7 +627,7 @@ export const sendPaymentFailedEmail = async (
   userName: string,
   planName: string,
   amount: number,
-  reason: string
+  reason: string,
 ): Promise<boolean> => {
   const retryLink = `${process.env.NEXT_PUBLIC_APP_URL}/subscription`;
 
@@ -700,7 +703,7 @@ export const sendAnnouncementEmail = async (
   email: string,
   recipientName: string,
   subject: string,
-  content: string
+  content: string,
 ): Promise<boolean> => {
   const html = `
     <!DOCTYPE html>
