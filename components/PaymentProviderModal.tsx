@@ -306,7 +306,7 @@ export default function PaymentProviderModal({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <DialogTitle className="text-base font-semibold">
-                    Binance Manual Payment
+                    Readypips Binance Payment
                   </DialogTitle>
                   <DialogDescription className="pt-1 text-xs leading-5">
                     Send USDT via TRC20, then submit the transaction ID for admin approval.
@@ -427,18 +427,19 @@ export default function PaymentProviderModal({
                           Transaction ID / Hash(TxID){" "}
                           <span className="text-red-500">*</span>
                         </label>
+                      
                         <input
-                          type="text"
-                          value={txId}
-                          onChange={(e) => setTxId(e.target.value)}
-                          placeholder="Enter blockchain transaction hash"
-                          className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-yellow-500 dark:border-gray-700 dark:bg-gray-800"
+                        type="text"
+                        value={txId}
+                        onChange={(e) => setTxId(e.target.value)}
+                        placeholder="Enter blockchain transaction hash"
+                        className="w-full rounded-lg border px-3 py-3 text-base font-mono tracking-wide outline-none focus:border-yellow-500 dark:border-gray-700 dark:bg-gray-800 break-all"
                         />
                       </div>
 
                       <div>
                         <label className="mb-1 block text-xs font-medium">
-                          Sender Wallet Address
+                          Your(Sender) Wallet Address
                         </label>
                         <input
                           type="text"

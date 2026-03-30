@@ -97,7 +97,15 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
 
       setSubscriptions(subData.subscriptions ?? []);
       setTotalPages(subData.totalPages ?? 1);
-      setPendingPayments(pendData.pending ?? []);
+      
+      const allowedProviders = ['mpesa', 'whop', 'binance'];
+
+setPendingPayments(
+  (pendData.pending ?? []).filter((item: any) =>
+    allowedProviders.includes((item.provider || '').toLowerCase())
+  )
+);
+
       setPendingTotalPages(pendData.totalPages ?? 1);
 
       setStats({
@@ -167,7 +175,17 @@ useEffect(() => {
     currentEnd.setDate(currentEnd.getDate() + 7);
     handleUpdateSubscription(sub._id, { endDate: currentEnd.toISOString() });
   };
-  
+  const colorStyles = {
+    blue: {
+      card: "bg-blue-50 border-blue-200",
+      icon: "bg-blue-100 text-blue-600",
+      text: "text-blue-700",
+    },
+    indigo: "...",
+    emerald: "...",
+    amber: "...",
+    slate: "...",
+  };
   // Example usage for a "Revoke" button:
   const revokeAccess = (id: string) => {
     handleUpdateSubscription(id, { status: 'expired' });
@@ -272,13 +290,13 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* 2. STATS GRID (Full Width) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Revenue" value={`$${stats.revenue.toLocaleString()}`} icon={<TrendingUp />} trend="+12.5%" color="indigo" />
-        <StatCard title="Active Users" value={stats.active} icon={<UserCheck />} color="emerald" />
-        <StatCard title="Action Required" value={stats.pending} icon={<Clock />} color="amber" />
-        <StatCard title="Churned" value={stats.expired} icon={<AlertCircle />} color="slate" />
-      </div>
+  <StatCard title="Total Revenue" value={`$${stats.revenue.toLocaleString()}`} icon={<TrendingUp />} trend="+12.5%" color="blue" />
+  <StatCard title="Active Users" value={stats.active} icon={<UserCheck />} color="green" />
+  <StatCard title="Action Required" value={stats.pending} icon={<Clock />} color="blue" />
+  <StatCard title="Churned" value={stats.expired} icon={<AlertCircle />} color="blue" />
+</div>
+
 
       <hr className="border-slate-200" />
 
@@ -424,21 +442,29 @@ useEffect(() => {
                       ${sub.price}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm"><MoreVertical className="w-4 h-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => extendSevenDays(sub)}>
-                                Extend 7 Days
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600" onClick={() => revokeAccess(sub._id)}>
-                                Revoke Access
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-2 text-slate-400 hover:text-slate-900 transition-colors"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => extendSevenDays(sub)}>
+                            Extend 7 Days
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => revokeAccess(sub._id)}
+                          >
+                            Revoke Access
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 ))}
@@ -542,33 +568,100 @@ useEffect(() => {
 /* -------------------- REFINED COMPONENTS -------------------- */
 
 function PendingCard({ pay, onAction, processingId }: any) {
+  const provider = (pay.provider || '').toLowerCase();
+
+  const providerStyles: Record<string, any> = {
+    mpesa: {
+      card: 'border-emerald-300 bg-emerald-50/80 shadow-emerald-100',
+      badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+      amount: 'text-emerald-700',
+      avatar: 'bg-emerald-100 text-emerald-700',
+      button: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+      ring: 'ring-1 ring-emerald-200',
+      label: 'M-Pesa',
+    },
+    whop: {
+      card: 'border-rose-300 bg-rose-50/80 shadow-rose-100',
+      badge: 'bg-rose-100 text-rose-700 border border-rose-200',
+      amount: 'text-rose-700',
+      avatar: 'bg-rose-100 text-rose-700',
+      button: 'bg-rose-600 hover:bg-rose-700 text-white',
+      ring: 'ring-1 ring-rose-200',
+      label: 'Whop',
+    },
+    binance: {
+      card: 'border-yellow-300 bg-yellow-50/80 shadow-yellow-100',
+      badge: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
+      amount: 'text-yellow-700',
+      avatar: 'bg-yellow-100 text-yellow-700',
+      button: 'bg-yellow-500 hover:bg-yellow-600 text-white',
+      ring: 'ring-1 ring-yellow-200',
+      label: 'Binance',
+    },
+  };
+
+  const style = providerStyles[provider];
+
+  if (!style) return null;
+
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all">
+    <div
+      className={`rounded-2xl p-4 border-2 shadow-sm hover:shadow-md transition-all ${style.card} ${style.ring}`}
+    >
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-xs">{pay.userName?.charAt(0)}</div>
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${style.avatar}`}>
+            {pay.userName?.charAt(0) || 'U'}
+          </div>
+
           <div>
             <h4 className="font-bold text-sm text-slate-900">{pay.userName}</h4>
-            <p className="text-[10px] text-slate-400 font-bold uppercase">{pay.provider}</p>
+            <span className={`inline-flex px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide ${style.badge}`}>
+              {style.label}
+            </span>
           </div>
         </div>
-        <span className="text-sm font-black text-indigo-600">${pay.amount}</span>
+
+        <span className={`text-sm font-black ${style.amount}`}>
+          ${pay.amount}
+        </span>
       </div>
-      <div className="text-[11px] text-slate-500 mb-4 bg-slate-50 p-2 rounded-lg truncate">
-        {pay.email}
+
+      <div className="space-y-2 mb-4">
+        <div className="text-[11px] text-slate-700 bg-white/70 p-2 rounded-lg truncate border border-white/60">
+          {pay.email}
+        </div>
+
+        {pay.phoneNumber && (
+          <div className="text-[11px] text-slate-700 bg-white/70 p-2 rounded-lg truncate border border-white/60">
+            {pay.phoneNumber}
+          </div>
+        )}
+
+        {pay.transactionId && (
+          <div className="text-[11px] text-slate-700 bg-white/70 p-2 rounded-lg truncate border border-white/60">
+            TXN: {pay.transactionId}
+          </div>
+        )}
       </div>
-      <div className="flex gap-2 ">
-        <Button 
+
+      <div className="flex gap-2">
+        <Button
           onClick={() => onAction(pay._id, 'approve')}
-          className="flex-1 h-8 text-[10px] font-bold bg-slate-900 hover:bg-black text-white"
+          className={`flex-1 h-9 text-[10px] font-bold ${style.button}`}
           disabled={!!processingId}
         >
-          {processingId === pay._id ? <RefreshCw className="animate-spin w-3 h-3" /> : 'Approve'}
+          {processingId === pay._id ? (
+            <RefreshCw className="animate-spin w-3 h-3" />
+          ) : (
+            'Approve'
+          )}
         </Button>
-        <Button 
+
+        <Button
           variant="outline"
           onClick={() => onAction(pay._id, 'reject')}
-          className="flex-1 h-8 text-[10px] font-bold hover:bg-rose-250 text-rose-600 border-rose-200"
+          className="flex-1 h-9 text-[10px] font-bold text-rose-600 border-rose-200 bg-white hover:bg-rose-50"
           disabled={!!processingId}
         >
           Decline

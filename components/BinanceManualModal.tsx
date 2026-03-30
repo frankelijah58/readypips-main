@@ -223,7 +223,7 @@ export default function BinanceManualModal({ isOpen, onClose, plan, user }: Prop
 
             <div className="mt-6 rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
               <h3 className="mb-4 font-bold text-slate-900 dark:text-white">
-                Submit Payment Proof
+                Submit Payment Proofe
               </h3>
 
               <div className="grid gap-4">
