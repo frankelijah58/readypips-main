@@ -521,7 +521,7 @@ export default function HomePage() {
                 className="w-full h-full object-cover"
                 poster="/video-poster.jpg"
               >
-                <source src="/videos/ready-pips-demo.mp4" type="video/mp4" />
+                <source src="/ready-pips-demo.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>
