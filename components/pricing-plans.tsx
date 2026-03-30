@@ -9,11 +9,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import {
+  CheckCircle,
+  ArrowRight,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Smartphone,
+} from "lucide-react";
 import { PLANS } from "@/lib/plans";
 import PaymentProviderModal from "@/components/PaymentProviderModal";
 import MpesaPromptModal from "@/components/MpesaPromptModal";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface PricingPlansProps {
   showGetStarted?: boolean;
@@ -22,12 +36,153 @@ interface PricingPlansProps {
     name: string;
     price: string;
     duration: number;
-    provider?: "whop" | "binance" | "mpesa";
+    provider?: "whop" | "binance" | "mpesa" | "paystack";
     phone?: string;
-  }) => Promise<void> | void;
+  }) => Promise<any> | void;
   className?: string;
   loading?: boolean;
   currentPlan?: string | null;
+}
+
+type PaymentStatus = "idle" | "waiting" | "success" | "failed";
+
+function MpesaPaymentStatusModal({
+  isOpen,
+  status,
+  message,
+  amount,
+  planName,
+  phone,
+  onClose,
+}: {
+  isOpen: boolean;
+  status: PaymentStatus;
+  message?: string;
+  amount?: number;
+  planName?: string;
+  phone?: string;
+  onClose: () => void;
+}) {
+  const canClose = status === "success" || status === "failed";
+
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && canClose) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-[420px] border bg-white text-gray-900 shadow-2xl dark:bg-gray-900 dark:text-gray-100">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-center gap-2 text-center text-xl font-bold">
+            {status === "waiting" && (
+              <Loader2 className="h-5 w-5 animate-spin text-green-600" />
+            )}
+            {status === "success" && (
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+            )}
+            {status === "failed" && (
+              <XCircle className="h-5 w-5 text-red-500" />
+            )}
+
+            {status === "waiting" && "Waiting for Payment"}
+            {status === "success" && "Payment Successful"}
+            {status === "failed" && "Payment Failed"}
+          </DialogTitle>
+
+          <DialogDescription className="pt-2 text-center text-sm leading-6 text-gray-600 dark:text-gray-300">
+            {status === "waiting" && (
+              <>
+                We sent an M-Pesa prompt to{" "}
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {phone || "your phone"}
+                </span>
+                .
+                <br />
+                Complete the payment for{" "}
+                <span className="font-semibold text-green-600">
+                  {planName || "your plan"}
+                </span>
+                {typeof amount === "number" ? (
+                  <>
+                    {" "}
+                    at{" "}
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      KES {amount.toLocaleString()}
+                    </span>
+                  </>
+                ) : null}
+                .
+              </>
+            )}
+
+            {status === "success" && (
+              <>
+                Your payment for{" "}
+                <span className="font-semibold text-green-600">
+                  {planName || "your plan"}
+                </span>{" "}
+                has been confirmed successfully.
+              </>
+            )}
+
+            {status === "failed" && (
+              <>
+                {message ||
+                  "We could not confirm your payment. Please try again."}
+              </>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="pt-4">
+          {status === "waiting" && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-900/40 dark:bg-green-950/20">
+                <div className="flex items-center gap-3">
+                  <Smartphone className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="font-medium">Prompt sent</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Waiting for confirmation from the payment system...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+                <div className="h-2 w-1/2 animate-pulse rounded-full bg-green-600" />
+              </div>
+
+              <p className="text-center text-xs text-gray-500 dark:text-gray-400">
+                Do not close this window before payment confirmation.
+              </p>
+            </div>
+          )}
+
+          {status === "success" && (
+            <Button
+              type="button"
+              onClick={onClose}
+              className="w-full bg-green-600 text-white hover:bg-green-700"
+            >
+              Continue
+            </Button>
+          )}
+
+          {status === "failed" && (
+            <Button
+              type="button"
+              onClick={onClose}
+              className="w-full bg-red-600 text-white hover:bg-red-700"
+            >
+              Close
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export default function PricingPlans({
@@ -39,8 +194,14 @@ export default function PricingPlans({
 }: PricingPlansProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMpesaPromptOpen, setIsMpesaPromptOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<any>(null);
   const [loadingState, setLoadingState] = useState(false);
+
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [paymentPhone, setPaymentPhone] = useState("");
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const USD_TO_KES = 130;
 
@@ -53,17 +214,26 @@ export default function PricingPlans({
     return Math.round(amount * USD_TO_KES);
   };
 
- 
+  const clearPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
   const handlePlanAction = (plan: any) => {
     try {
       if (!onPlanSelect) return;
-  
+
       const safePlan = {
         ...plan,
-        id: plan.planId || plan.id || plan.name?.toLowerCase().replace(/\s+/g, ""),
+        id:
+          plan.planId ||
+          plan.id ||
+          plan.name?.toLowerCase().replace(/\s+/g, ""),
         kesPrice: convertToKes(plan.price || 0),
       };
-  
+
       setSelectedPlanForPayment(safePlan);
       setIsMpesaPromptOpen(false);
       setIsModalOpen(true);
@@ -72,7 +242,9 @@ export default function PricingPlans({
     }
   };
 
-  const handleProviderSelect = async (provider: "whop" | "binance" | "mpesa") => {
+  const handleProviderSelect = async (
+    provider: "whop" | "binance" | "mpesa" | "paystack"
+  ) => {
     if (!onPlanSelect || !selectedPlanForPayment) return;
 
     if (provider === "mpesa") {
@@ -98,22 +270,106 @@ export default function PricingPlans({
     }
   };
 
+  const pollPaymentStatus = (
+    merchantRequestID: string,
+    checkoutRequestID: string
+  ) => {
+    clearPolling();
+
+    let attempts = 0;
+    const maxAttempts = 24;
+
+    pollIntervalRef.current = setInterval(async () => {
+      attempts++;
+
+      try {
+        const res = await fetch("/api/payments/mpesa/status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            merchantRequestID,
+            checkoutRequestID,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success" || data.paid === true) {
+          clearPolling();
+          setPaymentStatus("success");
+          setPaymentMessage("Payment received successfully.");
+          return;
+        }
+
+        if (data.status === "failed") {
+          clearPolling();
+          setPaymentStatus("failed");
+          setPaymentMessage(
+            data.message || "Payment failed or was cancelled."
+          );
+          return;
+        }
+
+        if (attempts >= maxAttempts) {
+          clearPolling();
+          setPaymentStatus("failed");
+          setPaymentMessage(
+            "Payment confirmation timed out. If you already paid, please refresh after a moment."
+          );
+        }
+      } catch (error) {
+        if (attempts >= maxAttempts) {
+          clearPolling();
+          setPaymentStatus("failed");
+          setPaymentMessage("Could not confirm payment status.");
+        }
+      }
+    }, 5000);
+  };
+
   const handleMpesaSubmit = async (phone: string) => {
     if (!onPlanSelect || !selectedPlanForPayment) {
       throw new Error("No plan selected.");
     }
+    
 
     try {
       setLoadingState(true);
 
-      await onPlanSelect({
+      const result = await onPlanSelect({
         ...selectedPlanForPayment,
         provider: "mpesa",
         phone,
       });
+      console.log("M-PESA RESULT:", result);
 
+      setPaymentPhone(phone);
+      setPaymentStatus("waiting");
+      setPaymentMessage("Prompt sent. Waiting for payment confirmation.");
       setIsMpesaPromptOpen(false);
       setIsModalOpen(false);
+      setIsStatusModalOpen(true);
+
+      const merchantRequestID =
+        result?.merchantRequestID ||
+        result?.MerchantRequestID ||
+        result?.merchantRequestId;
+
+      const checkoutRequestID =
+        result?.checkoutRequestID ||
+        result?.CheckoutRequestID ||
+        result?.checkoutRequestId;
+
+      if (merchantRequestID && checkoutRequestID) {
+        pollPaymentStatus(merchantRequestID, checkoutRequestID);
+      } else {
+        setPaymentStatus("failed");
+        setPaymentMessage(
+          "Prompt was sent but tracking IDs were not returned by the server."
+        );
+      }
     } catch (error: any) {
       console.error("M-Pesa submit error:", error);
       throw new Error(error?.message || "Failed to send STK Push.");
@@ -240,18 +496,16 @@ export default function PricingPlans({
         ))}
       </div>
 
-     
-
-<PaymentProviderModal
-  isOpen={isModalOpen}
-  loading={loadingState}
-  setLoading={setLoadingState}
-  onClose={() => {
-    if (!loadingState) setIsModalOpen(false);
-  }}
-  plan={selectedPlanForPayment || null}
-  onSelect={handleProviderSelect}
-/>
+      <PaymentProviderModal
+        isOpen={isModalOpen}
+        loading={loadingState}
+        setLoading={setLoadingState}
+        onClose={() => {
+          if (!loadingState) setIsModalOpen(false);
+        }}
+        plan={selectedPlanForPayment || null}
+        onSelect={handleProviderSelect}
+      />
 
       <MpesaPromptModal
         isOpen={isMpesaPromptOpen}
@@ -268,6 +522,26 @@ export default function PricingPlans({
         }
         loading={loadingState}
         onSubmit={handleMpesaSubmit}
+      />
+
+      <MpesaPaymentStatusModal
+        isOpen={isStatusModalOpen}
+        status={paymentStatus}
+        message={paymentMessage}
+        amount={
+          selectedPlanForPayment
+            ? convertToKes(selectedPlanForPayment.price || 0)
+            : undefined
+        }
+        planName={selectedPlanForPayment?.name}
+        phone={paymentPhone}
+        onClose={() => {
+          clearPolling();
+          setIsStatusModalOpen(false);
+          setPaymentStatus("idle");
+          setPaymentMessage("");
+          setPaymentPhone("");
+        }}
       />
     </>
   );

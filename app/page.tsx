@@ -19,20 +19,24 @@ import {
   BarChart3,
   CheckCircle,
   Shield,
-  Users,
   Globe,
   Smartphone,
-  Clock,
   Target,
+  PlayCircle,
 } from "lucide-react";
 import PricingPlans from "@/components/pricing-plans";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const showcaseSectionRef = useRef<HTMLElement | null>(null);
+  const showcaseVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [isShowcaseVisible, setIsShowcaseVisible] = useState(false);
+
   useEffect(() => {
     document.title =
       "Ready Pips | Forex Trading, TradingView Analysis, MT5 Strategy & Crypto Insights";
@@ -98,6 +102,33 @@ export default function HomePage() {
     setLink("canonical", "https://readypips.com");
   }, []);
 
+  useEffect(() => {
+    if (!showcaseSectionRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsShowcaseVisible(entry.isIntersecting);
+      },
+      {
+        threshold: 0.5,
+      }
+    );
+
+    observer.observe(showcaseSectionRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!showcaseVideoRef.current) return;
+
+    if (isShowcaseVisible) {
+      showcaseVideoRef.current.play().catch(() => {});
+    } else {
+      showcaseVideoRef.current.pause();
+    }
+  }, [isShowcaseVisible]);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -108,7 +139,7 @@ export default function HomePage() {
         url: "https://readypips.com",
         logo: "https://readypips.com/logo-dark.png",
         description:
-          "Ready Pips is a smart trading platform that helps traders analyze forex and crypto markets using structured strategy, TradingView-aligned market analysis, trading indicators, and risk management."
+          "Ready Pips is a smart trading platform that helps traders analyze forex and crypto markets using structured strategy, TradingView-aligned market analysis, trading indicators, and risk management.",
       },
       {
         "@type": "WebSite",
@@ -116,7 +147,7 @@ export default function HomePage() {
         url: "https://readypips.com",
         name: "Ready Pips",
         description:
-          "Forex trading, crypto trading, TradingView analysis, MT5 strategy support, trader education, and trading indicators."
+          "Forex trading, crypto trading, TradingView analysis, MT5 strategy support, trader education, and trading indicators.",
       },
       {
         "@type": "SoftwareApplication",
@@ -130,7 +161,7 @@ export default function HomePage() {
         offers: {
           "@type": "Offer",
           price: "0",
-          priceCurrency: "USD"
+          priceCurrency: "USD",
         },
         featureList: [
           "Forex trading analysis",
@@ -140,8 +171,8 @@ export default function HomePage() {
           "Trading indicators",
           "Risk management structure",
           "Trader education",
-          "Signal-based market analysis"
-        ]
+          "Signal-based market analysis",
+        ],
       },
       {
         "@type": "FAQPage",
@@ -151,28 +182,28 @@ export default function HomePage() {
             name: "What is Ready Pips?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Ready Pips is a trading platform that helps traders analyze forex and crypto markets using TradingView-aligned analysis, structured signal workflows, and risk management support."
-            }
+              text: "Ready Pips is a trading platform that helps traders analyze forex and crypto markets using TradingView-aligned analysis, structured signal workflows, and risk management support.",
+            },
           },
           {
             "@type": "Question",
             name: "Can Ready Pips help traders using TradingView and MT5?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Yes. Ready Pips is designed for traders who use TradingView for analysis and MT5 for execution and strategy workflows."
-            }
+              text: "Yes. Ready Pips is designed for traders who use TradingView for analysis and MT5 for execution and strategy workflows.",
+            },
           },
           {
             "@type": "Question",
             name: "Does Ready Pips help people learn forex trading?",
             acceptedAnswer: {
               "@type": "Answer",
-              text: "Ready Pips helps traders learn forex with clearer market analysis, indicator support, and structured risk management."
-            }
-          }
-        ]
-      }
-    ]
+              text: "Ready Pips helps traders learn forex with clearer market analysis, indicator support, and structured risk management.",
+            },
+          },
+        ],
+      },
+    ],
   };
 
   const USD_TO_KES = 130;
@@ -195,17 +226,19 @@ export default function HomePage() {
   }) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
-  
+
     try {
       setLoading(true);
-  
+
       const token = localStorage.getItem("token");
-  
+
       if (!token) {
         throw new Error("You need to login first.");
-      }if (plan.provider === "mpesa") {
+      }
+
+      if (plan.provider === "mpesa") {
         const amountKES = convertToKes(plan.price);
-      
+
         const res = await fetch("/api/mpesa/stkpush", {
           method: "POST",
           headers: {
@@ -222,29 +255,29 @@ export default function HomePage() {
           }),
           signal: controller.signal,
         });
-      
+
         const rawText = await res.text();
-      
+
         let data: any = null;
         try {
           data = rawText ? JSON.parse(rawText) : null;
         } catch {
           throw new Error(rawText || "Server returned an invalid response.");
         }
-      
+
         if (!res.ok || !data?.success) {
           throw new Error(data?.message || "M-Pesa payment failed");
         }
-      
+
         toast({
           title: "M-Pesa Prompt Sent",
           description: `Check ${plan.phone} and enter your M-Pesa PIN to complete payment.`,
           duration: 5000,
         });
-      
+
         return;
       }
-  
+
       const res = await fetch("/api/payments/create", {
         method: "POST",
         headers: {
@@ -258,37 +291,37 @@ export default function HomePage() {
         }),
         signal: controller.signal,
       });
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) {
         throw new Error(data.error || "Payment failed");
       }
-  
+
       if (data.checkoutUrl) {
         toast({
           title: "Redirecting to Payment Provider",
           description: `You are being redirected to ${plan.provider} to complete your purchase.`,
           duration: 5000,
         });
-  
+
         window.location.href = data.checkoutUrl;
       }
     } catch (err: any) {
       console.error(err);
-  
+
       const message =
         err?.name === "AbortError"
           ? "The request timed out. Please try again."
           : err.message || "Unable to start payment. Please try again.";
-  
+
       toast({
         title: "Payment Error",
         description: message,
         duration: 5000,
         variant: "destructive",
       });
-  
+
       throw new Error(message);
     } finally {
       clearTimeout(timeout);
@@ -296,109 +329,75 @@ export default function HomePage() {
     }
   };
 
-  const handlePricingPlanSelectV1 = async (plan: any) => {
+  const handlePricingPlanSelect = async (plan: any) => {
     try {
       setLoading(true);
-      
-      // Get the token from your auth state or cookies
-      // Assuming you are using next-auth or a similar token-based system:
-      const token = localStorage.getItem('token'); 
+
+      const token = localStorage.getItem("token");
 
       const res = await fetch("/api/payments/create", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          planId: plan.planId, // 'weekly', 'monthly', or '3months'
+          planId: plan.planId,
           provider: plan.provider,
           userId: user?._id,
+          phone: plan.phone || undefined,
         }),
       });
 
       const data = await res.json();
-      
-      if (!res.ok) throw new Error(data.error || "Payment failed");
 
-      // Smooth redirect to the checkout page
+      if (!res.ok) {
+        throw new Error(data.error || "Payment failed");
+      }
+
       if (data.checkoutUrl) {
-        // toast.info(`Redirecting to ${plan.provider}...`);
         toast({
-            title: 'Redirecting to Payment Provider',
-            description: `You are being redirected to ${plan.provider} to complete your purchase.`,
-            duration: 5000,
-            // variant: 'default',
-          });
+          title: "Redirecting to Payment Provider",
+          description: `You are being redirected to ${plan.provider} to complete your purchase.`,
+          duration: 5000,
+        });
+
         window.location.href = data.checkoutUrl;
       }
+
+      return data;
     } catch (err: any) {
       console.error(err);
-      // toast.error(err.message || "Unable to start payment.");
+
       toast({
         title: "Payment Error",
         description: err.message || "Unable to start payment. Please try again.",
         duration: 5000,
         variant: "destructive",
+      });
 
-      })
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // const handlePricingPlanSelect = async (plan: {
-  //   planId: string;
-  //   name: string;
-  //   price: string;
-  //   duration: number;
-  //   provider?: "whop" | "binance";
-  // }) => {
-  //   try {
-  //     setLoading(true);
-
-  //     const res = await fetch("/api/payments/create", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         planId: plan.planId,
-  //         provider: plan.provider,
-  //         userId: user?._id,
-  //       }),
-  //     });
-
-  //     const data = await res.json();
-  //     if (!res.ok) throw new Error(data.error || "Payment failed");
-
-  //     // Redirect to provider checkout
-  //     window.location.href = data.checkoutUrl;
-  //   } catch (err) {
-  //     console.error(err);
-  //     alert("Unable to start payment. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   return (
-    
-<div className="min-h-screen bg-white dark:bg-black">
-  <script
-    type="application/ld+json"
-    dangerouslySetInnerHTML={{
-      __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
-    }}
-  />
+    <div className="min-h-screen bg-white dark:bg-black">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
 
-      {/* Navigation */}
       <Navigation />
 
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden">
-        {/* Background Video */}
         <video
           autoPlay
-          muted
+        
           loop
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
@@ -407,10 +406,8 @@ export default function HomePage() {
           Your browser does not support the video tag.
         </video>
 
-        {/* Overlay for text readability */}
         <div className="absolute inset-0 bg-black/60"></div>
 
-        {/* Content */}
         <div className="container mx-auto text-center relative z-10">
           <Badge
             className="mb-6 bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800"
@@ -419,41 +416,38 @@ export default function HomePage() {
             <Zap className="w-3 h-3 mr-1" />
             Get real-time. Smart trading signals.
           </Badge>
+
           <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white leading-tight">
             Ready <span className="text-green-400">Pips</span>
           </h1>
+
           <p className="text-xl text-gray-100 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Historically consistent results.{" "}
+            Historically consistent results.
             <br />
             Join thousands of successful traders using our proprietary algorithm.
           </p>
 
-          {/* Conditional CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             {!authLoading && (
               <>
                 {user ? (
-                  // Logged in user - show dashboard button
                   <Link href="/dashboard">
                     <Button
                       size="lg"
                       className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                     >
                       <Home className="mr-2 w-4 h-4" />
-                      {/* Go to Dashboard */}
                       Indicator
                       <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                   </Link>
                 ) : (
-                  // Not logged in - show signals button
                   <Link href="/signals">
                     <Button
                       size="lg"
                       className="bg-green-600 hover:bg-green-700 text-white font-semibold"
                     >
                       <BarChart3 className="mr-2 w-4 h-4" />
-                      {/* Signals */}
                       Indicator
                       <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
@@ -461,31 +455,16 @@ export default function HomePage() {
                 )}
               </>
             )}
-            {/* <Link href="/copy-trading">
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-green-400 text-green-400 hover:bg-green-600 hover:text-white font-semibold"
-              >
-                Copy Trading
-                <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-            </Link> */}
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="text-3xl font-bold text-green-400">93%</div>
-              <div className="text-sm text-gray-100 font-medium">
-                Win Rate
-              </div>
+              <div className="text-sm text-gray-100 font-medium">Win Rate</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-green-400">10K+</div>
-              <div className="text-sm text-gray-100 font-medium">
-                Active Users
-              </div>
+              <div className="text-sm text-gray-100 font-medium">Active Users</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-green-400">$2.1M</div>
@@ -503,7 +482,54 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section - with sl_022321_41020_35.jpg background */}
+      {/* Video Showcase Section */}
+      <section
+        ref={showcaseSectionRef}
+        className="py-20 px-4 bg-black relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-950 to-black"></div>
+
+        <div className="container mx-auto relative z-10">
+          <div className="text-center mb-10">
+            <Badge
+              className="mb-4 bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800"
+              variant="outline"
+            >
+              <PlayCircle className="w-3 h-3 mr-1" />
+              Platform Walkthrough
+            </Badge>
+
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+              See Ready Pips In Action
+            </h2>
+
+            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+              Watch how traders use Ready Pips to follow signals, analyze setups,
+              and act with more confidence.
+            </p>
+          </div>
+
+          <div className="max-w-5xl mx-auto rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-gray-900">
+            <div className="aspect-video w-full bg-black">
+              <video
+                ref={showcaseVideoRef}
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                controls
+                className="w-full h-full object-cover"
+                poster="/video-poster.jpg"
+              >
+                <source src="/videos/ready-pips-demo.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
       <section
         id="features"
         className="py-20 px-4 bg-gray-50 dark:bg-gray-900 relative overflow-hidden"
@@ -514,7 +540,6 @@ export default function HomePage() {
           backgroundAttachment: "fixed",
         }}
       >
-        {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-black/40"></div>
 
         <div className="container mx-auto relative z-10">
@@ -537,8 +562,7 @@ export default function HomePage() {
                   AI-Powered Analysis
                 </CardTitle>
                 <CardDescription className="text-gray-700 dark:text-gray-300">
-                  Advanced machine learning algorithms analyze market patterns
-                  24/7
+                  Advanced machine learning algorithms analyze market patterns 24/7
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -712,7 +736,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing Section - with trading2.jpg background */}
+      {/* Pricing Section */}
       <section
         className="py-20 px-4 relative overflow-hidden"
         style={{
@@ -722,7 +746,6 @@ export default function HomePage() {
           backgroundAttachment: "fixed",
         }}
       >
-        {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-black/40"></div>
 
         <div className="container mx-auto relative z-10">
@@ -730,16 +753,16 @@ export default function HomePage() {
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white drop-shadow-lg">
               Choose Your Plan
             </h2>
-            {/* <p className="text-xl text-gray-100 drop-shadow-md">
-              Start with a free trial, upgrade anytime
-            </p> */}
           </div>
 
-          <PricingPlans showGetStarted={user ? false : true} onPlanSelect={(plan) => handlePlanSelect(plan)} />
+          <PricingPlans
+            showGetStarted={user ? false : true}
+            onPlanSelect={(plan) => handlePricingPlanSelect(plan)}
+          />
         </div>
       </section>
 
-      {/* CTA Section - with trading3.jpg background */}
+      {/* CTA Section */}
       <section
         className="py-20 px-4 relative overflow-hidden"
         style={{
@@ -749,7 +772,6 @@ export default function HomePage() {
           backgroundAttachment: "fixed",
         }}
       >
-        {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-black/60"></div>
 
         <div className="container mx-auto text-center relative z-10">
@@ -766,7 +788,7 @@ export default function HomePage() {
                 size="lg"
                 className="bg-white text-green-600 hover:bg-gray-100 font-semibold"
               >
-                Get Started 
+                Get Started
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
@@ -781,21 +803,22 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
       <section className="py-16 px-4 bg-white dark:bg-black">
-      <div className="container mx-auto max-w-5xl">
-        <h2 className="text-3xl md:text-4xl font-bold mb-6 text-black dark:text-white">
-          Forex Trading, TradingView Analysis, MT5 Strategy and Crypto Insights
-        </h2>
+        <div className="container mx-auto max-w-5xl">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-black dark:text-white">
+            Forex Trading, TradingView Analysis, MT5 Strategy and Crypto Insights
+          </h2>
 
-        <p className="text-lg text-gray-700 dark:text-gray-300 leading-8 mb-8">
-          Ready Pips is built for traders who want a smarter way to approach forex trading and
-          crypto trading. The platform supports traders using TradingView, MT5, trading indicators,
-          and structured risk management to make market analysis more practical and disciplined.
-        </p>
+          <p className="text-lg text-gray-700 dark:text-gray-300 leading-8 mb-8">
+            Ready Pips is built for traders who want a smarter way to approach
+            forex trading and crypto trading. The platform supports traders using
+            TradingView, MT5, trading indicators, and structured risk management
+            to make market analysis more practical and disciplined.
+          </p>
+        </div>
+      </section>
 
-        
-      </div>
-    </section>
       {/* Footer */}
       <footer className="py-12 px-4 bg-gray-900 text-white">
         <div className="container mx-auto">
@@ -814,6 +837,7 @@ export default function HomePage() {
                 Unlock Powerful AI-Driven Trading Signals Indicator for a competitive edge.
               </p>
             </div>
+
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
@@ -827,13 +851,9 @@ export default function HomePage() {
                     Copy Trading
                   </Link>
                 </li>
-                {/* <li>
-                  <Link href="/charts" className="hover:text-white">
-                    Charts
-                  </Link>
-                </li> */}
               </ul>
             </div>
+
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
@@ -849,6 +869,7 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
+
             <div>
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-gray-400">
@@ -865,19 +886,9 @@ export default function HomePage() {
               </ul>
             </div>
           </div>
+
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
             <p>&copy; 2026 Ready Pips. All rights reserved.</p>
-            {/* <p className="mt-2">
-              Developed and maintained by{" "}
-              <a
-                href="https://"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-green-400 hover:text-green-300 font-semibold transition-colors"
-              >
-                Pro Limited
-              </a>
-            </p> */}
           </div>
         </div>
       </footer>

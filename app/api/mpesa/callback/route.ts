@@ -37,17 +37,27 @@ function buildUserQuery(userId: string): Record<string, any> | null {
   };
 }
 
+// Change this if you want a different conversion rate
+const KES_TO_USD_RATE = 130;
+
+function kesToUsd(amountKes: any) {
+  const numericKes = Number(amountKes || 0);
+  if (!Number.isFinite(numericKes)) return 0;
+  return Number((numericKes / KES_TO_USD_RATE).toFixed(2));
+}
+
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.json();
+    console.log("CALLBACK HIT:", JSON.stringify(payload));
 
-    const callback =
-      payload?.Body?.stkCallback ||
-      payload?.body?.stkCallback ||
-      null;
+    const callback = payload?.Body?.stkCallback || payload?.body?.stkCallback || null;
 
     if (!callback) {
-      return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" });
+      return NextResponse.json({
+        ResultCode: 0,
+        ResultDesc: "Accepted",
+      });
     }
 
     const {
@@ -60,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     const items = CallbackMetadata?.Item || [];
 
-    const amount = extractCallbackItem(items, "Amount");
+    const amountKes = extractCallbackItem(items, "Amount");
     const mpesaReceiptNumber = extractCallbackItem(items, "MpesaReceiptNumber");
     const transactionDate = extractCallbackItem(items, "TransactionDate");
     const phoneNumber = extractCallbackItem(items, "PhoneNumber");
@@ -70,8 +80,8 @@ export async function POST(req: NextRequest) {
 
     const paymentIntent = await db.collection("payment_intents").findOne({
       $or: [
-        { checkoutRequestId: CheckoutRequestID },
-        { merchantRequestId: MerchantRequestID },
+        { checkoutRequestID: CheckoutRequestID },
+        { merchantRequestID: MerchantRequestID },
       ],
     });
 
@@ -89,9 +99,16 @@ export async function POST(req: NextRequest) {
 
     const isSuccessful = String(ResultCode) === "0";
     const now = new Date();
-    const finalAmount = amount ?? paymentIntent.amount ?? null;
-    const finalPhone = phoneNumber ?? paymentIntent.phoneNumber ?? null;
 
+    const finalAmountKes =
+      amountKes ?? paymentIntent.amountKes ?? paymentIntent.amount ?? 0;
+
+    const finalAmountUsd = kesToUsd(finalAmountKes);
+
+    const finalPhone =
+      phoneNumber ?? paymentIntent.phone ?? paymentIntent.phoneNumber ?? null;
+
+    // Update payment intent
     await db.collection("payment_intents").updateOne(
       { _id: paymentIntent._id },
       {
@@ -99,10 +116,19 @@ export async function POST(req: NextRequest) {
           status: isSuccessful ? "paid" : "failed",
           resultCode: ResultCode,
           resultDesc: ResultDesc,
-          amount: finalAmount,
+
+          // Main stored amount in USD
+          amount: finalAmountUsd,
+          currency: "USD",
+
+          // Keep original KES for reference
+          amountKes: Number(finalAmountKes || 0),
+          currencyKes: "KES",
+
           mpesaReceiptNumber: mpesaReceiptNumber ?? null,
           transactionDate: transactionDate ?? null,
           paidAt: isSuccessful ? paidAt || now : null,
+          phone: finalPhone,
           phoneNumber: finalPhone,
           callbackPayload: payload,
           updatedAt: now,
@@ -114,6 +140,7 @@ export async function POST(req: NextRequest) {
       const userId = String(paymentIntent.userId || "");
       const durationDays = Number(paymentIntent.duration || 0);
 
+      // Decline other pending intents for same user
       await db.collection("payment_intents").updateMany(
         {
           userId: paymentIntent.userId,
@@ -151,10 +178,17 @@ export async function POST(req: NextRequest) {
           $set: {
             userId: paymentIntent.userId,
             planId: paymentIntent.planId || null,
-            planName: paymentIntent.planName || null,
+            planName: paymentIntent.planName || paymentIntent.planId || null,
             provider: "mpesa",
-            amount: finalAmount,
-            currency: "KES",
+
+            // Store USD
+            amount: finalAmountUsd,
+            currency: "USD",
+
+            // Keep KES too
+            amountKes: Number(finalAmountKes || 0),
+            currencyKes: "KES",
+
             status: "active",
             startDate,
             endDate,
@@ -174,7 +208,8 @@ export async function POST(req: NextRequest) {
               subscriptionStatus: "active",
               subscriptionType: paymentIntent.planId || "premium",
               subscriptionPlanId: paymentIntent.planId || null,
-              subscriptionPlanName: paymentIntent.planName || null,
+              subscriptionPlanName:
+                paymentIntent.planName || paymentIntent.planId || null,
               subscriptionProvider: "mpesa",
               subscriptionStartedAt: startDate,
               subscriptionExpiresAt: endDate,
@@ -186,11 +221,18 @@ export async function POST(req: NextRequest) {
               paymentHistory: {
                 reference: paymentIntent.reference || null,
                 provider: "mpesa",
-                amount: finalAmount,
-                currency: "KES",
+
+                // Store USD
+                amount: finalAmountUsd,
+                currency: "USD",
+
+                // Keep KES too
+                amountKes: Number(finalAmountKes || 0),
+                currencyKes: "KES",
+
                 mpesaReceiptNumber: mpesaReceiptNumber ?? null,
-                checkoutRequestId: CheckoutRequestID ?? null,
-                merchantRequestId: MerchantRequestID ?? null,
+                checkoutRequestID: CheckoutRequestID ?? null,
+                merchantRequestID: MerchantRequestID ?? null,
                 phoneNumber: finalPhone,
                 paidAt: paidAt || now,
               },
@@ -203,7 +245,7 @@ export async function POST(req: NextRequest) {
         if (finalPhone) {
           await sendSms({
             mobile: String(finalPhone),
-            message: `ReadyPips: Payment of KES ${Number(finalAmount || 0).toLocaleString()} received successfully. Receipt ${mpesaReceiptNumber || "-"}. Your ${paymentIntent.planName || "subscription"} access is now active.`,
+            message: `ReadyPips: Payment of KES ${Number(finalAmountKes || 0).toLocaleString()} received successfully. Receipt ${mpesaReceiptNumber || "-"}. Your ${paymentIntent.planName || paymentIntent.planId || "subscription"} access is now active.`,
           });
         }
       } catch (smsError) {
@@ -222,16 +264,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.log("M-Pesa Callback:", {
+    console.log("M-Pesa Callback Processed:", {
       MerchantRequestID,
       CheckoutRequestID,
       ResultCode,
       ResultDesc,
-      amount: finalAmount,
+      amountKes: finalAmountKes,
+      amountUsd: finalAmountUsd,
       mpesaReceiptNumber,
       transactionDate,
       phoneNumber: finalPhone,
       paymentIntentId: paymentIntent._id,
+      finalStatus: isSuccessful ? "paid" : "failed",
     });
 
     return NextResponse.json({
