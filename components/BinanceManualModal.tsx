@@ -229,7 +229,7 @@ export default function BinanceManualModal({ isOpen, onClose, plan, user }: Prop
               <div className="grid gap-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Transaction ID / Hash *
+                    Transaction ID / Hash(TxID) *
                   </label>
                   <input
                     type="text"

@@ -56,7 +56,7 @@ export default function PaymentProviderModal({
   const [note, setNote] = useState("");
   const [binanceSubmitting, setBinanceSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
+  const showPaystack = false;
   if (!plan) return null;
 
   const amount =
@@ -204,6 +204,7 @@ export default function PaymentProviderModal({
                 <div className="h-2 w-2 rounded-full bg-gray-300 transition-colors group-hover:bg-green-500" />
               )}
             </button>
+            {showPaystack && (
 
             <button
               type="button"
@@ -232,6 +233,7 @@ export default function PaymentProviderModal({
                 <div className="h-2 w-2 rounded-full bg-gray-300 transition-colors group-hover:bg-blue-500" />
               )}
             </button>
+)}
 
             <button
               type="button"
@@ -422,7 +424,7 @@ export default function PaymentProviderModal({
                     <div className="space-y-3">
                       <div>
                         <label className="mb-1 block text-xs font-medium">
-                          Transaction ID / Hash{" "}
+                          Transaction ID / Hash(TxID){" "}
                           <span className="text-red-500">*</span>
                         </label>
                         <input
