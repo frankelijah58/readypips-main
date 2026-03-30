@@ -68,8 +68,8 @@ export default function SignalsPage() {
     name: string;
     price: string;
     duration: number;
-    provider?: "whop" | "binance" | "mpesa";
-    phone?: string;
+    provider?: "whop" | "binance" | "mpesa" | "paystack";
+        phone?: string;
   }) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
