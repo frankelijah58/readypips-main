@@ -248,7 +248,7 @@ export default function PaymentProviderModal({
 
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-gray-100">
-                    Whop (Card Payment)
+                   Card Payment
                   </p>
                   <p className="text-xs text-gray-500">
                     Secure checkout via Whop (Card / Apple Pay)
