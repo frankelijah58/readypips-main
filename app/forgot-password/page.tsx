@@ -159,12 +159,38 @@ export default function ForgotPasswordPage() {
                     <div className="text-sm text-amber-800 dark:text-amber-200">
                       <p className="font-medium mb-1">Email not verified</p>
                       <p className="mb-2">You need to verify your email address before you can reset your password.</p>
-                      <Link 
-                        href={`/verify-email?email=${encodeURIComponent(email)}`}
-                        className="text-amber-700 dark:text-amber-300 hover:underline font-medium"
-                      >
-                        Verify your email first →
-                      </Link>
+                      <button
+                            type="button"
+                            onClick={async () => {
+                              if (!email?.trim()) {
+                                toast.error("Please enter your email first.");
+                                return;
+                              }
+
+                              try {
+                                const response = await fetch("/api/auth/resend-verification", {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({ email: email.trim() }),
+                                });
+
+                                const data = await response.json();
+
+                                if (response.ok) {
+                                  toast.success("Verification email sent successfully. Check your inbox.");
+                                } else {
+                                  toast.error(data.error || "Failed to send verification email");
+                                }
+                              } catch (error) {
+                                toast.error("Something went wrong. Please try again.");
+                              }
+                            }}
+                            className="text-amber-700 dark:text-amber-300 hover:underline font-medium"
+                          >
+                            Verify your email first →
+                          </button>
                     </div>
                   </div>
                 </div>
