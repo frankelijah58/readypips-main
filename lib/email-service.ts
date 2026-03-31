@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 // Force hardcoded Hostinger settings since .env is not loading properly
 const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || "smtp.hostinger.com",
-  port: Number(process.env.SMTP_PORT) || 587,
+  port: Number(process.env.SMTP_PORT) || 465,
   user: process.env.SMTP_USER || "no-reply@readypips.com",
   pass: process.env.EMAIL_PASSWORD || "",
 };

@@ -313,13 +313,7 @@ export default function PaymentProviderModal({
                   </DialogDescription>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowBinanceManual(false)}
-                  className="rounded-lg p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                
               </div>
             </DialogHeader>
 
@@ -407,11 +401,11 @@ export default function PaymentProviderModal({
                     </div>
 
                     <div className="mt-3">
-                      <p className="mb-2 text-xs font-medium">QR Code</p>
+                      <p className="mb-2 text-xs font-medium">Scan our QR Code</p>
                       <img
                         src="/binance-usdt-qr.jpeg"
                         alt="Binance USDT QR"
-                        className="mx-auto h-52 w-52 rounded-lg border object-contain bg-white p-2"
+                        className="mx-auto h-66 w-66 rounded-lg border object-contain bg-white p-2"
                       />
                     </div>
                   </div>
