@@ -382,119 +382,114 @@ export default function PricingPlans({
 
   return (
     <>
-      <div className={`grid md:grid-cols-3 gap-8 max-w-6xl mx-auto ${className}`}>
-        {plans.map((plan, index) => (
-          <Card
-            key={index}
-            className={`relative hover:shadow-lg transition-all duration-200 bg-white dark:bg-black flex flex-col ${
-              plan.popular
-                ? "border-2 border-green-600"
-                : "border-gray-200 dark:border-gray-800"
-            }`}
+    <div className={`grid md:grid-cols-3 gap-8 max-w-6xl mx-auto ${className}`}>
+  {plans.map((plan, index) => (
+    <Card
+      key={index}
+      className={`relative hover:shadow-lg transition-all duration-200 bg-white dark:bg-black flex flex-col ${
+        plan.popular
+          ? "border-2 border-green-600"
+          : "border-gray-200 dark:border-gray-800"
+      }`}
+    >
+      {plan.popular && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
+          <Badge className="bg-green-600 px-3 py-1 text-white">
+            Most Recommended
+          </Badge>
+        </div>
+      )}
+
+      <CardHeader className="text-center flex-shrink-0">
+        <CardTitle className="text-2xl text-black dark:text-white">
+          {plan.name}
+        </CardTitle>
+        <div className="text-4xl font-bold text-green-600">
+          {plan.price}
+          <span className="text-lg text-gray-600 dark:text-gray-400">
+            {plan.period}
+          </span>
+        </div>
+      </CardHeader>
+
+      <CardContent className="flex flex-1 flex-col space-y-4">
+        <div className="flex-1">
+          <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+            Features:
+          </h4>
+          <ul className="mb-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+            {plan.features.slice(0, 6).map((feature, featureIndex) => (
+              <li key={featureIndex} className="flex items-start">
+                <CheckCircle className="mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mb-4 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
+            <h4 className="mb-2 text-sm font-semibold text-green-800 dark:text-green-300">
+              Package Benefits:
+            </h4>
+            <ul className="space-y-1 text-xs text-green-700 dark:text-green-200">
+              {(plan as any).benefits?.map((benefit: string, idx: number) => (
+                <li key={idx} className="flex items-start">
+                  <span className="mr-1 text-green-600">✓</span>
+                  <span>{benefit}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mb-2 flex items-center justify-center">
+            <Badge
+              variant="outline"
+              className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+            >
+              {(plan as any).duration} days of access
+            </Badge>
+          </div>
+        </div>
+
+        {/* BUTTON SECTION */}
+        {showGetStarted ? (
+          <Link href="/login">
+            <Button className="w-full bg-green-600 font-semibold text-white hover:bg-green-700">
+              Get Started
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        ) : loadingState ? (
+          <Button
+            className="w-full cursor-not-allowed bg-gray-400 font-semibold text-white"
+            disabled
           >
-            {plan.popular && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-                <Badge className="bg-green-600 px-3 py-1 text-white">
-                  Most Recommended
-                </Badge>
-              </div>
-            )}
-
-            <CardHeader className="text-center flex-shrink-0">
-              <CardTitle className="text-2xl text-black dark:text-white">
-                {plan.name}
-              </CardTitle>
-              <div className="text-4xl font-bold text-green-600">
-                {plan.price}
-                <span className="text-lg text-gray-600 dark:text-gray-400">
-                  {plan.period}
-                </span>
-              </div>
-            </CardHeader>
-
-            <CardContent className="flex flex-1 flex-col space-y-4">
-              <div className="flex-1">
-                <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
-                  Features:
-                </h4>
-                <ul className="mb-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                  {plan.features.slice(0, 6).map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start">
-                      <CheckCircle className="mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="mb-4 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
-                  <h4 className="mb-2 text-sm font-semibold text-green-800 dark:text-green-300">
-                    Package Benefits:
-                  </h4>
-                  <ul className="space-y-1 text-xs text-green-700 dark:text-green-200">
-                    {(plan as any).benefits?.map((benefit: string, idx: number) => (
-                      <li key={idx} className="flex items-start">
-                        <span className="mr-1 text-green-600">✓</span>
-                        <span>{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mb-2 flex items-center justify-center">
-                  <Badge
-                    variant="outline"
-                    className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                  >
-                    {(plan as any).duration} days of access
-                  </Badge>
-                </div>
-              </div>
-
-              {showGetStarted ? (
-                <Link href="/login">
-                  <Button className="w-full bg-green-600 font-semibold text-white hover:bg-green-700">
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              ) : loadingState ? (
-                <Button
-                  className="w-full cursor-not-allowed bg-gray-400 font-semibold text-white"
-                  disabled
-                >
-                  Processing...
-                </Button>
-              ) : (
-                <Button
-                  className={`w-full font-semibold text-white ${
-                    plan.popular
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-gray-600 hover:bg-gray-700"
-                  }`}
-                  onClick={() =>
-                    handlePlanAction({
-                      planId: plan.name.toLowerCase().replace(/\s+/g, ""),
-                      name: plan.name,
-                      price: plan.price,
-                      duration: (plan as any).duration,
-                    })
-                  }
-                  disabled={loading || currentPlan === "active"}
-                >
-                  {loading
-                    ? "Processing..."
-                    : currentPlan === "active"
-                    ? "Active Subscription"
-                    : "Get Access Now"}
-                  {!loading && currentPlan !== "active" && (
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  )}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            Processing...
+          </Button>
+        ) : (
+          <Button
+            className={`w-full font-semibold text-white ${
+              plan.popular
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-gray-600 hover:bg-gray-700"
+            }`}
+            onClick={() =>
+              handlePlanAction({
+                planId: plan.name.toLowerCase().replace(/\s+/g, ""),
+                name: plan.name,
+                price: plan.price,
+                duration: (plan as any).duration,
+              })
+            }
+            disabled={loading}
+          >
+            {loading ? "Processing..." : "Proceed with Payment"}
+            {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  ))}
+</div>
 
       <PaymentProviderModal
         isOpen={isModalOpen}
