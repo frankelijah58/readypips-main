@@ -20,7 +20,7 @@ import {
 import { PLANS } from "@/lib/plans";
 import PaymentProviderModal from "@/components/PaymentProviderModal";
 import MpesaPromptModal from "@/components/MpesaPromptModal";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -195,7 +195,8 @@ export default function PricingPlans({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMpesaPromptOpen, setIsMpesaPromptOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [selectedPlanForPayment, setSelectedPlanForPayment] = useState<any>(null);
+  const [selectedPlanForPayment, setSelectedPlanForPayment] =
+    useState<any>(null);
   const [loadingState, setLoadingState] = useState(false);
 
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
@@ -210,7 +211,6 @@ export default function PricingPlans({
       typeof price === "number"
         ? price
         : Number(String(price).replace(/[^0-9.]/g, ""));
-
     return Math.round(amount * USD_TO_KES);
   };
 
@@ -220,6 +220,10 @@ export default function PricingPlans({
       pollIntervalRef.current = null;
     }
   };
+
+  useEffect(() => {
+    return () => clearPolling();
+  }, []);
 
   const handlePlanAction = (plan: any) => {
     try {
@@ -256,21 +260,24 @@ export default function PricingPlans({
     try {
       setLoadingState(true);
 
-      await onPlanSelect({
+      const result = await onPlanSelect({
         ...selectedPlanForPayment,
         provider,
       });
 
+      console.log(`${provider.toUpperCase()} RESULT:`, result);
       setIsModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Provider selection error:", error);
-      alert("Failed to continue with payment. Please try again.");
+      alert(
+        error?.message || "Failed to continue with payment. Please try again."
+      );
     } finally {
       setLoadingState(false);
     }
   };
 
-  const pollPaymentStatus = (
+  const pollPaymentStatus = async (
     merchantRequestID: string,
     checkoutRequestID: string
   ) => {
@@ -295,19 +302,39 @@ export default function PricingPlans({
         });
 
         const data = await res.json();
+        console.log("M-PESA STATUS RESPONSE:", data);
 
-        if (data.status === "success" || data.paid === true) {
-          clearPolling();
-          setPaymentStatus("success");
-          setPaymentMessage("Payment received successfully.");
+        if (!res.ok) {
+          if (attempts >= maxAttempts) {
+            clearPolling();
+            setPaymentStatus("failed");
+            setPaymentMessage(
+              data?.message || "Could not confirm payment status."
+            );
+          }
           return;
         }
 
-        if (data.status === "failed") {
+        const status = data?.status || data?.paymentStatus;
+        const paid =
+          data?.paid === true || status === "success" || status === "paid";
+        const failed =
+          status === "failed" ||
+          status === "cancelled" ||
+          status === "canceled";
+
+        if (paid) {
+          clearPolling();
+          setPaymentStatus("success");
+          setPaymentMessage(data?.message || "Payment received successfully.");
+          return;
+        }
+
+        if (failed) {
           clearPolling();
           setPaymentStatus("failed");
           setPaymentMessage(
-            data.message || "Payment failed or was cancelled."
+            data?.message || "Payment failed or was cancelled."
           );
           return;
         }
@@ -320,6 +347,8 @@ export default function PricingPlans({
           );
         }
       } catch (error) {
+        console.error("M-PESA STATUS POLL ERROR:", error);
+
         if (attempts >= maxAttempts) {
           clearPolling();
           setPaymentStatus("failed");
@@ -333,7 +362,6 @@ export default function PricingPlans({
     if (!onPlanSelect || !selectedPlanForPayment) {
       throw new Error("No plan selected.");
     }
-    
 
     try {
       setLoadingState(true);
@@ -343,24 +371,61 @@ export default function PricingPlans({
         provider: "mpesa",
         phone,
       });
+
       console.log("M-PESA RESULT:", result);
+
+      const payload = result?.data?.data || result?.data || result;
+
+      const success =
+        result?.success === true ||
+        result?.data?.success === true ||
+        payload?.success === true ||
+        payload?.ResponseCode === "0" ||
+        payload?.ResponseCode === 0;
+
+      if (!success) {
+        throw new Error(
+          result?.message ||
+            result?.data?.message ||
+            payload?.message ||
+            payload?.ResponseDescription ||
+            "Failed to send M-Pesa prompt."
+        );
+      }
+
+      const merchantRequestID =
+        result?.MerchantRequestID ||
+        result?.merchantRequestID ||
+        result?.merchantRequestId ||
+        result?.data?.MerchantRequestID ||
+        result?.data?.merchantRequestID ||
+        result?.data?.merchantRequestId ||
+        payload?.MerchantRequestID ||
+        payload?.merchantRequestID ||
+        payload?.merchantRequestId;
+
+      const checkoutRequestID =
+        result?.CheckoutRequestID ||
+        result?.checkoutRequestID ||
+        result?.checkoutRequestId ||
+        result?.data?.CheckoutRequestID ||
+        result?.data?.checkoutRequestID ||
+        result?.data?.checkoutRequestId ||
+        payload?.CheckoutRequestID ||
+        payload?.checkoutRequestID ||
+        payload?.checkoutRequestId;
 
       setPaymentPhone(phone);
       setPaymentStatus("waiting");
-      setPaymentMessage("Prompt sent. Waiting for payment confirmation.");
+      setPaymentMessage(
+        result?.message ||
+          result?.data?.message ||
+          payload?.CustomerMessage ||
+          "Prompt sent. Waiting for payment confirmation."
+      );
       setIsMpesaPromptOpen(false);
       setIsModalOpen(false);
       setIsStatusModalOpen(true);
-
-      const merchantRequestID =
-        result?.merchantRequestID ||
-        result?.MerchantRequestID ||
-        result?.merchantRequestId;
-
-      const checkoutRequestID =
-        result?.checkoutRequestID ||
-        result?.CheckoutRequestID ||
-        result?.checkoutRequestId;
 
       if (merchantRequestID && checkoutRequestID) {
         pollPaymentStatus(merchantRequestID, checkoutRequestID);
@@ -372,6 +437,11 @@ export default function PricingPlans({
       }
     } catch (error: any) {
       console.error("M-Pesa submit error:", error);
+      setPaymentStatus("failed");
+      setPaymentMessage(error?.message || "Failed to send STK Push.");
+      setIsMpesaPromptOpen(false);
+      setIsModalOpen(false);
+      setIsStatusModalOpen(true);
       throw new Error(error?.message || "Failed to send STK Push.");
     } finally {
       setLoadingState(false);
@@ -382,114 +452,115 @@ export default function PricingPlans({
 
   return (
     <>
-    <div className={`grid md:grid-cols-3 gap-8 max-w-6xl mx-auto ${className}`}>
-  {plans.map((plan, index) => (
-    <Card
-      key={index}
-      className={`relative hover:shadow-lg transition-all duration-200 bg-white dark:bg-black flex flex-col ${
-        plan.popular
-          ? "border-2 border-green-600"
-          : "border-gray-200 dark:border-gray-800"
-      }`}
-    >
-      {plan.popular && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
-          <Badge className="bg-green-600 px-3 py-1 text-white">
-            Most Recommended
-          </Badge>
-        </div>
-      )}
-
-      <CardHeader className="text-center flex-shrink-0">
-        <CardTitle className="text-2xl text-black dark:text-white">
-          {plan.name}
-        </CardTitle>
-        <div className="text-4xl font-bold text-green-600">
-          {plan.price}
-          <span className="text-lg text-gray-600 dark:text-gray-400">
-            {plan.period}
-          </span>
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex flex-1 flex-col space-y-4">
-        <div className="flex-1">
-          <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
-            Features:
-          </h4>
-          <ul className="mb-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-            {plan.features.slice(0, 6).map((feature, featureIndex) => (
-              <li key={featureIndex} className="flex items-start">
-                <CheckCircle className="mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mb-4 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
-            <h4 className="mb-2 text-sm font-semibold text-green-800 dark:text-green-300">
-              Package Benefits:
-            </h4>
-            <ul className="space-y-1 text-xs text-green-700 dark:text-green-200">
-              {(plan as any).benefits?.map((benefit: string, idx: number) => (
-                <li key={idx} className="flex items-start">
-                  <span className="mr-1 text-green-600">✓</span>
-                  <span>{benefit}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="mb-2 flex items-center justify-center">
-            <Badge
-              variant="outline"
-              className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-            >
-              {(plan as any).duration} days of access
-            </Badge>
-          </div>
-        </div>
-
-        {/* BUTTON SECTION */}
-        {showGetStarted ? (
-          <Link href="/login">
-            <Button className="w-full bg-green-600 font-semibold text-white hover:bg-green-700">
-              Get Started
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        ) : loadingState ? (
-          <Button
-            className="w-full cursor-not-allowed bg-gray-400 font-semibold text-white"
-            disabled
-          >
-            Processing...
-          </Button>
-        ) : (
-          <Button
-            className={`w-full font-semibold text-white ${
+      <div className={`grid md:grid-cols-3 gap-8 max-w-6xl mx-auto ${className}`}>
+        {plans.map((plan, index) => (
+          <Card
+            key={index}
+            className={`relative hover:shadow-lg transition-all duration-200 bg-white dark:bg-black flex flex-col ${
               plan.popular
-                ? "bg-green-600 hover:bg-green-700"
-                : "bg-gray-600 hover:bg-gray-700"
+                ? "border-2 border-green-600"
+                : "border-gray-200 dark:border-gray-800"
             }`}
-            onClick={() =>
-              handlePlanAction({
-                planId: plan.name.toLowerCase().replace(/\s+/g, ""),
-                name: plan.name,
-                price: plan.price,
-                duration: (plan as any).duration,
-              })
-            }
-            disabled={loading}
           >
-            {loading ? "Processing..." : "Proceed with Payment"}
-            {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  ))}
-</div>
+            {plan.popular && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
+                <Badge className="bg-green-600 px-3 py-1 text-white">
+                  Most Recommended
+                </Badge>
+              </div>
+            )}
+
+            <CardHeader className="text-center flex-shrink-0">
+              <CardTitle className="text-2xl text-black dark:text-white">
+                {plan.name}
+              </CardTitle>
+              <div className="text-4xl font-bold text-green-600">
+                {plan.price}
+                <span className="text-lg text-gray-600 dark:text-gray-400">
+                  {plan.period}
+                </span>
+              </div>
+            </CardHeader>
+
+            <CardContent className="flex flex-1 flex-col space-y-4">
+              <div className="flex-1">
+                <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                  Features:
+                </h4>
+                <ul className="mb-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                  {plan.features.slice(0, 6).map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-start">
+                      <CheckCircle className="mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mb-4 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
+                  <h4 className="mb-2 text-sm font-semibold text-green-800 dark:text-green-300">
+                    Package Benefits:
+                  </h4>
+                  <ul className="space-y-1 text-xs text-green-700 dark:text-green-200">
+                    {(plan as any).benefits?.map(
+                      (benefit: string, idx: number) => (
+                        <li key={idx} className="flex items-start">
+                          <span className="mr-1 text-green-600">✓</span>
+                          <span>{benefit}</span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+
+                <div className="mb-2 flex items-center justify-center">
+                  <Badge
+                    variant="outline"
+                    className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
+                  >
+                    {(plan as any).duration} days of access
+                  </Badge>
+                </div>
+              </div>
+
+              {showGetStarted ? (
+                <Link href="/login">
+                  <Button className="w-full bg-green-600 font-semibold text-white hover:bg-green-700">
+                    Get Started
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              ) : loadingState ? (
+                <Button
+                  className="w-full cursor-not-allowed bg-gray-400 font-semibold text-white"
+                  disabled
+                >
+                  Processing...
+                </Button>
+              ) : (
+                <Button
+                  className={`w-full font-semibold text-white ${
+                    plan.popular
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-gray-600 hover:bg-gray-700"
+                  }`}
+                  onClick={() =>
+                    handlePlanAction({
+                      planId: plan.name.toLowerCase().replace(/\s+/g, ""),
+                      name: plan.name,
+                      price: plan.price,
+                      duration: (plan as any).duration,
+                    })
+                  }
+                  disabled={loading}
+                >
+                  {loading ? "Processing..." : "Proceed with Payment"}
+                  {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       <PaymentProviderModal
         isOpen={isModalOpen}

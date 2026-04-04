@@ -13,13 +13,31 @@ const MPESA_CALLBACK_URL = process.env.MPESA_CALLBACK_URL!;
 const BINANCE_PAY_KEY = process.env.BINANCE_PAY_KEY;
 const BINANCE_PAY_SECRET = process.env.BINANCE_PAY_SECRET;
 const BINANCE_PAY_CERT = process.env.BINANCE_PAY_CERT;
-const WHOP_APP_ID = process.env.NEXT_PUBLIC_WHOP_APP_ID;
 
 type Provider = "whop" | "binance" | "mpesa" | "paystack";
+
+function getWhopCheckoutUrl(plan: any, email?: string, reference?: string) {
+  if (!plan.whopCheckoutUrl) {
+    throw new Error("Whop checkout URL is not configured for this plan");
+  }
+
+  const url = new URL(plan.whopCheckoutUrl);
+
+  if (reference) {
+    url.searchParams.set("custom_id", reference);
+  }
+
+  if (email) {
+    url.searchParams.set("email", email);
+  }
+
+  return url.toString();
+}
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
     const { planId, provider, phone } = body as {
       planId: string;
       provider: Provider;
@@ -36,6 +54,7 @@ export async function POST(req: NextRequest) {
     const planConfig = PLANS.find(
       (p: any) =>
         p.id === planId ||
+        p.planId === planId ||
         p.name?.toLowerCase().replace(/\s+/g, "") === planId
     );
 
@@ -52,7 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = await verifyToken(token);
+    const decoded: any = await verifyToken(token);
 
     if (!decoded) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -66,8 +85,10 @@ export async function POST(req: NextRequest) {
         reference,
         userId: decoded.userId,
         email: decoded.email,
-        planId,
-        provider,
+        planId: planConfig.id,
+        planName: planConfig.name,
+        duration: planConfig.duration,
+        provider: "whop",
         amount: Number(planConfig.usd || 0),
         currency: "USD",
         status: "pending",
@@ -75,24 +96,29 @@ export async function POST(req: NextRequest) {
         updatedAt: new Date(),
       });
 
-      if (!WHOP_APP_ID) {
-        return NextResponse.json(
-          { error: "Whop is not configured" },
-          { status: 500 }
-        );
-      }
+      const checkoutUrl = getWhopCheckoutUrl(
+        planConfig,
+        decoded.email,
+        reference
+      );
 
-      const whopUrl = new URL(`https://whop.com/checkout/${WHOP_APP_ID}`);
-      whopUrl.searchParams.append("custom_id", reference);
-
-      if (decoded.email) {
-        whopUrl.searchParams.append("email", decoded.email);
-      }
+      await db.collection("payment_intents").updateOne(
+        { reference },
+        {
+          $set: {
+            checkoutUrl,
+            updatedAt: new Date(),
+          },
+        }
+      );
 
       return NextResponse.json({
         success: true,
-        checkoutUrl: whopUrl.toString(),
+        checkoutUrl,
         reference,
+        provider: "whop",
+        planId: planConfig.id,
+        planName: planConfig.name,
       });
     }
 
@@ -109,7 +135,6 @@ export async function POST(req: NextRequest) {
       }
 
       const amountKes = Math.round(Number(planConfig.kes || 0));
-      //const amountKes = 5; // TEST MODE
       const email = decoded.email;
 
       if (!email) {
@@ -123,8 +148,10 @@ export async function POST(req: NextRequest) {
         reference,
         userId: decoded.userId,
         email: decoded.email,
-        planId,
-        provider,
+        planId: planConfig.id,
+        planName: planConfig.name,
+        duration: planConfig.duration,
+        provider: "paystack",
         amount: amountKes,
         currency: "KES",
         status: "pending",
@@ -147,7 +174,9 @@ export async function POST(req: NextRequest) {
             reference,
             callback_url: `${APP_URL}/payment/success?reference=${reference}`,
             metadata: {
-              planId,
+              planId: planConfig.id,
+              planName: planConfig.name,
+              duration: planConfig.duration,
               userId: decoded.userId,
               provider: "paystack",
             },
@@ -183,9 +212,8 @@ export async function POST(req: NextRequest) {
         { reference },
         {
           $set: {
-            provider: "paystack",
-            paystackAccessCode: paystackData.data?.access_code,
-            paystackReference: paystackData.data?.reference,
+            paystackAccessCode: paystackData.data?.access_code || null,
+            paystackReference: paystackData.data?.reference || null,
             rawPaystackResponse: paystackData,
             updatedAt: new Date(),
           },
@@ -195,6 +223,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         reference,
+        provider: "paystack",
         checkoutUrl: paystackData.data.authorization_url,
       });
     }
@@ -211,8 +240,10 @@ export async function POST(req: NextRequest) {
         reference,
         userId: decoded.userId,
         email: decoded.email,
-        planId,
-        provider,
+        planId: planConfig.id,
+        planName: planConfig.name,
+        duration: planConfig.duration,
+        provider: "binance",
         amount: Number(planConfig.usd || 0),
         currency: "USD",
         status: "pending",
@@ -235,7 +266,7 @@ export async function POST(req: NextRequest) {
         goods: {
           goodsType: "01",
           goodsCategory: "D000",
-          referenceGoodsId: planId,
+          referenceGoodsId: planConfig.id,
           goodsName: `ReadyPips ${planConfig.name}`,
           goodsDetail: `Subscription ${planConfig.name}`,
         },
@@ -280,15 +311,18 @@ export async function POST(req: NextRequest) {
           }
         );
 
-        throw new Error("Binance Order Creation Failed");
+        return NextResponse.json(
+          { error: "Binance Order Creation Failed" },
+          { status: 400 }
+        );
       }
 
       await db.collection("payment_intents").updateOne(
         { reference },
         {
           $set: {
-            provider: "binance",
             rawBinanceResponse: binanceData,
+            checkoutUrl: binanceData.data?.checkoutUrl || null,
             updatedAt: new Date(),
           },
         }
@@ -297,6 +331,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         reference,
+        provider: "binance",
         checkoutUrl: binanceData.data.checkoutUrl,
       });
     }
@@ -312,19 +347,18 @@ export async function POST(req: NextRequest) {
       const formattedPhone = phone.startsWith("0")
         ? "254" + phone.substring(1)
         : phone.startsWith("254")
-          ? phone
-          : `254${phone}`;
+        ? phone
+        : `254${phone}`;
 
       console.log("MPESA INPUT:", {
         phone,
         formattedPhone,
-        planId,
+        planId: planConfig.id,
         userId: decoded.userId,
       });
 
       const amount = Math.round(Number(planConfig.kes || 0));
-      //const amount = 5; // TEST MODE
-      // Check for an existing pending payment BEFORE creating a new one
+
       const existing = await db.collection("payment_intents").findOne({
         userId: decoded.userId,
         provider: "mpesa",
@@ -335,32 +369,44 @@ export async function POST(req: NextRequest) {
       if (existing) {
         console.log("REUSING EXISTING MPESA PENDING:", {
           reference: existing.reference,
-          merchantRequestID: existing.merchantRequestID,
-          checkoutRequestID: existing.checkoutRequestID,
+          merchantRequestID:
+            existing.merchantRequestID || existing.merchantRequestId,
+          checkoutRequestID:
+            existing.checkoutRequestID || existing.checkoutRequestId,
         });
 
         return NextResponse.json({
           success: true,
           message: "You already have a pending payment. Check your phone.",
           reference: existing.reference,
-          merchantRequestID: existing.merchantRequestID,
-          checkoutRequestID: existing.checkoutRequestID,
+          MerchantRequestID:
+            existing.merchantRequestID || existing.merchantRequestId || null,
+          CheckoutRequestID:
+            existing.checkoutRequestID || existing.checkoutRequestId || null,
+          merchantRequestID:
+            existing.merchantRequestID || existing.merchantRequestId || null,
+          checkoutRequestID:
+            existing.checkoutRequestID || existing.checkoutRequestId || null,
           customerMessage:
             existing.customerMessage || "Pending payment found",
           reusedPending: true,
         });
       }
 
-      // Create the payment intent only after confirming no pending one exists
       await db.collection("payment_intents").insertOne({
         reference,
         userId: decoded.userId,
         email: decoded.email,
-        planId,
-        provider,
+        planId: planConfig.id,
+        planName: planConfig.name,
+        duration: planConfig.duration,
+        provider: "mpesa",
         amount,
         currency: "KES",
+        phone: formattedPhone,
+        phoneNumber: formattedPhone,
         status: "pending",
+        smsPromptSent: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -369,7 +415,10 @@ export async function POST(req: NextRequest) {
         `${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`
       ).toString("base64");
 
-      const baseUrl = "https://api.safaricom.co.ke";
+      const baseUrl =
+        process.env.MPESA_ENV === "sandbox"
+          ? "https://sandbox.safaricom.co.ke"
+          : "https://api.safaricom.co.ke";
 
       const tokenRes = await fetch(
         `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
@@ -399,8 +448,10 @@ export async function POST(req: NextRequest) {
           }
         );
 
-        console.error("M-Pesa Token Error:", tokenData);
-        throw new Error("Failed to get M-Pesa token");
+        return NextResponse.json(
+          { error: "Failed to get M-Pesa token" },
+          { status: 500 }
+        );
       }
 
       const timestamp = new Date()
@@ -441,7 +492,7 @@ export async function POST(req: NextRequest) {
       const stkData = await (stkResponse as Response).json();
       console.log("MPESA STK RESPONSE:", stkData);
 
-      if (stkData.ResponseCode !== "0") {
+      if (String(stkData?.ResponseCode) !== "0") {
         console.error("M-Pesa STK Error:", stkData);
 
         await db.collection("payment_intents").updateOne(
@@ -449,30 +500,50 @@ export async function POST(req: NextRequest) {
           {
             $set: {
               status: "failed",
-              failureReason: stkData.ResponseDescription,
+              failureReason: stkData?.ResponseDescription || "STK Push failed",
               rawStkResponse: stkData,
+              responseCode:
+                stkData?.ResponseCode != null
+                  ? String(stkData.ResponseCode)
+                  : null,
+              responseDescription: stkData?.ResponseDescription || null,
+              customerMessage: stkData?.CustomerMessage || null,
               updatedAt: new Date(),
             },
           }
         );
 
-        throw new Error(stkData.ResponseDescription || "STK Push failed");
+        return NextResponse.json(
+          {
+            error: stkData?.ResponseDescription || "STK Push failed",
+            MerchantRequestID: stkData?.MerchantRequestID || null,
+            CheckoutRequestID: stkData?.CheckoutRequestID || null,
+            merchantRequestID: stkData?.MerchantRequestID || null,
+            checkoutRequestID: stkData?.CheckoutRequestID || null,
+            customerMessage: stkData?.CustomerMessage || null,
+          },
+          { status: 400 }
+        );
       }
 
       await db.collection("payment_intents").updateOne(
         { reference },
         {
           $set: {
-            provider: "mpesa",
-            phone: formattedPhone,
-            planId,
-            amount,
             paymentIntentId: reference,
-            checkoutRequestID: stkData.CheckoutRequestID,
-            merchantRequestID: stkData.MerchantRequestID,
-            responseCode: stkData.ResponseCode,
-            responseDescription: stkData.ResponseDescription,
-            customerMessage: stkData.CustomerMessage,
+
+            merchantRequestID: stkData?.MerchantRequestID || null,
+            checkoutRequestID: stkData?.CheckoutRequestID || null,
+
+            merchantRequestId: stkData?.MerchantRequestID || null,
+            checkoutRequestId: stkData?.CheckoutRequestID || null,
+
+            responseCode:
+              stkData?.ResponseCode != null
+                ? String(stkData.ResponseCode)
+                : null,
+            responseDescription: stkData?.ResponseDescription || null,
+            customerMessage: stkData?.CustomerMessage || null,
             rawStkResponse: stkData,
             updatedAt: new Date(),
           },
@@ -480,18 +551,29 @@ export async function POST(req: NextRequest) {
       );
 
       console.log("MPESA SUCCESS RETURN:", {
-        merchantRequestID: stkData.MerchantRequestID,
-        checkoutRequestID: stkData.CheckoutRequestID,
-        customerMessage: stkData.CustomerMessage,
+        merchantRequestID: stkData?.MerchantRequestID,
+        checkoutRequestID: stkData?.CheckoutRequestID,
+        customerMessage: stkData?.CustomerMessage,
       });
 
       return NextResponse.json({
         success: true,
-        message: stkData.CustomerMessage || "STK Push sent",
+        message: stkData?.CustomerMessage || "STK Push sent",
         reference,
-        merchantRequestID: stkData.MerchantRequestID,
-        checkoutRequestID: stkData.CheckoutRequestID,
-        customerMessage: stkData.CustomerMessage,
+
+        MerchantRequestID: stkData?.MerchantRequestID || null,
+        CheckoutRequestID: stkData?.CheckoutRequestID || null,
+        ResponseCode:
+          stkData?.ResponseCode != null ? String(stkData.ResponseCode) : null,
+        ResponseDescription: stkData?.ResponseDescription || null,
+        CustomerMessage: stkData?.CustomerMessage || null,
+
+        merchantRequestID: stkData?.MerchantRequestID || null,
+        checkoutRequestID: stkData?.CheckoutRequestID || null,
+        responseCode:
+          stkData?.ResponseCode != null ? String(stkData.ResponseCode) : null,
+        responseDescription: stkData?.ResponseDescription || null,
+        customerMessage: stkData?.CustomerMessage || null,
       });
     }
 
