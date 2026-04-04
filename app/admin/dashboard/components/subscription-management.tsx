@@ -11,19 +11,18 @@ import {
   AlertCircle,
   TrendingUp,
   UserCheck,
+  Phone,
+  Mail,
   ShieldAlert,
+  Filter,
   MoreVertical,
   Calendar,
   CreditCard,
   ChevronDown,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const TABS = [
   { id: 'all', label: 'All Subscriptions' },
@@ -34,33 +33,25 @@ const TABS = [
 export default function SubscriptionManagement({ admin }: { admin: any }) {
   const { toast } = useToast();
 
+  // -------------------- STATE --------------------
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [pendingPayments, setPendingPayments] = useState<any[]>([]);
-  const [stats, setStats] = useState({
-    active: 0,
-    expired: 0,
-    pending: 0,
-    revenue: 0,
-  });
-
+  const [stats, setStats] = useState({ active: 0, expired: 0, pending: 0, revenue: 0 });
+  
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  // const [isQueueOpen, setIsQueueOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pendingPage, setPendingPage] = useState(1);
   const [pendingTotalPages, setPendingTotalPages] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [bulkConfirmData, setBulkConfirmData] = useState<{
-    type: 'status' | 'extend';
-    value: string | number;
-    label: string;
-  } | null>(null);
-
-  const [isQueueOpen, setIsQueueOpen] = useState(() => {
+  const [bulkConfirmData, setBulkConfirmData] = useState<{ type: 'status' | 'extend'; value: string | number; label: string; } | null>(null);
+ const [isQueueOpen, setIsQueueOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('admin_queue_expanded');
       return saved !== null ? JSON.parse(saved) : true;
@@ -69,8 +60,8 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
   });
 
   const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
 
@@ -78,34 +69,26 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
     if (selectedIds.length === subscriptions.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(subscriptions.map((s) => s._id));
+      setSelectedIds(subscriptions.map(s => s._id));
     }
   };
 
-  const authHeaders = useCallback(
-    () => ({
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    }),
-    []
-  );
+  // -------------------- HANDLERS (Same logic as before) --------------------
+  const authHeaders = useCallback(() => ({
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+  }), []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      
       const dateFilters = `&startDate=${startDate}&endDate=${endDate}`;
-      const statusFilter = activeTab === 'all' ? '' : `&status=${activeTab}`;
 
+      const statusFilter = activeTab === 'all' ? '' : `&status=${activeTab}`;
       const [subRes, revRes, pendRes] = await Promise.all([
-        fetch(
-          `/api/admin/subscriptions?page=${currentPage}&limit=10&search=${encodeURIComponent(
-            searchTerm
-          )}${statusFilter}${dateFilters}`,
-          { headers: authHeaders() }
-        ),
+        fetch(`/api/admin/subscriptions?page=${currentPage}&limit=10&search=${encodeURIComponent(searchTerm)}${statusFilter}${dateFilters}`, { headers: authHeaders() }),
         fetch('/api/admin/revenuev2', { headers: authHeaders() }),
-        fetch(`/api/admin/payments/pending?page=${pendingPage}&limit=4`, {
-          headers: authHeaders(),
-        }),
+        fetch(`/api/admin/payments/pending?page=${pendingPage}&limit=4`, { headers: authHeaders() }) // Adjusted limit for vertical flow
       ]);
 
       const subData = await subRes.json();
@@ -114,54 +97,28 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
 
       setSubscriptions(subData.subscriptions ?? []);
       setTotalPages(subData.totalPages ?? 1);
-
-      const allowedProviders = ['mpesa', 'whop', 'binance'];
-      const filteredPending = (pendData.pending ?? []).filter((item: any) =>
-        allowedProviders.includes((item.provider || '').toLowerCase())
-      );
-
-      setPendingPayments(filteredPending);
+      setPendingPayments(pendData.pending ?? []);
       setPendingTotalPages(pendData.totalPages ?? 1);
 
       setStats({
         active: subData.activeCount ?? 0,
         expired: subData.expiredCount ?? 0,
-        pending: filteredPending.length,
+        pending: pendData.totalCount ?? 0,
         revenue: revData?.revenue?.total ?? 0,
       });
     } catch (err) {
-      toast({
-        title: 'Sync Error',
-        description: 'Could not update dashboard data.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Sync Error', description: 'Could not update dashboard data.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [
-    currentPage,
-    searchTerm,
-    activeTab,
-    pendingPage,
-    startDate,
-    endDate,
-    authHeaders,
-    toast,
-  ]);
+  }, [currentPage, searchTerm, activeTab, pendingPage, startDate, endDate, authHeaders, toast]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 400);
     return () => clearTimeout(timer);
   }, [fetchData]);
 
-  useEffect(() => {
-    localStorage.setItem('admin_queue_expanded', JSON.stringify(isQueueOpen));
-  }, [isQueueOpen]);
-
-  const handlePaymentAction = async (
-    id: string,
-    action: 'approve' | 'reject'
-  ) => {
+  const handlePaymentAction = async (id: string, action: 'approve' | 'reject') => {
     setProcessingId(id);
     try {
       const res = await fetch('/api/admin/payments/action', {
@@ -169,9 +126,7 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ intentId: id, action }),
       });
-
       if (!res.ok) throw new Error();
-
       toast({ title: `Successfully ${action}ed` });
       fetchData();
     } catch {
@@ -189,9 +144,7 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ subscriptionId: id, ...updates }),
       });
-
       if (!res.ok) throw new Error();
-
       toast({ title: 'Success', description: 'User updated.' });
       fetchData();
     } catch {
@@ -201,20 +154,26 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
     }
   };
 
+ 
+
+// 2. Sync changes to localStorage
+useEffect(() => {
+  localStorage.setItem('admin_queue_expanded', JSON.stringify(isQueueOpen));
+}, [isQueueOpen]);
+  
+  // Example usage for an "Extend 7 Days" button:
   const extendSevenDays = (sub: any) => {
     const currentEnd = new Date(sub.endDate);
     currentEnd.setDate(currentEnd.getDate() + 7);
     handleUpdateSubscription(sub._id, { endDate: currentEnd.toISOString() });
   };
-
+  
+  // Example usage for a "Revoke" button:
   const revokeAccess = (id: string) => {
     handleUpdateSubscription(id, { status: 'expired' });
   };
-
-  const handleBulkAction = async (updates: {
-    status?: string;
-    extendDays?: number;
-  }) => {
+  
+  const handleBulkAction = async (updates: { status?: string; extendDays?: number }) => {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/subscriptions/bulk', {
@@ -224,22 +183,23 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({
-          ids: selectedIds,
+          ids: selectedIds, // The array of IDs from your state
           ...updates,
         }),
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok) throw new Error(data.error || 'Bulk update failed');
-
+  
       toast({
         title: 'Bulk Action Complete',
         description: `Successfully updated ${selectedIds.length} subscriptions.`,
       });
-
+  
+      // Reset selection and refresh data
       setSelectedIds([]);
-      fetchData();
+      fetchData(); 
     } catch (err: any) {
       toast({
         title: 'Error',
@@ -251,38 +211,50 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
     }
   };
 
-  const initiateBulkConfirm = (
-    type: 'status' | 'extend',
-    value: string | number,
-    label: string
-  ) => {
+  
+  // Triggered by the Floating Bar buttons
+  const initiateBulkConfirm = (type: 'status' | 'extend', value: string | number, label: string) => {
     setBulkConfirmData({ type, value, label });
   };
-
+  
+  // The actual execution
   const confirmAndExecute = () => {
     if (!bulkConfirmData) return;
-
-    const updates =
-      bulkConfirmData.type === 'status'
-        ? { status: bulkConfirmData.value as string }
-        : { extendDays: bulkConfirmData.value as number };
-
+    
+    const updates = bulkConfirmData.type === 'status' 
+      ? { status: bulkConfirmData.value as string }
+      : { extendDays: bulkConfirmData.value as number };
+  
     handleBulkAction(updates);
-    setBulkConfirmData(null);
+    setBulkConfirmData(null); // Close modal
   };
+  
 
   return (
     <div className="p-4 md:p-8 max-w-[1400px] mx-auto space-y-10 bg-[#F8FAFC] min-h-screen font-sans text-slate-900">
+      
+      {/* 1. HEADER */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
             <CreditCard className="w-6 h-6 text-indigo-600" />
             Subscription Management
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Manage user access and verify incoming payments.
-          </p>
+          <p className="text-slate-500 text-sm mt-1">Manage user access and verify incoming payments.</p>
         </div>
+
+        {/* Date Picker Group */}
+        {/* <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+          <Calendar className="w-4 h-4 text-slate-400 ml-2" />
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none text-slate-600" />
+          <span className="text-slate-300">-</span>
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none text-slate-600" />
+          {(startDate || endDate) && (
+            <button onClick={() => {setStartDate(''); setEndDate('')}} className="p-1 hover:bg-slate-200 rounded-md">
+              <X className="w-3 h-3 text-slate-500" />
+            </button>
+          )}
+        </div> */}
 
         <div className="flex items-center gap-3">
           <div className="relative group">
@@ -291,82 +263,47 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
               className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm w-full md:w-80 shadow-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
               placeholder="Search users..."
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             />
           </div>
-
           <Button variant="outline" className="bg-white" onClick={fetchData}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>
 
+      {/* 2. STATS GRID (Full Width) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Revenue"
-          value={`$${stats.revenue.toLocaleString()}`}
-          icon={<TrendingUp />}
-          trend="+12.5%"
-          color="blue"
-        />
-        <StatCard
-          title="Active Users"
-          value={stats.active}
-          icon={<UserCheck />}
-          color="blue"
-        />
-        <StatCard
-          title="Action Required"
-          value={stats.pending}
-          icon={<Clock />}
-          color="blue"
-        />
-        <StatCard
-          title="Churned"
-          value={stats.expired}
-          icon={<AlertCircle />}
-          color="blue"
-        />
+        <StatCard title="Total Revenue" value={`$${stats.revenue.toLocaleString()}`} icon={<TrendingUp />} trend="+12.5%" color="indigo" />
+        <StatCard title="Active Users" value={stats.active} icon={<UserCheck />} color="emerald" />
+        <StatCard title="Action Required" value={stats.pending} icon={<Clock />} color="amber" />
+        <StatCard title="Churned" value={stats.expired} icon={<AlertCircle />} color="slate" />
       </div>
 
       <hr className="border-slate-200" />
 
       <section className="space-y-6 transition-all duration-300">
-        <div
+        <div 
           className="flex items-center justify-between cursor-pointer group select-none"
           onClick={() => setIsQueueOpen(!isQueueOpen)}
         >
           <div className="flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
-                isQueueOpen
-                  ? 'bg-amber-50 border-amber-100'
-                  : 'bg-slate-100 border-slate-200'
-              }`}
-            >
-              <ShieldAlert
-                className={`w-5 h-5 ${
-                  isQueueOpen ? 'text-amber-600' : 'text-slate-400'
-                }`}
-              />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
+              isQueueOpen ? 'bg-amber-50 border-amber-100' : 'bg-slate-100 border-slate-200'
+            }`}>
+              <ShieldAlert className={`w-5 h-5 ${isQueueOpen ? 'text-amber-600' : 'text-slate-400'}`} />
             </div>
-
             <div>
               <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
                 Verification Queue
                 {!isQueueOpen && stats.pending > 0 && (
-                  <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">
-                    {stats.pending}
-                  </span>
+                   <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">
+                     {stats.pending}
+                   </span>
                 )}
               </h3>
               <p className="text-[11px] text-slate-400 font-medium">
-                {isQueueOpen
-                  ? 'Click to minimize'
-                  : 'Click to expand pending requests'}
+                {isQueueOpen ? 'Click to minimize' : 'Click to expand pending requests'}
               </p>
             </div>
           </div>
@@ -374,90 +311,63 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
           <div className="flex items-center gap-3">
             {isQueueOpen && (
               <div className="hidden md:flex items-center gap-2 mr-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
                   className="h-8 w-8 p-0"
-                  disabled={pendingPage === 1}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPendingPage((p) => p - 1);
-                  }}
+                  disabled={pendingPage === 1} 
+                  onClick={(e) => { e.stopPropagation(); setPendingPage(p => p - 1); }}
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-4 h-4"/>
                 </Button>
-
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   {pendingPage} / {pendingTotalPages}
                 </span>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
                   className="h-8 w-8 p-0"
-                  disabled={pendingPage === pendingTotalPages}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPendingPage((p) => p + 1);
-                  }}
+                  disabled={pendingPage === pendingTotalPages} 
+                  onClick={(e) => { e.stopPropagation(); setPendingPage(p => p + 1); }}
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4"/>
                 </Button>
               </div>
             )}
-
-            <div
-              className={`p-2 rounded-full group-hover:bg-slate-100 transition-transform duration-300 ${
-                isQueueOpen ? 'rotate-180' : 'rotate-0'
-              }`}
-            >
+            <div className={`p-2 rounded-full group-hover:bg-slate-100 transition-transform duration-300 ${isQueueOpen ? 'rotate-180' : 'rotate-0'}`}>
               <ChevronDown className="w-5 h-5 text-slate-400" />
             </div>
           </div>
         </div>
 
+        {/* Collapsible Content */}
         {isQueueOpen && (
           <div className="animate-in fade-in slide-in-from-top-2 duration-300">
             {pendingPayments.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {pendingPayments.map((pay) => (
-                  <PendingCard
-                    key={pay._id}
-                    pay={pay}
-                    onAction={handlePaymentAction}
-                    processingId={processingId}
-                  />
+                  <PendingCard key={pay._id} pay={pay} onAction={handlePaymentAction} processingId={processingId} />
                 ))}
               </div>
             ) : (
               <div className="py-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
-                <p className="text-sm font-medium text-slate-400 uppercase tracking-widest">
-                  All verifications cleared
-                </p>
+                <p className="text-sm font-medium text-slate-400 uppercase tracking-widest">All verifications cleared</p>
               </div>
             )}
           </div>
         )}
       </section>
-
+      {/* 4. MAIN DATABASE (Now a full-width section) */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-800 tracking-tight">
-            Subscriber Ledger
-          </h3>
-
+          <h3 className="text-lg font-bold text-slate-800 tracking-tight">Subscriber Ledger</h3>
           <div className="flex bg-slate-200/50 p-1 rounded-xl">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  setCurrentPage(1);
-                }}
+                onClick={() => { setActiveTab(tab.id); setCurrentPage(1); }}
                 className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                  activeTab === tab.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 {tab.label}
@@ -472,14 +382,7 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
               <thead className="bg-slate-50/50 border-b border-slate-100">
                 <tr className="text-[10px] uppercase tracking-widest text-slate-400">
                   <th className="px-6 py-4 text-center w-10">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.length === subscriptions.length}
-                      onChange={() => {
-                        toggleSelectAll();
-                      }}
-                      className="rounded accent-indigo-600"
-                    />
+                    <input type="checkbox" checked={selectedIds.length === subscriptions.length} onChange={() => {toggleSelectAll()}} className="rounded accent-indigo-600" />
                   </th>
                   <th className="px-6 py-4 text-left font-bold">Subscriber</th>
                   <th className="px-6 py-4 text-left font-bold">Status</th>
@@ -488,175 +391,115 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
                   <th className="px-6 py-4"></th>
                 </tr>
               </thead>
-
               <tbody className="divide-y divide-slate-50">
                 {subscriptions.map((sub) => (
-                  <tr
-                    key={sub._id}
-                    className="hover:bg-slate-50/50 transition-colors group"
-                  >
+                  <tr key={sub._id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-4 text-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(sub._id)}
-                        onChange={() => {
-                          toggleSelect(sub._id);
-                        }}
-                        className="rounded accent-indigo-600"
-                      />
+                      <input type="checkbox" checked={selectedIds.includes(sub._id)} onChange={() => {toggleSelect(sub._id)}} className="rounded accent-indigo-600" />
                     </td>
-
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
                           {sub.userName?.charAt(0)}
                         </div>
-
                         <div>
-                          <div className="font-bold text-slate-900 text-sm">
-                            {sub.userName}
-                          </div>
-                          <div className="flex items-center gap-1 text-slate-600 text-xs">
-                            {sub.email}
-                          </div>
-                          <div className="flex items-center gap-1 text-slate-600 text-xs">
-                            {sub.phoneNumber}
-                          </div>
-                          <div className="flex items-center gap-1 text-slate-600 text-xs">
-                            {sub.tradingviewUsername}
-                          </div>
-                          <div className="text-[10px] text-indigo-600 font-bold uppercase">
-                            {sub.plan}
-                          </div>
+                          <div className="font-bold text-slate-900 text-sm">{sub.userName}</div>
+                          <div className="flex items-center gap-1 text-slate-600 text-xs">{sub.email}</div>
+                          <div className="flex items-center gap-1 text-slate-600 text-xs">{sub.phoneNumber}</div>
+                          <div className="flex items-center gap-1 text-slate-600 text-xs">{sub.tradingviewUsername}</div>
+                          <div className="text-[10px] text-indigo-600 font-bold uppercase">{sub.plan}</div>
                         </div>
                       </div>
                     </td>
-
                     <td className="px-6 py-4">
                       <StatusBadge status={sub.status} />
                     </td>
-
                     <td className="px-6 py-4 text-xs text-slate-600">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
                         {new Date(sub.updatedDate).toLocaleDateString()}
                       </div>
                     </td>
-
                     <td className="px-6 py-4 text-right font-mono font-bold text-slate-700">
                       ${sub.price}
                     </td>
-
                     <td className="px-6 py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-2 text-slate-400 hover:text-slate-900 transition-colors"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => extendSevenDays(sub)}>
-                            Extend 7 Days
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => revokeAccess(sub._id)}
-                          >
-                            Revoke Access
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm"><MoreVertical className="w-4 h-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => extendSevenDays(sub)}>
+                                Extend 7 Days
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600" onClick={() => revokeAccess(sub._id)}>
+                                Revoke Access
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
+            
           </div>
-
+          
           <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-            <p className="text-xs font-medium text-slate-500">
-              Page {currentPage} of {totalPages}
-            </p>
-
+            <p className="text-xs font-medium text-slate-500">Page {currentPage} of {totalPages}</p>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="text-slate-700"
-                size="sm"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                className="text-slate-700"
-                size="sm"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-              >
-                Next
-              </Button>
+              <Button variant="outline" className={"text-white"} size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
+              <Button variant="outline" className={"text-white"} size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Floating Bulk Action Bar (Same as before) */}
       {selectedIds.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-in slide-in-from-bottom-4 z-50">
-          <span className="text-sm font-bold border-r border-slate-700 pr-6">
-            {selectedIds.length} Selected
-          </span>
-
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              className="bg-emerald-600"
-              onClick={() =>
-                initiateBulkConfirm('status', 'active', 'Set to Active')
-              }
-            >
-              Activate All
-            </Button>
-
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-white border-slate-700"
-              onClick={() =>
-                initiateBulkConfirm('status', 'expired', 'Mark as Expired')
-              }
-            >
-              Expire All
-            </Button>
-
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-white border-slate-700"
-              onClick={() =>
-                initiateBulkConfirm('extend', 7, 'Extend by 7 Days')
-              }
-            >
-              +7 Days Access
-            </Button>
-
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-slate-400"
-              onClick={() => setSelectedIds([])}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-in slide-in-from-bottom-4 z-50">
+                <span className="text-sm font-bold border-r border-slate-700 pr-6">
+                  {selectedIds.length} Selected
+                </span>
+                
+                <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      className="bg-emerald-600"
+                      onClick={() => initiateBulkConfirm('status', 'active', 'Set to Active')}
+                    >
+                      Activate All
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="text-white border-slate-700"
+                      onClick={() => initiateBulkConfirm('status', 'expired', 'Mark as Expired')}
+                    >
+                      Expire All
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="text-white border-slate-700"
+                      onClick={() => initiateBulkConfirm('extend', 7, 'Extend by 7 Days')}
+                    >
+                      +7 Days Access
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-slate-400"
+                      onClick={() => setSelectedIds([])}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                             </div>
+            )}
 
       {bulkConfirmData && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -664,155 +507,68 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
             <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
               <AlertCircle className="w-6 h-6 text-amber-600" />
             </div>
-
-            <h3 className="text-xl font-black text-slate-900 mb-2">
-              Are you absolutely sure?
-            </h3>
+            
+            <h3 className="text-xl font-black text-slate-900 mb-2">Are you absolutely sure?</h3>
             <p className="text-slate-500 text-sm leading-relaxed mb-8">
-              You are about to{' '}
-              <span className="font-bold text-slate-900">
-                {bulkConfirmData.label}
-              </span>{' '}
-              for
-              <span className="font-bold text-indigo-600">
-                {' '}
-                {selectedIds.length} users
-              </span>
-              . This action will update the database immediately.
+              You are about to <span className="font-bold text-slate-900">{bulkConfirmData.label}</span> for 
+              <span className="font-bold text-indigo-600"> {selectedIds.length} users</span>. 
+              This action will update the database immediately.
             </p>
 
             <div className="flex gap-3">
-              <Button
-                variant="outline"
+              <Button 
+                variant="outline" 
                 className="flex-1 rounded-xl h-12 font-bold border-slate-200 text-slate-600"
                 onClick={() => setBulkConfirmData(null)}
               >
                 Cancel
               </Button>
-
-              <Button
+              <Button 
                 className="flex-1 rounded-xl h-12 font-bold bg-slate-900 hover:bg-black text-white"
                 onClick={confirmAndExecute}
                 disabled={loading}
               >
-                {loading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  'Yes, Proceed'
-                )}
+                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Yes, Proceed'}
               </Button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
 
+/* -------------------- REFINED COMPONENTS -------------------- */
+
 function PendingCard({ pay, onAction, processingId }: any) {
-  const provider = (pay.provider || '').toLowerCase();
-
-  const providerStyles: Record<string, any> = {
-    mpesa: {
-      card: 'border-emerald-300 bg-emerald-50/80 shadow-emerald-100',
-      badge: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
-      amount: 'text-emerald-700',
-      avatar: 'bg-emerald-100 text-emerald-700',
-      button: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-      ring: 'ring-1 ring-emerald-200',
-      label: 'M-Pesa',
-    },
-    whop: {
-      card: 'border-rose-300 bg-rose-50/80 shadow-rose-100',
-      badge: 'bg-rose-100 text-rose-700 border border-rose-200',
-      amount: 'text-rose-700',
-      avatar: 'bg-rose-100 text-rose-700',
-      button: 'bg-rose-600 hover:bg-rose-700 text-white',
-      ring: 'ring-1 ring-rose-200',
-      label: 'Whop',
-    },
-    binance: {
-      card: 'border-yellow-300 bg-yellow-50/80 shadow-yellow-100',
-      badge: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
-      amount: 'text-yellow-700',
-      avatar: 'bg-yellow-100 text-yellow-700',
-      button: 'bg-yellow-500 hover:bg-yellow-600 text-white',
-      ring: 'ring-1 ring-yellow-200',
-      label: 'Binance',
-    },
-  };
-
-  const style = providerStyles[provider];
-
-  if (!style) return null;
-
   return (
-    <div
-      className={`rounded-2xl p-4 border-2 shadow-sm hover:shadow-md transition-all ${style.card} ${style.ring}`}
-    >
+    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all">
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
-          <div
-            className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${style.avatar}`}
-          >
-            {pay.userName?.charAt(0) || 'U'}
-          </div>
-
+          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-xs">{pay.userName?.charAt(0)}</div>
           <div>
             <h4 className="font-bold text-sm text-slate-900">{pay.userName}</h4>
-
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span
-                className={`inline-flex px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide ${style.badge}`}
-              >
-                {style.label}
-              </span>
-
-              <PaymentStatusBadge status={pay.status} />
-            </div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase">{pay.provider}</p>
           </div>
         </div>
-
-        <span className={`text-sm font-black ${style.amount}`}>
-          ${pay.amount}
-        </span>
+        <span className="text-sm font-black text-indigo-600">${pay.amount}</span>
       </div>
-
-      <div className="space-y-2 mb-4">
-        <div className="text-[11px] text-slate-700 bg-white/70 p-2 rounded-lg truncate border border-white/60">
-          {pay.email}
-        </div>
-
-        {pay.phoneNumber && (
-          <div className="text-[11px] text-slate-700 bg-white/70 p-2 rounded-lg truncate border border-white/60">
-            {pay.phoneNumber}
-          </div>
-        )}
-
-        {pay.transactionId && (
-          <div className="text-[11px] text-slate-700 bg-white/70 p-2 rounded-lg break-all border border-white/60">
-            TXN: {pay.transactionId}
-          </div>
-        )}
+      <div className="text-[11px] text-slate-500 mb-4 bg-slate-50 p-2 rounded-lg truncate">
+        {pay.email}
       </div>
-
-      <div className="flex gap-2">
-        <Button
+      <div className="flex gap-2 ">
+        <Button 
           onClick={() => onAction(pay._id, 'approve')}
-          className={`flex-1 h-9 text-[10px] font-bold ${style.button}`}
+          className="flex-1 h-8 text-[10px] font-bold bg-slate-900 hover:bg-black text-white"
           disabled={!!processingId}
         >
-          {processingId === pay._id ? (
-            <RefreshCw className="animate-spin w-3 h-3" />
-          ) : (
-            'Approve'
-          )}
+          {processingId === pay._id ? <RefreshCw className="animate-spin w-3 h-3" /> : 'Approve'}
         </Button>
-
-        <Button
+        <Button 
           variant="outline"
           onClick={() => onAction(pay._id, 'reject')}
-          className="flex-1 h-9 text-[10px] font-bold text-rose-600 border-rose-200 bg-white hover:bg-rose-50"
+          className="flex-1 h-8 text-[10px] font-bold hover:bg-rose-250 text-rose-600 border-rose-200"
           disabled={!!processingId}
         >
           Decline
@@ -824,70 +580,32 @@ function PendingCard({ pay, onAction, processingId }: any) {
 
 function StatCard({ title, value, icon, color, trend }: any) {
   const colors: any = {
-    blue: 'bg-blue-50 text-blue-600 border-blue-100',
     indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
     emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
     amber: 'bg-amber-50 text-amber-600 border-amber-100',
     slate: 'bg-slate-50 text-slate-600 border-slate-100',
   };
-
   return (
     <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
       <div className="flex justify-between items-center mb-4">
         <div className={`p-2 rounded-xl ${colors[color]}`}>{icon}</div>
-        {trend && (
-          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-            {trend}
-          </span>
-        )}
+        {trend && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">{trend}</span>}
       </div>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-        {title}
-      </p>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{title}</p>
       <p className="text-2xl font-black text-slate-900">{value}</p>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const normalized = (status || '').toLowerCase();
-
   const styles: Record<string, string> = {
     active: 'bg-emerald-50 text-emerald-700 border-emerald-100',
     expired: 'bg-red-50 text-red-700 border-red-100',
     trial: 'bg-indigo-50 text-indigo-700 border-indigo-100',
   };
-
   return (
-    <span
-      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border ${
-        styles[normalized] || styles.expired
-      }`}
-    >
+    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border ${styles[status] || styles.expired}`}>
       {status}
-    </span>
-  );
-}
-
-function PaymentStatusBadge({ status }: { status: string }) {
-  const normalized = (status || 'pending').toLowerCase();
-
-  const styles: Record<string, string> = {
-    pending: 'bg-amber-50 text-amber-700 border-amber-200',
-    submitted: 'bg-blue-50 text-blue-700 border-blue-200',
-    approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    rejected: 'bg-red-50 text-red-700 border-red-200',
-    failed: 'bg-red-50 text-red-700 border-red-200',
-    verified: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  };
-
-  return (
-    <span
-      className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase border ${
-        styles[normalized] || styles.pending
-      }`}
-    >
-      {normalized}
     </span>
   );
 }
