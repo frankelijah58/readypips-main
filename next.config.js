@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: { unoptimized: true },
   serverExternalPackages: ['mongodb'],
+  devIndicators: {
+    buildActivity: false,
+  },
 };
 
 module.exports = nextConfig;

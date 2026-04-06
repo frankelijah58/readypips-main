@@ -2,23 +2,21 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowRight, 
-  CheckCircle2, 
-  ChevronRight, 
-  Users, 
-  Briefcase, 
-  Globe, 
-  Layout, 
-  Youtube, 
-  Twitter, 
-  Send, 
-  Instagram, 
+import {
+  ArrowRight,
+  CheckCircle2,
+  ChevronRight,
+  Users,
+  Briefcase,
+  Globe,
+  Layout,
+  Send,
   MousePointer2,
   Building,
   BarChart3,
-  ChevronLeft
-} from 'lucide-react';
+  ChevronLeft,
+} from "lucide-react";
+import { Instagram, Twitter, Youtube } from "@/components/icons/brand-social";
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 // import { motion, AnimatePresence } from 'framer-motion';

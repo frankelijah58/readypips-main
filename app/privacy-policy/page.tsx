@@ -2,7 +2,7 @@
 
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
-import { Instagram } from "lucide-react";
+import { Instagram } from "@/components/icons/brand-social";
 export default function PrivacyPolicyPage() {
   return (
     <>
@@ -91,8 +91,7 @@ export default function PrivacyPolicyPage() {
             <p>
               If you have any questions about this Privacy Policy, please contact us at:
             </p>
-            
-            `
+
             <ul className="space-y-3 mt-4">
   <li className="flex items-center gap-2">
     <Instagram className="h-4 w-4 text-pink-500" />

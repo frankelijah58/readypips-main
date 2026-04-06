@@ -6,7 +6,25 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, MessageSquare, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { Instagram } from "lucide-react";
+
+function InstagramGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
 
 interface SupportFormData {
   name: string;
@@ -87,8 +105,15 @@ export default function SupportPage() {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (response.ok) {
-        toast.success('Support request submitted successfully!');
+        const ticket = typeof data.ticketNumber === 'string' ? data.ticketNumber : '';
+        toast.success(
+          ticket
+            ? `Ticket ${ticket} submitted — we will get back to you soon.`
+            : 'Support request submitted successfully!'
+        );
         setFormData({
           name: '',
           email: '',
@@ -97,7 +122,9 @@ export default function SupportPage() {
           description: '',
         });
       } else {
-        toast.error('Failed to submit support request');
+        const msg =
+          typeof data.error === 'string' ? data.error : 'Failed to submit support request';
+        toast.error(msg);
       }
     } catch (error) {
       console.error('Error submitting support request:', error);
@@ -137,6 +164,9 @@ export default function SupportPage() {
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Email</h3>
                     <p className="text-gray-600 dark:text-gray-400">info@readypips.com</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                      Automated replies are sent from no-reply@readypips.com
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -173,7 +203,7 @@ export default function SupportPage() {
               </Card>
               <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
   <CardContent className="pt-6 flex items-start space-x-4">
-    <Instagram className="w-6 h-6 text-pink-500 flex-shrink-0 mt-1" />
+    <InstagramGlyph className="w-6 h-6 text-pink-500 flex-shrink-0 mt-1" />
     <div>
       <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
         Instagram

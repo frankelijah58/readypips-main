@@ -210,9 +210,9 @@ export default function ToolsManagement({ admin }: { admin: any }) {
       </div>
 
       {/* Tool Library */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-[#18181b] rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold text-gray-900">Tool Library</h3>
+          <h3 className="font-semibold text-white">Tool Library</h3>
           <button 
             onClick={handleAddTool}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
@@ -224,19 +224,19 @@ export default function ToolsManagement({ admin }: { admin: any }) {
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left text-gray-900 font-semibold">Tool Name</th>
-                <th className="px-4 py-2 text-left text-gray-900 font-semibold">Category</th>
-                <th className="px-4 py-2 text-left text-gray-900 font-semibold">Access Level</th>
-                <th className="px-4 py-2 text-left text-gray-900 font-semibold">Status</th>
-                <th className="px-4 py-2 text-left text-gray-900 font-semibold">Actions</th>
+                <th className="px-4 py-2 text-left text-white font-semibold">Tool Name</th>
+                <th className="px-4 py-2 text-left text-white font-semibold">Category</th>
+                <th className="px-4 py-2 text-left text-white font-semibold">Access Level</th>
+                <th className="px-4 py-2 text-left text-white font-semibold">Status</th>
+                <th className="px-4 py-2 text-left text-white font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {tools.length > 0 ? (
                 tools.map((tool) => (
                   <tr key={tool._id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{tool.name}</td>
-                    <td className="px-4 py-3 text-gray-600">{tool.category}</td>
+                    <td className="px-4 py-3 font-medium text-white">{tool.name}</td>
+                    <td className="px-4 py-3 text-white/60">{tool.category}</td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                         {tool.accessLevel}
@@ -285,12 +285,12 @@ export default function ToolsManagement({ admin }: { admin: any }) {
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+          <div className="bg-[#18181b] rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-900">
+              <h3 className="text-xl font-bold text-white">
                 {editingTool ? 'Edit Tool' : 'Add New Tool'}
               </h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white/60">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -390,10 +390,11 @@ function StatBox({ title, value }: { title: string; value: string }) {
     <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm text-white/60">{title}</p>
+          <p className="text-2xl font-bold text-white">{value}</p>
         </div>
       </div>
     </div>
   );
 }
+

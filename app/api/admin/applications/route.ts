@@ -8,7 +8,21 @@ export async function GET(req: NextRequest) {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
     const decoded = verifyToken(token!);
-    if (!decoded || !decoded.isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!decoded && !token) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
+    let userId = decoded?.userId;
+    if (!userId && token) {
+       // if token is a direct passkey token, we need to decode differently or use verifyAdminToken
+       const { verifyAdminToken } = require('@/lib/admin');
+       const adminDecoded = verifyAdminToken(token);
+       if (adminDecoded) userId = adminDecoded.adminId;
+    }
+    
+    const { findUserById } = require('@/lib/auth');
+    const user = await findUserById(userId);
+    if (!user || (!user.isAdmin && user.role !== "admin")) {
+        return NextResponse.json({ error: "Unauthorized access. Admin privileges required." }, { status: 403 });
+    }
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status"); // 'pending' or 'approved'
@@ -50,9 +64,23 @@ export async function PATCH(req: NextRequest) {
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
     const decoded = verifyToken(token!);
-    if (!decoded || !decoded.isAdmin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!decoded && !token) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
-    const { userId, status, updates, role } = await req.json();
+    let userId = decoded?.userId;
+    if (!userId && token) {
+       // if token is a direct passkey token, we need to decode differently or use verifyAdminToken
+       const { verifyAdminToken } = require('@/lib/admin');
+       const adminDecoded = verifyAdminToken(token);
+       if (adminDecoded) userId = adminDecoded.adminId;
+    }
+    
+    const { findUserById } = require('@/lib/auth');
+    const user = await findUserById(userId);
+    if (!user || (!user.isAdmin && user.role !== "admin")) {
+        return NextResponse.json({ error: "Unauthorized access. Admin privileges required." }, { status: 403 });
+    }
+
+    const { userId: targetUserId, status, updates, role } = await req.json();
     const db = await getDatabase();
 
     const updateQuery: any = {};
@@ -82,7 +110,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const result = await db.collection("users").updateOne(
-      { _id: new ObjectId(userId) },
+      { _id: new ObjectId(targetUserId) },
       { $set: updateQuery }
     );
 

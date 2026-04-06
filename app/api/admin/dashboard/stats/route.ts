@@ -1,54 +1,18 @@
-// /api/admin/dashboard/stats/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminToken, findAdminById } from "@/lib/admin";
 import { getDatabase } from "@/lib/mongodb";
+import { requireAdminDashboardAccess } from "@/lib/admin-dashboard-auth";
+import { aggregateIntentRevenueKes } from "@/lib/dashboard-revenue";
 
-async function verifyAdmin(req: NextRequest) {
-  const token = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!token) return null;
-
-  const decoded = verifyAdminToken(token);
-  if (!decoded) return null;
-
-  const admin = await findAdminById(decoded.adminId);
-  if (!admin || !admin.isActive || !admin.isAdmin) return null;
-
-  return admin;
-}
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    // const admin = await verifyAdmin(req);
-    // if (!admin) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    const auth = await requireAdminDashboardAccess(req);
+    if (!auth.ok) return auth.response;
 
     const db = await getDatabase();
 
-    const now = new Date();
-    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    const revenueAgg = await db.collection("payment_intents").aggregate([
-      { $match: { status: "success" } },
-      {
-        $facet: {
-          total: [
-            { $group: { _id: null, sum: { $sum: "$amount" } } }
-          ],
-          daily: [
-            { $match: { createdAt: { $gte: dayAgo } } },
-            { $group: { _id: null, sum: { $sum: "$amount" } } }
-          ],
-          weekly: [
-            { $match: { createdAt: { $gte: weekAgo } } },
-            { $group: { _id: null, sum: { $sum: "$amount" } } }
-          ]
-        }
-      }
-    ]).toArray();
-
-    const revenue = revenueAgg[0];
+    const revenue = await aggregateIntentRevenueKes(db);
 
     const [
       totalUsers,
@@ -56,15 +20,24 @@ export async function GET(req: NextRequest) {
       expired,
       trial,
       pending,
-      toolAccessMetrics
+      toolAccessMetrics,
     ] = await Promise.all([
       db.collection("users").countDocuments(),
       db.collection("subscriptions").countDocuments({ status: "active" }),
       db.collection("subscriptions").countDocuments({ status: "expired" }),
       db.collection("subscriptions").countDocuments({ status: "trial" }),
       db.collection("payment_intents").countDocuments({ status: "pending" }),
-      db.collection("tools").countDocuments({ isActive: true })
+      db.collection("tools").countDocuments({ isActive: true }),
     ]);
+
+    const formatUptime = (seconds: number) => {
+      const d = Math.floor(seconds / (3600 * 24));
+      const h = Math.floor((seconds % (3600 * 24)) / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      if (d > 0) return `${d}d ${h}h`;
+      if (h > 0) return `${h}h ${m}m`;
+      return `${m}m`;
+    };
 
     return NextResponse.json({
       stats: {
@@ -73,14 +46,14 @@ export async function GET(req: NextRequest) {
         expired,
         trial,
         pending,
-        systemUptime: "99.9%",
+        systemUptime: formatUptime(process.uptime()),
         toolAccessMetrics,
         revenue: {
-          total: revenue.total[0]?.sum || 0,
-          daily: revenue.daily[0]?.sum || 0,
-          weekly: revenue.weekly[0]?.sum || 0
-        }
-      }
+          total: revenue.total,
+          weekly: revenue.weekly,
+          daily: revenue.daily,
+        },
+      },
     });
   } catch (err) {
     console.error("Dashboard stats error:", err);

@@ -12,7 +12,7 @@ async function requireAdmin(req: NextRequest) {
     return { ok: false as const, status: 401, error: "Unauthorized" };
   }
   const user = await findUserById(decoded.userId);
-  if (!user || (!user.isAdmin && user.role !== "admin")) {
+  if (!user || !user.isAdmin) {
     return { ok: false as const, status: 403, error: "Forbidden" };
   }
   return { ok: true as const };

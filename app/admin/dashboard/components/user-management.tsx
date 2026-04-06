@@ -17,7 +17,15 @@ interface User {
   subscriptionEndDate?: string;
 }
 
-export default function UserManagement({ admin }: { admin: any }) {
+export default function UserManagement({
+  admin,
+  headerSearch,
+  onHeaderSearchChange,
+}: {
+  admin: any;
+  headerSearch: string;
+  onHeaderSearchChange: (value: string) => void;
+}) {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,12 +47,11 @@ export default function UserManagement({ admin }: { admin: any }) {
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState("");
   const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     fetchUsers();
-  }, [page, search, limit]);
+  }, [page, headerSearch, limit]);
 
   const fetchStats = async () => {
     try {
@@ -86,7 +93,7 @@ export default function UserManagement({ admin }: { admin: any }) {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
-      search
+      search: headerSearch,
     });
 
     const res = await fetch(`/api/admin/users?${params}`, {
@@ -154,6 +161,26 @@ export default function UserManagement({ admin }: { admin: any }) {
     }
   };
 
+  const handleMakeAdmin = async (userId: string) => {
+    if (!window.confirm('Are you sure you want to promote this user to an Admin?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/admin/users/${userId}/make-admin`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        toast({ title: 'Success', description: 'User promoted to Admin successfully' });
+        fetchUsers();
+      } else {
+        const error = await response.json();
+        toast({ title: 'Error', description: error.error || 'Failed to promote user', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to promote user', variant: 'destructive' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -164,9 +191,9 @@ export default function UserManagement({ admin }: { admin: any }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">User Management</h2>
-        <p className="text-gray-600 mb-4">Manage registered users and their access to trading tools.</p>
+      <div className="bg-[#18181b] rounded-xl shadow-lg border border-white/[0.04] p-6">
+        <h2 className="text-2xl font-bold text-white mb-4">User Management</h2>
+        <p className="text-white/60 mb-4">Manage registered users and their access to trading tools.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
           <StatBox title="Total Users" value={stats.totalUsers.toString()} color="blue" />
@@ -176,11 +203,11 @@ export default function UserManagement({ admin }: { admin: any }) {
           <StatBox title="Pending" value={stats.pending.toString()} color="orange" />
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
+        <div className="bg-[#18181b] rounded-xl shadow-lg border border-white/[0.04] overflow-hidden mt-6">
+          <div className="p-6 border-b border-white/[0.04]">
             <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-gray-900">User Directory</h3>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+              <h3 className="font-semibold text-white">User Directory</h3>
+              <button className="bg-[#8C57FF] hover:bg-[#8C57FF]/90 text-white px-4 py-2 rounded-lg text-sm shadow-[0_2px_6px_rgba(140,87,255,0.4)] transition-all">
                 Add User
               </button>
             </div>
@@ -189,12 +216,12 @@ export default function UserManagement({ admin }: { admin: any }) {
             <div className="flex flex-col md:flex-row gap-4 justify-between mb-4">
               <input
                 placeholder="Search users…"
-                value={search}
+                value={headerSearch}
                 onChange={(e) => {
                   setPage(1);
-                  setSearch(e.target.value);
+                  onHeaderSearchChange(e.target.value);
                 }}
-                className="w-full md:w-64 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full md:w-64 px-4 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C57FF] text-white placeholder:text-white/30"
               />
 
               <select
@@ -203,7 +230,7 @@ export default function UserManagement({ admin }: { admin: any }) {
                   setPage(1);
                   setLimit(Number(e.target.value));
                 }}
-                className="px-3 py-2 border rounded-lg"
+                className="px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-white outline-none focus:ring-2 focus:ring-[#8C57FF]"
               >
                 <option value={10}>10 / page</option>
                 <option value={20}>20 / page</option>
@@ -212,26 +239,26 @@ export default function UserManagement({ admin }: { admin: any }) {
             </div>
 
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-black/20">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Plan</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Expires On</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email Verified</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Joined</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-white/90">Name</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-white/90">Email</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Plan</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Status</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Expires On</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-white/90">Email Verified</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-white/90">Joined</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-white/90">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-white/[0.04]">
                 {users.length > 0 ? (
                   users.map((user) => (
-                    <tr key={user._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <tr key={user._id} className="hover:bg-[#18181b]/[0.02] transition-colors">
+                      <td className="px-6 py-4 text-sm font-medium text-white">
                         {user.firstName} {user.lastName}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
+                      <td className="px-6 py-4 text-sm text-white/70">{user.email}</td>
                       <td className="px-6 py-4 text-sm">
                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
                           getPlanBadgeColor(user.subscriptionType)
@@ -246,35 +273,41 @@ export default function UserManagement({ admin }: { admin: any }) {
                           {(user.subscriptionStatus || 'inactive').toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-white/70">
                         {getExpiryDisplay(user)}
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${
                           user.emailVerified
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                            : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                         }`}>
                           {user.emailVerified ? 'Verified' : 'Pending'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-white/70">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 text-sm space-x-2">
+                      <td className="px-6 py-4 text-sm space-x-3">
                         <button 
                           onClick={() => handleEditUser(user)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-[#8C57FF] hover:text-[#8C57FF]/80 transition-colors"
                         >
                           Edit
                         </button>
-                        <button className="text-red-600 hover:text-red-800">Delete</button>
+                        <button 
+                          onClick={() => handleMakeAdmin(user._id)}
+                          className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                        >
+                          Make Admin
+                        </button>
+                        <button className="text-rose-400 hover:text-rose-300 transition-colors">Delete</button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan={8} className="px-6 py-8 text-center text-sm text-white/50">
                       No users found
                     </td>
                   </tr>
@@ -282,8 +315,8 @@ export default function UserManagement({ admin }: { admin: any }) {
               </tbody>
             </table>
 
-            <div className="flex items-center justify-between p-4 border-t bg-gray-50">
-              <span className="text-sm text-gray-600">
+            <div className="flex items-center justify-between p-4 border-t border-white/[0.04] bg-black/10">
+              <span className="text-sm text-white/60">
                 Page {page} of {totalPages}
               </span>
 
@@ -291,7 +324,7 @@ export default function UserManagement({ admin }: { admin: any }) {
                 <button
                   disabled={page === 1}
                   onClick={() => setPage(p => p - 1)}
-                  className="px-3 py-1 border rounded disabled:opacity-50 text-sm text-gray-700"
+                  className="px-3 py-1 border border-white/10 rounded disabled:opacity-50 text-sm text-white/80 hover:bg-[#18181b]/5 transition-colors"
                 >
                   ← Prev
                 </button>
@@ -299,7 +332,7 @@ export default function UserManagement({ admin }: { admin: any }) {
                 <button
                   disabled={page === totalPages}
                   onClick={() => setPage(p => p + 1)}
-                  className="px-3 py-1 border rounded disabled:opacity-50 text-sm text-gray-700"
+                  className="px-3 py-1 border border-white/10 rounded disabled:opacity-50 text-sm text-white/80 hover:bg-[#18181b]/5 transition-colors"
                 >
                   Next →
                 </button>
@@ -312,12 +345,12 @@ export default function UserManagement({ admin }: { admin: any }) {
 
       {/* Edit User Modal */}
       {showEditModal && editingUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Edit User</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#18181b] rounded-xl p-8 max-w-md w-full mx-4 border border-white/10 shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-6">Edit User</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   First Name
                 </label>
                 <input
@@ -326,11 +359,11 @@ export default function UserManagement({ admin }: { admin: any }) {
                   onChange={(e) =>
                     setEditingUser({ ...editingUser, firstName: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C57FF] text-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   Last Name
                 </label>
                 <input
@@ -339,11 +372,11 @@ export default function UserManagement({ admin }: { admin: any }) {
                   onChange={(e) =>
                     setEditingUser({ ...editingUser, lastName: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C57FF] text-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   Email
                 </label>
                 <input
@@ -352,11 +385,11 @@ export default function UserManagement({ admin }: { admin: any }) {
                   onChange={(e) =>
                     setEditingUser({ ...editingUser, email: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C57FF] text-white"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-white/70 mb-2">
                   Phone Number
                 </label>
                 <input
@@ -365,24 +398,24 @@ export default function UserManagement({ admin }: { admin: any }) {
                   onChange={(e) =>
                     setEditingUser({ ...editingUser, phoneNumber: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-black/20 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C57FF] text-white"
                   placeholder="+254..."
                 />
               </div>
             </div>
-            <div className="flex justify-end space-x-3 mt-6">
+            <div className="flex justify-end space-x-3 mt-8">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setEditingUser(null);
                 }}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                className="px-4 py-2 text-white/70 bg-[#18181b]/5 rounded-lg hover:bg-[#18181b]/10 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpdateUser}
-                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                className="px-4 py-2 text-white bg-[#8C57FF] rounded-lg hover:bg-[#8C57FF]/90 shadow-[0_2px_6px_rgba(140,87,255,0.4)] transition-all"
               >
                 Save Changes
               </button>
@@ -396,21 +429,17 @@ export default function UserManagement({ admin }: { admin: any }) {
 
 function StatBox({ title, value, color = 'blue' }: { title: string; value: string; color?: string }) {
   const colorClasses: Record<string, string> = {
-    blue: 'from-blue-50 to-blue-100',
-    gray: 'from-gray-50 to-gray-100',
-    green: 'from-green-50 to-green-100',
-    purple: 'from-purple-50 to-purple-100',
-    orange: 'from-orange-50 to-orange-100',
+    blue: 'text-[#8C57FF] bg-[#8C57FF]/10',
+    gray: 'text-white/60 bg-[#18181b]/5',
+    green: 'text-emerald-500 bg-emerald-500/10',
+    purple: 'text-[#8C57FF] bg-[#8C57FF]/10',
+    orange: 'text-amber-500 bg-amber-500/10',
   };
 
   return (
-    <div className={`bg-gradient-to-br ${colorClasses[color]} rounded-lg p-4`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-        </div>
-      </div>
+    <div className={`rounded-xl p-5 border border-white/[0.04] flex flex-col justify-between ${colorClasses[color]}`}>
+      <p className="text-sm font-medium opacity-80 mb-2">{title}</p>
+      <p className="text-2xl font-bold opacity-100">{value}</p>
     </div>
   );
 }
@@ -427,21 +456,21 @@ function getPlanDisplayName(type: string | null | undefined): string {
 
 function getPlanBadgeColor(type: string | null | undefined): string {
   const colors: Record<string, string> = {
-    free: 'bg-gray-100 text-gray-800',
-    basic: 'bg-green-100 text-green-800',
-    premium: 'bg-purple-100 text-purple-800',
-    pro: 'bg-orange-100 text-orange-800',
+    free: 'bg-[#18181b]/5 text-white/70 border border-white/10',
+    basic: 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20',
+    premium: 'bg-[#8C57FF]/10 text-[#8C57FF] border border-[#8C57FF]/20',
+    pro: 'bg-amber-500/10 text-amber-500 border border-amber-500/20',
   };
-  return colors[type || 'free'] || 'bg-gray-100 text-gray-800';
+  return colors[type || 'free'] || 'bg-[#18181b]/5 text-white/70 border border-white/10';
 }
 
 function getStatusBadgeColor(status: string | undefined): string {
   const colors: Record<string, string> = {
-    active: 'bg-green-100 text-green-800',
-    inactive: 'bg-gray-100 text-gray-800',
-    expired: 'bg-red-100 text-red-800',
+    active: 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20',
+    inactive: 'bg-[#18181b]/5 text-white/50 border border-white/10',
+    expired: 'bg-rose-500/10 text-rose-500 border border-rose-500/20',
   };
-  return colors[status || 'inactive'] || 'bg-gray-100 text-gray-800';
+  return colors[status || 'inactive'] || 'bg-[#18181b]/5 text-white/50 border border-white/10';
 }
 
 function getExpiryDisplay(user: User): string {
@@ -476,3 +505,4 @@ function getExpiryDisplay(user: User): string {
   
   return 'No expiry date';
 }
+

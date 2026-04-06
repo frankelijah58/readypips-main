@@ -30,7 +30,15 @@ const TABS = [
   { id: 'expired', label: 'Expired' },
 ];
 
-export default function SubscriptionManagement({ admin }: { admin: any }) {
+export default function SubscriptionManagement({
+  admin,
+  headerSearch,
+  onHeaderSearchChange,
+}: {
+  admin: any;
+  headerSearch: string;
+  onHeaderSearchChange: (value: string) => void;
+}) {
   const { toast } = useToast();
 
   // -------------------- STATE --------------------
@@ -39,7 +47,6 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
   const [stats, setStats] = useState({ active: 0, expired: 0, pending: 0, revenue: 0 });
   
   const [activeTab, setActiveTab] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('');
@@ -86,7 +93,7 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
 
       const statusFilter = activeTab === 'all' ? '' : `&status=${activeTab}`;
       const [subRes, revRes, pendRes] = await Promise.all([
-        fetch(`/api/admin/subscriptions?page=${currentPage}&limit=10&search=${encodeURIComponent(searchTerm)}${statusFilter}${dateFilters}`, { headers: authHeaders() }),
+        fetch(`/api/admin/subscriptions?page=${currentPage}&limit=10&search=${encodeURIComponent(headerSearch)}${statusFilter}${dateFilters}`, { headers: authHeaders() }),
         fetch('/api/admin/revenuev2', { headers: authHeaders() }),
         fetch(`/api/admin/payments/pending?page=${pendingPage}&limit=4`, { headers: authHeaders() }) // Adjusted limit for vertical flow
       ]);
@@ -111,7 +118,7 @@ export default function SubscriptionManagement({ admin }: { admin: any }) {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, activeTab, pendingPage, startDate, endDate, authHeaders, toast]);
+  }, [currentPage, headerSearch, activeTab, pendingPage, startDate, endDate, authHeaders, toast]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 400);
@@ -231,42 +238,45 @@ useEffect(() => {
   
 
   return (
-    <div className="p-4 md:p-8 max-w-[1400px] mx-auto space-y-10 bg-[#F8FAFC] min-h-screen font-sans text-slate-900">
+    <div className="space-y-10 font-sans text-white h-full relative">
       
       {/* 1. HEADER */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <CreditCard className="w-6 h-6 text-[#8C57FF]" />
             Subscription Management
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Manage user access and verify incoming payments.</p>
+          <p className="text-white/60 text-sm mt-1">Manage user access and verify incoming payments.</p>
         </div>
 
         {/* Date Picker Group */}
-        {/* <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
-          <Calendar className="w-4 h-4 text-slate-400 ml-2" />
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none text-slate-600" />
+        {/* <div className="flex items-center gap-2 bg-[#18181b]/5 p-1.5 rounded-xl border border-white/10">
+          <Calendar className="w-4 h-4 text-white/40 ml-2" />
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none text-white/80" />
           <span className="text-slate-300">-</span>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none text-slate-600" />
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none text-white/80" />
           {(startDate || endDate) && (
-            <button onClick={() => {setStartDate(''); setEndDate('')}} className="p-1 hover:bg-slate-200 rounded-md">
-              <X className="w-3 h-3 text-slate-500" />
+            <button onClick={() => {setStartDate(''); setEndDate('')}} className="p-1 hover:bg-[#18181b]/5 rounded-md">
+              <X className="w-3 h-3 text-white/60" />
             </button>
           )}
         </div> */}
 
         <div className="flex items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-[#8C57FF] transition-colors" />
             <input
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm w-full md:w-80 shadow-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="pl-10 pr-4 py-2 bg-[#18181b] border border-white/10 rounded-xl text-sm w-full md:w-80 shadow-sm outline-none focus:ring-2 focus:ring-[#8C57FF] text-white placeholder:text-white/30"
               placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              value={headerSearch}
+              onChange={(e) => {
+                onHeaderSearchChange(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
-          <Button variant="outline" className="bg-white" onClick={fetchData}>
+          <Button variant="outline" className="bg-[#18181b] border-white/10 text-white hover:bg-[#18181b]/5" onClick={fetchData}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -280,7 +290,7 @@ useEffect(() => {
         <StatCard title="Churned" value={stats.expired} icon={<AlertCircle />} color="slate" />
       </div>
 
-      <hr className="border-slate-200" />
+      <hr className="border-white/[0.04]" />
 
       <section className="space-y-6 transition-all duration-300">
         <div 
@@ -289,12 +299,12 @@ useEffect(() => {
         >
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
-              isQueueOpen ? 'bg-amber-50 border-amber-100' : 'bg-slate-100 border-slate-200'
+              isQueueOpen ? 'bg-amber-500/10 border-amber-500/20' : 'bg-[#18181b]/5 border-white/10'
             }`}>
-              <ShieldAlert className={`w-5 h-5 ${isQueueOpen ? 'text-amber-600' : 'text-slate-400'}`} />
+              <ShieldAlert className={`w-5 h-5 ${isQueueOpen ? 'text-amber-500' : 'text-white/40'}`} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+              <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                 Verification Queue
                 {!isQueueOpen && stats.pending > 0 && (
                    <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">
@@ -302,7 +312,7 @@ useEffect(() => {
                    </span>
                 )}
               </h3>
-              <p className="text-[11px] text-slate-400 font-medium">
+              <p className="text-[11px] text-white/50 font-medium">
                 {isQueueOpen ? 'Click to minimize' : 'Click to expand pending requests'}
               </p>
             </div>
@@ -320,7 +330,7 @@ useEffect(() => {
                 >
                   <ChevronLeft className="w-4 h-4"/>
                 </Button>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
                   {pendingPage} / {pendingTotalPages}
                 </span>
                 <Button 
@@ -334,8 +344,8 @@ useEffect(() => {
                 </Button>
               </div>
             )}
-            <div className={`p-2 rounded-full group-hover:bg-slate-100 transition-transform duration-300 ${isQueueOpen ? 'rotate-180' : 'rotate-0'}`}>
-              <ChevronDown className="w-5 h-5 text-slate-400" />
+            <div className={`p-2 rounded-full group-hover:bg-[#18181b]/5 transition-transform duration-300 ${isQueueOpen ? 'rotate-180' : 'rotate-0'}`}>
+              <ChevronDown className="w-5 h-5 text-white/40" />
             </div>
           </div>
         </div>
@@ -350,8 +360,8 @@ useEffect(() => {
                 ))}
               </div>
             ) : (
-              <div className="py-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
-                <p className="text-sm font-medium text-slate-400 uppercase tracking-widest">All verifications cleared</p>
+              <div className="py-10 text-center border-2 border-dashed border-white/10 rounded-3xl bg-[#18181b]/5">
+                <p className="text-sm font-medium text-white/40 uppercase tracking-widest">All verifications cleared</p>
               </div>
             )}
           </div>
@@ -360,14 +370,14 @@ useEffect(() => {
       {/* 4. MAIN DATABASE (Now a full-width section) */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-800 tracking-tight">Subscriber Ledger</h3>
-          <div className="flex bg-slate-200/50 p-1 rounded-xl">
+          <h3 className="text-lg font-bold text-white tracking-tight">Subscriber Ledger</h3>
+          <div className="flex bg-black/20 p-1 rounded-xl">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setCurrentPage(1); }}
                 className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  activeTab === tab.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  activeTab === tab.id ? 'bg-[#18181b] text-white shadow-sm' : 'text-white/50 hover:text-white'
                 }`}
               >
                 {tab.label}
@@ -376,13 +386,13 @@ useEffect(() => {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+        <div className="bg-[#18181b] border border-white/[0.04] rounded-xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50/50 border-b border-slate-100">
-                <tr className="text-[10px] uppercase tracking-widest text-slate-400">
+              <thead className="bg-black/20 border-b border-white/[0.04]">
+                <tr className="text-[10px] uppercase tracking-widest text-white/50">
                   <th className="px-6 py-4 text-center w-10">
-                    <input type="checkbox" checked={selectedIds.length === subscriptions.length} onChange={() => {toggleSelectAll()}} className="rounded accent-indigo-600" />
+                    <input type="checkbox" checked={selectedIds.length === subscriptions.length} onChange={() => {toggleSelectAll()}} className="rounded accent-[#8C57FF]" />
                   </th>
                   <th className="px-6 py-4 text-left font-bold">Subscriber</th>
                   <th className="px-6 py-4 text-left font-bold">Status</th>
@@ -391,49 +401,49 @@ useEffect(() => {
                   <th className="px-6 py-4"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-white/[0.02]">
                 {subscriptions.map((sub) => (
-                  <tr key={sub._id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr key={sub._id} className="hover:bg-[#18181b]/[0.02] transition-colors group">
                     <td className="px-6 py-4 text-center">
-                      <input type="checkbox" checked={selectedIds.includes(sub._id)} onChange={() => {toggleSelect(sub._id)}} className="rounded accent-indigo-600" />
+                      <input type="checkbox" checked={selectedIds.includes(sub._id)} onChange={() => {toggleSelect(sub._id)}} className="rounded accent-[#8C57FF]" />
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                        <div className="w-8 h-8 rounded-full bg-[#8C57FF]/10 text-[#8C57FF] flex items-center justify-center font-bold text-xs border border-[#8C57FF]/20">
                           {sub.userName?.charAt(0)}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900 text-sm">{sub.userName}</div>
-                          <div className="flex items-center gap-1 text-slate-600 text-xs">{sub.email}</div>
-                          <div className="flex items-center gap-1 text-slate-600 text-xs">{sub.phoneNumber}</div>
-                          <div className="flex items-center gap-1 text-slate-600 text-xs">{sub.tradingviewUsername}</div>
-                          <div className="text-[10px] text-indigo-600 font-bold uppercase">{sub.plan}</div>
+                          <div className="font-bold text-white text-sm">{sub.userName}</div>
+                          <div className="flex items-center gap-1 text-white/50 text-xs">{sub.email}</div>
+                          <div className="flex items-center gap-1 text-white/50 text-xs">{sub.phoneNumber}</div>
+                          <div className="flex items-center gap-1 text-white/50 text-xs">{sub.tradingviewUsername}</div>
+                          <div className="text-[10px] text-[#8C57FF] font-bold uppercase">{sub.plan}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <StatusBadge status={sub.status} />
                     </td>
-                    <td className="px-6 py-4 text-xs text-slate-600">
+                    <td className="px-6 py-4 text-xs text-white/60">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <Calendar className="w-3.5 h-3.5 text-white/40" />
                         {new Date(sub.updatedDate).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right font-mono font-bold text-slate-700">
+                    <td className="px-6 py-4 text-right font-mono font-bold text-white/80">
                       ${sub.price}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
+                      <button className="p-2 text-white/40 hover:text-white transition-colors">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm"><MoreVertical className="w-4 h-4" /></Button>
+                              <Button variant="ghost" size="sm" className="hover:bg-[#18181b]/5"><MoreVertical className="w-4 h-4" /></Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => extendSevenDays(sub)}>
+                            <DropdownMenuContent align="end" className="bg-[#18181b] border-white/10 text-white">
+                              <DropdownMenuItem className="focus:bg-[#18181b]/5 focus:text-white" onClick={() => extendSevenDays(sub)}>
                                 Extend 7 Days
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600" onClick={() => revokeAccess(sub._id)}>
+                              <DropdownMenuItem className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400" onClick={() => revokeAccess(sub._id)}>
                                 Revoke Access
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -448,11 +458,11 @@ useEffect(() => {
             
           </div>
           
-          <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-            <p className="text-xs font-medium text-slate-500">Page {currentPage} of {totalPages}</p>
+          <div className="p-4 border-t border-white/[0.04] bg-black/20 flex items-center justify-between">
+            <p className="text-xs font-medium text-white/50">Page {currentPage} of {totalPages}</p>
             <div className="flex gap-2">
-              <Button variant="outline" className={"text-white"} size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
-              <Button variant="outline" className={"text-white"} size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
+              <Button variant="outline" className="text-white border-white/10 hover:bg-[#18181b]/5" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>Previous</Button>
+              <Button variant="outline" className="text-white border-white/10 hover:bg-[#18181b]/5" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next</Button>
             </div>
           </div>
         </div>
@@ -460,7 +470,7 @@ useEffect(() => {
 
       {/* Floating Bulk Action Bar (Same as before) */}
       {selectedIds.length > 0 && (
-              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-in slide-in-from-bottom-4 z-50">
+              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#18181b]/5 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-in slide-in-from-bottom-4 z-50">
                 <span className="text-sm font-bold border-r border-slate-700 pr-6">
                   {selectedIds.length} Selected
                 </span>
@@ -492,7 +502,7 @@ useEffect(() => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="text-slate-400"
+                      className="text-white/40"
                       onClick={() => setSelectedIds([])}
                     >
                       Cancel
@@ -502,15 +512,15 @@ useEffect(() => {
             )}
 
       {bulkConfirmData && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#18181b]/5 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#18181b] rounded-3xl p-8 max-w-md w-full shadow-2xl border border-white/5 animate-in zoom-in-95 duration-200">
             <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
               <AlertCircle className="w-6 h-6 text-amber-600" />
             </div>
             
-            <h3 className="text-xl font-black text-slate-900 mb-2">Are you absolutely sure?</h3>
-            <p className="text-slate-500 text-sm leading-relaxed mb-8">
-              You are about to <span className="font-bold text-slate-900">{bulkConfirmData.label}</span> for 
+            <h3 className="text-xl font-black text-white mb-2">Are you absolutely sure?</h3>
+            <p className="text-white/60 text-sm leading-relaxed mb-8">
+              You are about to <span className="font-bold text-white">{bulkConfirmData.label}</span> for 
               <span className="font-bold text-indigo-600"> {selectedIds.length} users</span>. 
               This action will update the database immediately.
             </p>
@@ -518,13 +528,13 @@ useEffect(() => {
             <div className="flex gap-3">
               <Button 
                 variant="outline" 
-                className="flex-1 rounded-xl h-12 font-bold border-slate-200 text-slate-600"
+                className="flex-1 rounded-xl h-12 font-bold border-white/10 text-white/80"
                 onClick={() => setBulkConfirmData(null)}
               >
                 Cancel
               </Button>
               <Button 
-                className="flex-1 rounded-xl h-12 font-bold bg-slate-900 hover:bg-black text-white"
+                className="flex-1 rounded-xl h-12 font-bold bg-[#18181b]/5 hover:bg-black text-white"
                 onClick={confirmAndExecute}
                 disabled={loading}
               >
@@ -543,24 +553,24 @@ useEffect(() => {
 
 function PendingCard({ pay, onAction, processingId }: any) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all">
+    <div className="bg-[#18181b] border border-white/[0.04] rounded-2xl p-4 shadow-sm hover:shadow-lg hover:border-white/10 transition-all">
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-xs">{pay.userName?.charAt(0)}</div>
+          <div className="w-8 h-8 rounded-lg bg-[#18181b]/5 flex items-center justify-center font-bold text-xs text-white">{pay.userName?.charAt(0)}</div>
           <div>
-            <h4 className="font-bold text-sm text-slate-900">{pay.userName}</h4>
-            <p className="text-[10px] text-slate-400 font-bold uppercase">{pay.provider}</p>
+            <h4 className="font-bold text-sm text-white">{pay.userName}</h4>
+            <p className="text-[10px] text-white/40 font-bold uppercase">{pay.provider}</p>
           </div>
         </div>
-        <span className="text-sm font-black text-indigo-600">${pay.amount}</span>
+        <span className="text-sm font-black text-[#8C57FF]">${pay.amount}</span>
       </div>
-      <div className="text-[11px] text-slate-500 mb-4 bg-slate-50 p-2 rounded-lg truncate">
+      <div className="text-[11px] text-white/60 mb-4 bg-black/20 p-2 rounded-lg truncate">
         {pay.email}
       </div>
-      <div className="flex gap-2 ">
+      <div className="flex gap-2">
         <Button 
           onClick={() => onAction(pay._id, 'approve')}
-          className="flex-1 h-8 text-[10px] font-bold bg-slate-900 hover:bg-black text-white"
+          className="flex-1 h-8 text-[10px] font-bold bg-[#8C57FF] hover:bg-[#8C57FF]/90 text-white shadow-[0_2px_6px_rgba(140,87,255,0.4)]"
           disabled={!!processingId}
         >
           {processingId === pay._id ? <RefreshCw className="animate-spin w-3 h-3" /> : 'Approve'}
@@ -568,7 +578,7 @@ function PendingCard({ pay, onAction, processingId }: any) {
         <Button 
           variant="outline"
           onClick={() => onAction(pay._id, 'reject')}
-          className="flex-1 h-8 text-[10px] font-bold hover:bg-rose-250 text-rose-600 border-rose-200"
+          className="flex-1 h-8 text-[10px] font-bold hover:bg-rose-500/10 text-rose-400 border-rose-500/20"
           disabled={!!processingId}
         >
           Decline
@@ -580,28 +590,28 @@ function PendingCard({ pay, onAction, processingId }: any) {
 
 function StatCard({ title, value, icon, color, trend }: any) {
   const colors: any = {
-    indigo: 'bg-indigo-50 text-indigo-600 border-indigo-100',
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    amber: 'bg-amber-50 text-amber-600 border-amber-100',
-    slate: 'bg-slate-50 text-slate-600 border-slate-100',
+    indigo: 'bg-[#8C57FF]/10 text-[#8C57FF] border-[#8C57FF]/20',
+    emerald: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+    amber: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+    slate: 'bg-[#18181b]/5 text-white/60 border-white/10',
   };
   return (
-    <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
+    <div className="bg-[#18181b] p-5 rounded-3xl border border-white/[0.04] shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <div className={`p-2 rounded-xl ${colors[color]}`}>{icon}</div>
-        {trend && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">{trend}</span>}
+        <div className={`p-2 rounded-xl border ${colors[color]}`}>{icon}</div>
+        {trend && <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">{trend}</span>}
       </div>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{title}</p>
-      <p className="text-2xl font-black text-slate-900">{value}</p>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-white/40">{title}</p>
+      <p className="text-2xl font-black text-white">{value}</p>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    active: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    expired: 'bg-red-50 text-red-700 border-red-100',
-    trial: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+    active: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+    expired: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+    trial: 'bg-[#8C57FF]/10 text-[#8C57FF] border-[#8C57FF]/20',
   };
   return (
     <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border ${styles[status] || styles.expired}`}>

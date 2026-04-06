@@ -323,6 +323,31 @@ dbx.createCollection("withdrawals", {
   }
 });
 
+// SUPPORT REQUESTS (public contact form + admin read-only inbox)
+dbx.createCollection("support_requests", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["ticketNumber", "name", "email", "phoneNumber", "description", "createdAt"],
+      properties: {
+        ticketNumber: { bsonType: "string" },
+        name: { bsonType: "string" },
+        email: { bsonType: "string" },
+        phoneNumber: { bsonType: "string" },
+        queryType: { bsonType: "string" },
+        queryTypeLabel: { bsonType: ["string", "null"] },
+        description: { bsonType: "string" },
+        status: { bsonType: ["string", "null"] },
+        staffEmailSent: { bsonType: ["bool", "null"] },
+        userEmailSent: { bsonType: ["bool", "null"] },
+        emailError: { bsonType: ["string", "null"] },
+        createdAt: { bsonType: "date" },
+        updatedAt: { bsonType: ["date", "null"] }
+      }
+    }
+  }
+});
+
 // INDEXES
 dbx.users.createIndex({ email: 1 }, { unique: true });
 dbx.admins.createIndex({ email: 1 }, { unique: true });
@@ -341,5 +366,8 @@ dbx.tools.createIndex({ category: 1 });
 dbx.passwordResets.createIndex({ email: 1 });
 dbx.passwordResets.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 dbx.withdrawals.createIndex({ userId: 1, createdAt: -1 });
+dbx.support_requests.createIndex({ ticketNumber: 1 }, { unique: true });
+dbx.support_requests.createIndex({ createdAt: -1 });
+dbx.support_requests.createIndex({ email: 1 });
 
 print("ReadyPips database and collections created successfully.");
