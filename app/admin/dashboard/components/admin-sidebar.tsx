@@ -2,6 +2,20 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import {
+  LayoutDashboard,
+  Users,
+  CreditCard,
+  Handshake,
+  Home,
+  Mail,
+  Wallet,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Headphones,
+} from 'lucide-react';
 
 interface AdminSidebarProps {
   currentSection: string;
@@ -9,6 +23,20 @@ interface AdminSidebarProps {
   admin: any;
   onLogout: () => void;
 }
+
+const menuItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, category: 'main' },
+  { id: 'users', label: 'Users', icon: Users, category: 'main' },
+  { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, category: 'main' },
+  { id: 'partners', label: 'Partners', icon: Handshake, category: 'main' },
+  { id: 'support', label: 'Support', icon: Headphones, category: 'main' },
+];
+
+const externalLinks = [
+  { href: '/', label: 'Homepage', icon: Home },
+  { href: '/admin/send-emails', label: 'Send Emails', icon: Mail },
+  { href: '/admin/withdrawals', label: 'Withdrawals', icon: Wallet },
+];
 
 export default function AdminSidebar({
   currentSection,
@@ -18,172 +46,104 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
 
-  const menuItems = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: 'D',
-      permission: true,
-    },
-    {
-      id: 'users',
-      label: 'Users',
-      icon: 'U',
-      permission: admin?.isAdmin === true,//.permissions?.includes('view_users'),
-    },
-    {
-      id: 'subscriptions',
-      label: 'Subscriptions',
-      icon: 'S',
-      permission: admin?.isAdmin === true,//,//admin?.permissions?.includes('view_subscriptions'),
-    },
-    {
-      id: 'partners',
-      label: 'Partners',
-      icon: 'P',
-      permission: admin?.isAdmin === true,//,//admin?.permissions?.includes('view_partners'),
-    },
-    // {
-    //   id: 'tools',
-    //   label: 'Tools',
-    //   icon: 'T',
-    //   permission: true,//admin?.permissions?.includes('view_tools'),
-    // },
-    // {
-    //   id: 'admins',
-    //   label: 'Admins',
-    //   icon: 'A',
-    //   permission: true,//admin?.permissions?.includes('view_admins'),
-    // },
-    // {
-    //   id: 'analytics',
-    //   label: 'Analytics',
-    //   icon: 'L',
-    //   permission: true,//admin?.permissions?.includes('view_analytics'),
-    // },
-    // {
-    //   id: 'settings',
-    //   label: 'Settings',
-    //   icon: 'C',
-    //   permission: true,//admin?.permissions?.includes('manage_settings'),
-    // },
-  ];
-
   return (
     <div
       className={`${
-        collapsed ? 'w-20' : 'w-64'
-      } bg-gray-900 text-white transition-all duration-300 flex flex-col shadow-lg`}
+        collapsed ? 'w-[78px]' : 'w-[260px]'
+      } h-screen bg-[#2F3349] flex flex-col transition-all duration-300 shadow-[4px_0_10px_rgba(0,0,0,0.15)]`}
     >
-      {/* Header */}
-      <div className="p-4 border-b border-gray-800">
-        <div className="flex items-center justify-between">
-          {!collapsed && (
-            <div className="flex items-center space-x-3">
-              <Link href="/admin/dashboard" className="flex-shrink-0">
-                <img 
-                  src="/logo-dark.png" 
-                  alt="Ready Pips Logo" 
-                  className="h-8 w-auto"
-                />
-              </Link>
-            </div>
-          )}
-          {collapsed && (
-            <Link href="/admin/dashboard" className="flex justify-center w-full">
-              <img 
-                src="/logo-dark.png" 
-                alt="Ready Pips" 
-                className="h-6 w-auto"
-              />
-            </Link>
-          )}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-1 hover:bg-gray-800 rounded flex-shrink-0"
-          >
-            {collapsed ? '→' : '←'}
-          </button>
-        </div>
+      {/* Header / Brand */}
+      <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.04]">
+        {!collapsed && (
+          <div className="flex items-center gap-2.5">
+            <Image
+              src="/logo-dark.png"
+              alt="ReadyPips"
+              width={140}
+              height={36}
+              className="h-8 w-auto object-contain"
+              priority
+            />
+          </div>
+        )}
+        {collapsed && (
+          <div className="w-full flex justify-center">
+            <Image
+              src="/logo-dark.png"
+              alt="RP"
+              width={32}
+              height={32}
+              className="h-8 w-8 object-contain"
+              priority
+            />
+          </div>
+        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-7 h-7 rounded-full bg-[#18181b]/5 hover:bg-[#18181b]/10 flex items-center justify-center text-white/50 transition-colors"
+        >
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
       </div>
 
-      {/* Admin Info */}
-      {!collapsed && (
-        <div className="p-4 bg-gray-800 border-b border-gray-700">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center font-bold">
-              {admin?.firstName?.charAt(0)}
-            </div>
-            <div className="text-sm">
-              <p className="font-semibold">{admin?.firstName}</p>
-              <p className="text-xs text-gray-400">
-                {admin?.isAdmin ? 'ADMIN' : admin?.role?.replace('_', ' ').toUpperCase()}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-2">
+      <nav className="flex-1 overflow-y-auto px-3 py-2">
+        {/* Main Menu */}
+        {!collapsed && (
+          <p className="px-4 pt-4 pb-2 text-[10px] font-bold text-white/25 uppercase tracking-[1.5px]">
+            Dashboard
+          </p>
+        )}
+
+        <div className="space-y-1">
           {menuItems
-            .filter((item) => item.permission)
-            .map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onSectionChange(item.id)}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  currentSection === item.id
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800'
-                }`}
-                title={collapsed ? item.label : undefined}
+            .filter(() => admin?.isAdmin === true)
+            .map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSectionChange(item.id)}
+                  title={collapsed ? item.label : undefined}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm transition-all duration-200 ${
+                    currentSection === item.id
+                      ? 'bg-[#8C57FF] text-white shadow-[0_2px_6px_rgba(140,87,255,0.4)] font-medium'
+                      : 'text-white/60 hover:text-white/90 hover:bg-[#18181b]/[0.04]'
+                  } ${collapsed ? 'justify-center px-0' : ''}`}
+                >
+                  <IconComponent className="w-5 h-5 flex-shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </button>
+              );
+            })}
+        </div>
+
+        {/* External Links */}
+        {!collapsed && (
+          <p className="px-4 pt-6 pb-2 text-[10px] font-bold text-white/25 uppercase tracking-[1.5px]">
+            Pages & Links
+          </p>
+        )}
+
+        <div className="space-y-1">
+          {externalLinks.map((link) => {
+            const IconComponent = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                title={collapsed ? link.label : undefined}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm text-white/40 hover:text-white/70 hover:bg-[#18181b]/[0.04] transition-all duration-200 ${collapsed ? 'justify-center px-0' : ''}`}
               >
-                <span className="text-lg">{item.icon}</span>
-                {!collapsed && <span>{item.label}</span>}
-              </button>
-            ))}
+                <IconComponent className="w-5 h-5 flex-shrink-0" />
+                {!collapsed && <span>{link.label}</span>}
+              </Link>
+            );
+          })}
         </div>
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-800 space-y-2">
-        {!collapsed && (
-          <>
-            <Link
-              href="/"
-              className="block w-full text-center px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors text-sm"
-            >
-              Homepage
-            </Link>
-            <Link
-              href="/admin/partner-dashbaord"
-              className="block w-full text-center px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors text-sm"
-            >
-              Partner Dashboard
-            </Link>
-            <Link
-              href="/admin/send-emails"
-              className="block w-full text-center px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors text-sm"
-            >
-              Send Emails
-            </Link>
-            <Link
-              href="/admin/withdrawals"
-              className="block w-full text-center px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors text-sm"
-            >
-              Admin Withdrawals
-            </Link>
-          </>
-        )}
-        <button
-          onClick={onLogout}
-          className="w-full px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors text-sm"
-        >
-          {collapsed ? '↓' : 'Logout'}
-        </button>
-      </div>
     </div>
   );
 }
+

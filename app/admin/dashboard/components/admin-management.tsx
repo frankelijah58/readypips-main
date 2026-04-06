@@ -182,7 +182,7 @@ export default function AdminManagement({ admin: currentAdmin }: { admin: any })
 
       {/* Form */}
       {showForm && canCreateAdmin && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-[#18181b] rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4">
             {editingId ? 'Edit Admin' : 'Create New Admin'}
           </h3>
@@ -269,27 +269,27 @@ export default function AdminManagement({ admin: currentAdmin }: { admin: any })
       )}
 
       {/* Admins List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-[#18181b] rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 border-b border-white/10">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-white">
                   Name
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-white">
                   Email
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-white">
                   Role
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-white">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-white">
                   Last Login
                 </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-white">
                   Actions
                 </th>
               </tr>
@@ -297,10 +297,10 @@ export default function AdminManagement({ admin: currentAdmin }: { admin: any })
             <tbody className="divide-y divide-gray-200">
               {admins.map((a) => (
                 <tr key={a._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 text-sm font-medium text-white">
                     {a.firstName} {a.lastName}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{a.email}</td>
+                  <td className="px-6 py-4 text-sm text-white/60">{a.email}</td>
                   <td className="px-6 py-4 text-sm">
                     <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                       {a.role.replace('_', ' ').toUpperCase()}
@@ -360,3 +360,4 @@ export default function AdminManagement({ admin: currentAdmin }: { admin: any })
     </div>
   );
 }
+

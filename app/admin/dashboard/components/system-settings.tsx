@@ -8,7 +8,7 @@ export default function SystemSettings({ admin }: { admin: any }) {
   return (
     <div className="space-y-6">
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow border-b border-gray-200">
+      <div className="bg-[#18181b] rounded-lg shadow border-b border-white/10">
         <div className="flex">
           {[
             { id: 'general', label: 'General Settings' },
@@ -23,7 +23,7 @@ export default function SystemSettings({ admin }: { admin: any }) {
               className={`px-6 py-4 font-medium border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
+                  : 'border-transparent text-white/60 hover:text-white'
               }`}
             >
               {tab.label}
@@ -46,12 +46,12 @@ export default function SystemSettings({ admin }: { admin: any }) {
 
 function GeneralSettings() {
   return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Platform Settings</h3>
+    <div className="bg-[#18181b] rounded-lg shadow p-6 space-y-6">
+      <h3 className="text-lg font-semibold text-white">Platform Settings</h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">Platform Name</label>
+          <label className="block text-sm font-medium text-white mb-2">Platform Name</label>
           <input
             type="text"
             defaultValue="ReadyPips"
@@ -59,7 +59,7 @@ function GeneralSettings() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">Support Email</label>
+          <label className="block text-sm font-medium text-white mb-2">Support Email</label>
           <input
             type="email"
             defaultValue="support@readypips.com"
@@ -67,7 +67,7 @@ function GeneralSettings() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">Primary Color</label>
+          <label className="block text-sm font-medium text-white mb-2">Primary Color</label>
           <input
             type="color"
             defaultValue="#2563eb"
@@ -75,7 +75,7 @@ function GeneralSettings() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">Secondary Color</label>
+          <label className="block text-sm font-medium text-white mb-2">Secondary Color</label>
           <input
             type="color"
             defaultValue="#3b82f6"
@@ -85,9 +85,9 @@ function GeneralSettings() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">Platform Logo</label>
+        <label className="block text-sm font-medium text-white mb-2">Platform Logo</label>
         <div className="border border-gray-300 border-dashed rounded-lg p-6 text-center">
-          <p className="text-gray-600">Drag and drop logo here or click to browse</p>
+          <p className="text-white/60">Drag and drop logo here or click to browse</p>
           <button className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium">
             Choose File
           </button>
@@ -103,13 +103,13 @@ function GeneralSettings() {
 
 function PaymentSettings() {
   return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Payment Gateway Configuration</h3>
+    <div className="bg-[#18181b] rounded-lg shadow p-6 space-y-6">
+      <h3 className="text-lg font-semibold text-white">Payment Gateway Configuration</h3>
 
       <div className="space-y-6">
         {/* M-Pesa */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-4">M-Pesa</h4>
+        <div className="border border-white/10 rounded-lg p-4">
+          <h4 className="font-medium text-white mb-4">M-Pesa</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
@@ -125,8 +125,8 @@ function PaymentSettings() {
         </div>
 
         {/* Stripe */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-4">Stripe</h4>
+        <div className="border border-white/10 rounded-lg p-4">
+          <h4 className="font-medium text-white mb-4">Stripe</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="password"
@@ -142,8 +142,8 @@ function PaymentSettings() {
         </div>
 
         {/* PayPal */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-4">PayPal</h4>
+        <div className="border border-white/10 rounded-lg p-4">
+          <h4 className="font-medium text-white mb-4">PayPal</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="password"
@@ -168,12 +168,12 @@ function PaymentSettings() {
 
 function EmailSettings() {
   return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Email Templates & Configuration</h3>
+    <div className="bg-[#18181b] rounded-lg shadow p-6 space-y-6">
+      <h3 className="text-lg font-semibold text-white">Email Templates & Configuration</h3>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">SMTP Server</label>
+          <label className="block text-sm font-medium text-white mb-2">SMTP Server</label>
           <input
             type="text"
             placeholder="smtp.gmail.com"
@@ -181,7 +181,7 @@ function EmailSettings() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">SMTP Port</label>
+          <label className="block text-sm font-medium text-white mb-2">SMTP Port</label>
           <input
             type="text"
             placeholder="587"
@@ -189,7 +189,7 @@ function EmailSettings() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">From Email</label>
+          <label className="block text-sm font-medium text-white mb-2">From Email</label>
           <input
             type="email"
             placeholder="noreply@readypips.com"
@@ -199,12 +199,12 @@ function EmailSettings() {
       </div>
 
       <div>
-        <h4 className="font-medium text-gray-900 mb-3">Email Templates</h4>
+        <h4 className="font-medium text-white mb-3">Email Templates</h4>
         <div className="space-y-2">
           {['Welcome Email', 'Password Reset', 'Subscription Confirmation', 'Renewal Reminder'].map(
             (template) => (
-              <div key={template} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                <span className="text-sm text-gray-900">{template}</span>
+              <div key={template} className="flex items-center justify-between p-3 border border-white/10 rounded-lg">
+                <span className="text-sm text-white">{template}</span>
                 <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
                   Edit
                 </button>
@@ -223,42 +223,42 @@ function EmailSettings() {
 
 function SecuritySettings() {
   return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">Security & Audit Logs</h3>
+    <div className="bg-[#18181b] rounded-lg shadow p-6 space-y-6">
+      <h3 className="text-lg font-semibold text-white">Security & Audit Logs</h3>
 
       <div className="space-y-4">
-        <div className="border border-gray-200 rounded-lg p-4">
+        <div className="border border-white/10 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="font-medium text-gray-900">Two-Factor Authentication</span>
+            <span className="font-medium text-white">Two-Factor Authentication</span>
             <label className="flex items-center cursor-pointer">
               <input type="checkbox" className="w-5 h-5" defaultChecked />
             </label>
           </div>
-          <p className="text-sm text-gray-600">Enable 2FA for all admin accounts</p>
+          <p className="text-sm text-white/60">Enable 2FA for all admin accounts</p>
         </div>
 
-        <div className="border border-gray-200 rounded-lg p-4">
+        <div className="border border-white/10 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="font-medium text-gray-900">Session Timeout</span>
+            <span className="font-medium text-white">Session Timeout</span>
             <select className="px-3 py-1 border border-gray-300 rounded text-sm">
               <option>15 minutes</option>
               <option>30 minutes</option>
               <option>1 hour</option>
             </select>
           </div>
-          <p className="text-sm text-gray-600">Automatically logout after inactivity</p>
+          <p className="text-sm text-white/60">Automatically logout after inactivity</p>
         </div>
       </div>
 
       <div>
-        <h4 className="font-medium text-gray-900 mb-3">Admin Activity Logs</h4>
+        <h4 className="font-medium text-white mb-3">Admin Activity Logs</h4>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-2 text-left font-semibold text-gray-900">Admin</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-900">Action</th>
-                <th className="px-4 py-2 text-left font-semibold text-gray-900">Timestamp</th>
+                <th className="px-4 py-2 text-left font-semibold text-white">Admin</th>
+                <th className="px-4 py-2 text-left font-semibold text-white">Action</th>
+                <th className="px-4 py-2 text-left font-semibold text-white">Timestamp</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -268,8 +268,8 @@ function SecuritySettings() {
                 { admin: 'Moderator', action: 'Subscription ended', time: '6 hours ago' },
               ].map((log, i) => (
                 <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 text-gray-900">{log.admin}</td>
-                  <td className="px-4 py-2 text-gray-600">{log.action}</td>
+                  <td className="px-4 py-2 text-white">{log.admin}</td>
+                  <td className="px-4 py-2 text-white/60">{log.action}</td>
                   <td className="px-4 py-2 text-gray-500">{log.time}</td>
                 </tr>
               ))}
@@ -283,13 +283,13 @@ function SecuritySettings() {
 
 function APISettings() {
   return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900">API Keys & Integrations</h3>
+    <div className="bg-[#18181b] rounded-lg shadow p-6 space-y-6">
+      <h3 className="text-lg font-semibold text-white">API Keys & Integrations</h3>
 
       <div className="space-y-6">
         {/* TradingView */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-4">TradingView Integration</h4>
+        <div className="border border-white/10 rounded-lg p-4">
+          <h4 className="font-medium text-white mb-4">TradingView Integration</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="password"
@@ -305,8 +305,8 @@ function APISettings() {
         </div>
 
         {/* Alpha Vantage */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-4">Alpha Vantage (Market Data)</h4>
+        <div className="border border-white/10 rounded-lg p-4">
+          <h4 className="font-medium text-white mb-4">Alpha Vantage (Market Data)</h4>
           <input
             type="password"
             placeholder="API Key"
@@ -315,8 +315,8 @@ function APISettings() {
         </div>
 
         {/* Mailchimp */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 mb-4">Mailchimp (Email Marketing)</h4>
+        <div className="border border-white/10 rounded-lg p-4">
+          <h4 className="font-medium text-white mb-4">Mailchimp (Email Marketing)</h4>
           <input
             type="password"
             placeholder="API Key"
@@ -331,3 +331,4 @@ function APISettings() {
     </div>
   );
 }
+

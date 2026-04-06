@@ -1,43 +1,68 @@
-// /api/admin/dashboard/recent-users/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
-import { verifyAdminToken } from "@/lib/admin";
+import { requireAdminDashboardAccess } from "@/lib/admin-dashboard-auth";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    // const decoded = verifyAdminToken(token!);
-
-    // if (!decoded || !decoded.isAdmin) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    const auth = await requireAdminDashboardAccess(req);
+    if (!auth.ok) return auth.response;
 
     const db = await getDatabase();
 
-    const users = await db.collection("users").aggregate([
-      { $sort: { createdAt: -1 } },
-      { $limit: 10 },
-      {
-        $lookup: {
-          from: "subscriptions",
-          localField: "_id",
-          foreignField: "userId",
-          as: "subscription"
-        }
-      },
-      { $unwind: { path: "$subscription", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          _id: 1,
-          userName: {
-            $concat: ["$firstName", " ", "$lastName"]
+    const users = await db
+      .collection("users")
+      .aggregate([
+        { $sort: { createdAt: -1 } },
+        { $limit: 10 },
+        {
+          $lookup: {
+            from: "subscriptions",
+            let: { uid: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: [{ $toString: "$userId" }, { $toString: "$$uid" }],
+                  },
+                },
+              },
+              { $sort: { createdAt: -1 } },
+              { $limit: 1 },
+            ],
+            as: "subscription",
           },
-          userEmail: "$email",
-          planType: { $ifNull: ["$subscription.planId", "Free Trial"] },
-          joinedDate: "$createdAt"
-        }
-      }
-    ]).toArray();
+        },
+        { $unwind: { path: "$subscription", preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            _id: 1,
+            userName: {
+              $trim: {
+                input: {
+                  $concat: [
+                    { $ifNull: ["$firstName", ""] },
+                    " ",
+                    { $ifNull: ["$lastName", ""] },
+                  ],
+                },
+              },
+            },
+            userEmail: "$email",
+            planType: {
+              $ifNull: [
+                "$subscription.planId",
+                {
+                  $ifNull: ["$subscription.plan", "Free"],
+                },
+              ],
+            },
+            joinedDate: "$createdAt",
+          },
+        },
+      ])
+      .toArray();
 
     return NextResponse.json({ users });
   } catch (err) {

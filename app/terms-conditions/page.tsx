@@ -2,7 +2,7 @@
 
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
-import { Instagram } from "lucide-react";
+import { Instagram } from "@/components/icons/brand-social";
 export default function TermsConditionsPage() {
   return (
     <>

@@ -1,40 +1,47 @@
-// /api/admin/dashboard/plan-revenue/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
-import { verifyAdminToken } from "@/lib/admin";
+import { requireAdminDashboardAccess } from "@/lib/admin-dashboard-auth";
+import {
+  PAID_INTENT_STATUSES,
+  addAmountKesFieldStage,
+  usdToKesRate,
+} from "@/lib/dashboard-revenue";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    // const decoded = verifyAdminToken(token!);
-
-    // if (!decoded || !decoded.isAdmin) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    const auth = await requireAdminDashboardAccess(req);
+    if (!auth.ok) return auth.response;
 
     const db = await getDatabase();
+    const rate = usdToKesRate();
 
-    const plans = await db.collection("payment_intents").aggregate([
-      { $match: { status: "success" } },
-      {
-        $group: {
-          _id: "$planId",
-          totalRevenue: { $sum: "$amount" },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { totalRevenue: -1 } }
-    ]).toArray();
+    const plans = await db
+      .collection("payment_intents")
+      .aggregate([
+        { $match: { status: { $in: [...PAID_INTENT_STATUSES] } } },
+        addAmountKesFieldStage(rate),
+        {
+          $group: {
+            _id: "$planId",
+            totalRevenue: { $sum: "$amountKes" },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { totalRevenue: -1 } },
+      ])
+      .toArray();
 
     const totalRevenue = plans.reduce((s, p) => s + p.totalRevenue, 0);
 
-    const formatted = plans.map(p => ({
+    const formatted = plans.map((p) => ({
       name: p._id || "Unknown",
-      revenue: `KES ${p.totalRevenue.toLocaleString()}`,
+      revenue: `KES ${Math.round(p.totalRevenue).toLocaleString()}`,
       percentage: totalRevenue
         ? Math.round((p.totalRevenue / totalRevenue) * 100)
         : 0,
-      count: p.count
+      count: p.count,
     }));
 
     return NextResponse.json({ plans: formatted });
