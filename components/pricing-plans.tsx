@@ -204,21 +204,18 @@ export default function PricingPlans({
   const [paymentPhone, setPaymentPhone] = useState("");
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const convertToKes = (price: string | number) => {
-    if (typeof price === "number" && Number.isFinite(price) && price > 100) {
-      return Math.round(price);
+  const resolveKesAmount = (plan: any) => {
+    if (typeof plan?.kesPrice === "number" && Number.isFinite(plan.kesPrice)) {
+      return Math.round(plan.kesPrice);
     }
-    if (typeof price === "string") {
-      const kesInString = Number(String(price).replace(/[^0-9.]/g, ""));
-      if (Number.isFinite(kesInString) && String(price).toUpperCase().includes("KES")) {
-        return Math.round(kesInString);
-      }
+    if (typeof plan?.kes === "number" && Number.isFinite(plan.kes)) {
+      return Math.round(plan.kes);
     }
-    const amount =
-      typeof price === "number"
-        ? price
-        : Number(String(price).replace(/[^0-9.]/g, ""));
-    return Math.round(amount);
+    if (typeof plan?.priceKES === "string") {
+      const parsed = Number(String(plan.priceKES).replace(/[^0-9.]/g, ""));
+      if (Number.isFinite(parsed) && parsed > 0) return Math.round(parsed);
+    }
+    return 0;
   };
 
   const clearPolling = () => {
@@ -245,7 +242,7 @@ export default function PricingPlans({
         kesPrice:
           typeof (plan as any).kes === "number"
             ? Number((plan as any).kes)
-            : convertToKes(plan.price || 0),
+            : resolveKesAmount(plan),
       };
 
       setSelectedPlanForPayment(safePlan);
@@ -596,7 +593,7 @@ export default function PricingPlans({
                 kesPrice:
                   typeof selectedPlanForPayment.kesPrice === "number"
                     ? selectedPlanForPayment.kesPrice
-                    : convertToKes(selectedPlanForPayment.price || 0),
+                    : resolveKesAmount(selectedPlanForPayment),
               }
             : null
         }
@@ -612,7 +609,7 @@ export default function PricingPlans({
           selectedPlanForPayment
             ? typeof selectedPlanForPayment.kesPrice === "number"
               ? selectedPlanForPayment.kesPrice
-              : convertToKes(selectedPlanForPayment.price || 0)
+              : resolveKesAmount(selectedPlanForPayment)
             : undefined
         }
         planName={selectedPlanForPayment?.name}

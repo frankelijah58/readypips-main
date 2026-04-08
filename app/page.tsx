@@ -206,17 +206,6 @@ export default function HomePage() {
     ],
   };
 
-  const convertToKes = (price: string | number) => {
-    if (typeof price === "number" && Number.isFinite(price) && price > 100) {
-      return Math.round(price);
-    }
-    const amount =
-      typeof price === "number"
-        ? price
-        : Number(String(price).replace(/[^0-9.]/g, ""));
-    return Math.round(amount);
-  };
-
   const handlePlanSelect = async (plan: {
     planId: string;
     name: string;
@@ -241,7 +230,9 @@ export default function HomePage() {
         const amountKES =
           typeof (plan as any).kesPrice === "number"
             ? Number((plan as any).kesPrice)
-            : convertToKes(plan.price);
+            : typeof (plan as any).kes === "number"
+            ? Number((plan as any).kes)
+            : 0;
 
         const res = await fetch("/api/mpesa/stkpush", {
           method: "POST",
