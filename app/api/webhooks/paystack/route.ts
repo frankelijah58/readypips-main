@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validatePaystackWebhook } from "@/lib/payments";
-import { updateUserSubscription, findUser } from "@/lib/auth";
+import { getDatabase } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
+import { PLANS } from "@/lib/plans";
+import { normalizePaymentChannel } from "@/lib/payment-provider";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,35 +28,133 @@ export async function POST(request: NextRequest) {
 
     if (body.event === "charge.success") {
       const { data } = body;
-      const { customer, metadata } = data;
-
-      // Find user by email
-      const user = await findUser(customer.email);
-      if (!user) {
-        console.error("User not found for Paystack webhook:", customer.email);
+      const metadata = data?.metadata || {};
+      const reference = String(data?.reference || metadata?.reference || "");
+      if (!reference) {
         return NextResponse.json({ received: true });
       }
 
-      // Extract plan ID from metadata
-      const planId = metadata?.planId;
-      if (!planId) {
-        console.error("Plan ID not found in Paystack webhook metadata");
-        return NextResponse.json({ received: true });
-      }
-
-      // Calculate subscription end date (30 days from now)
-      const subscriptionEndDate = new Date();
-      subscriptionEndDate.setDate(subscriptionEndDate.getDate() + 30);
-
-      await updateUserSubscription(user._id!, {
-        subscriptionStatus: "active",
-        subscriptionType: planId as "basic" | "premium" | "pro",
-        subscriptionEndDate,
+      const db = await getDatabase();
+      const intent = await db.collection("payment_intents").findOne({
+        reference,
+        status: { $in: ["pending", "initiated", "submitted_waiting_admin_approval"] },
       });
+      if (!intent) return NextResponse.json({ received: true });
 
-      console.log(
-        `Paystack subscription activated for user ${user._id}, plan: ${planId}`
+      const normalizedIntentPlanId = String(intent.planId || "")
+        .toLowerCase()
+        .replace(/\s+/g, "");
+      const plan = PLANS.find((p: any) => {
+        const pid = String(p.id || "").toLowerCase().replace(/\s+/g, "");
+        const ppid = String((p as any).planId || "")
+          .toLowerCase()
+          .replace(/\s+/g, "");
+        const pname = String(p.name || "").toLowerCase().replace(/\s+/g, "");
+        return (
+          pid === normalizedIntentPlanId ||
+          ppid === normalizedIntentPlanId ||
+          pname === normalizedIntentPlanId
+        );
+      });
+      if (!plan) return NextResponse.json({ received: true });
+
+      const expectedAmountKes = Number(intent.expectedAmountKes ?? plan.kes ?? 0);
+      const expectedAmountUsd = Number(intent.expectedAmountUsd ?? plan.usd ?? 0);
+      const paidAmountKes = Number(data?.amount || 0) / 100;
+      const amountMismatch =
+        expectedAmountKes > 0
+          ? Math.abs(paidAmountKes - expectedAmountKes) >= 1
+          : false;
+
+      await db.collection("payment_intents").updateOne(
+        { _id: intent._id },
+        {
+          $set: {
+            status: "success",
+            processedAt: new Date(),
+            amount: paidAmountKes,
+            currency: "KES",
+            amountKes: paidAmountKes,
+            currencyKes: "KES",
+            amountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
+            currencyUsd: expectedAmountUsd > 0 ? "USD" : null,
+            expectedAmountKes: expectedAmountKes > 0 ? expectedAmountKes : null,
+            expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
+            amountMismatch,
+            amountSource: "paystack_webhook",
+            paystackReference: data?.reference || null,
+            rawPaystackWebhook: body,
+            updatedAt: new Date(),
+          },
+        }
       );
+
+      const userId = intent.userId;
+      await db.collection("payment_intents").updateMany(
+        {
+          userId,
+          _id: { $ne: intent._id },
+          status: { $ne: "success" },
+        },
+        {
+          $set: {
+            status: "declined",
+            processedAt: new Date(),
+            updatedAt: new Date(),
+          },
+        }
+      );
+
+      const existingSub = await db.collection("subscriptions").findOne({
+        userId,
+        status: "active",
+      });
+      let startDate = new Date();
+      if (existingSub?.endDate && new Date(existingSub.endDate) > startDate) {
+        startDate = new Date(existingSub.endDate);
+      }
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + Number(plan.duration || 30));
+
+      await db.collection("subscriptions").updateOne(
+        { userId },
+        {
+          $set: {
+            userId,
+            planId: intent.planId,
+            amount: paidAmountKes,
+            currency: "KES",
+            amountKes: paidAmountKes,
+            currencyKes: "KES",
+            amountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
+            currencyUsd: expectedAmountUsd > 0 ? "USD" : null,
+            expectedAmountKes: expectedAmountKes > 0 ? expectedAmountKes : null,
+            expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
+            amountMismatch,
+            provider: "paystack",
+            paymentChannel: normalizePaymentChannel("paystack"),
+            status: "active",
+            startDate,
+            endDate,
+            updatedAt: new Date(),
+          },
+        },
+        { upsert: true }
+      );
+
+      if (ObjectId.isValid(String(userId || ""))) {
+        await db.collection("users").updateOne(
+          { _id: new ObjectId(String(userId)) },
+          {
+            $set: {
+              subscriptionStatus: "active",
+              subscriptionType: intent.planId,
+              subscriptionEndDate: endDate,
+              updatedAt: new Date(),
+            },
+          }
+        );
+      }
     }
 
     return NextResponse.json({ received: true });

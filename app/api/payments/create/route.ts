@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PLANS } from "@/lib/plans";
 import { getDatabase } from "@/lib/mongodb";
 import { verifyToken } from "@/lib/auth";
+import { getKesToUsdRate } from "@/lib/currency-rates";
 
 const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY!;
 const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET!;
@@ -32,6 +33,14 @@ function getWhopCheckoutUrl(plan: any, email?: string, reference?: string) {
   }
 
   return url.toString();
+}
+
+function convertUsdToKes(usdAmount: number, kesToUsdRate: number): number {
+  const numericUsd = Number(usdAmount);
+  const numericRate = Number(kesToUsdRate);
+  if (!Number.isFinite(numericUsd) || numericUsd <= 0) return 0;
+  if (!Number.isFinite(numericRate) || numericRate <= 0) return 0;
+  return Math.round(numericUsd / numericRate);
 }
 
 export async function POST(req: NextRequest) {
@@ -91,6 +100,12 @@ export async function POST(req: NextRequest) {
         provider: "whop",
         amount: Number(planConfig.usd || 0),
         currency: "USD",
+        amountUsd: Number(planConfig.usd || 0),
+        currencyUsd: "USD",
+        amountKes: Number(planConfig.kes || 0) || null,
+        currencyKes: Number(planConfig.kes || 0) > 0 ? "KES" : null,
+        expectedAmountUsd: Number(planConfig.usd || 0),
+        expectedAmountKes: Number(planConfig.kes || 0) || null,
         status: "pending",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -154,6 +169,12 @@ export async function POST(req: NextRequest) {
         provider: "paystack",
         amount: amountKes,
         currency: "KES",
+        amountKes: amountKes,
+        currencyKes: "KES",
+        amountUsd: Number(planConfig.usd || 0) || null,
+        currencyUsd: Number(planConfig.usd || 0) > 0 ? "USD" : null,
+        expectedAmountKes: amountKes,
+        expectedAmountUsd: Number(planConfig.usd || 0) || null,
         status: "pending",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -246,6 +267,12 @@ export async function POST(req: NextRequest) {
         provider: "binance",
         amount: Number(planConfig.usd || 0),
         currency: "USD",
+        amountUsd: Number(planConfig.usd || 0),
+        currencyUsd: "USD",
+        amountKes: Number(planConfig.kes || 0) || null,
+        currencyKes: Number(planConfig.kes || 0) > 0 ? "KES" : null,
+        expectedAmountUsd: Number(planConfig.usd || 0),
+        expectedAmountKes: Number(planConfig.kes || 0) || null,
         status: "pending",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -357,7 +384,27 @@ export async function POST(req: NextRequest) {
         userId: decoded.userId,
       });
 
-      const amount = Math.round(Number(planConfig.kes || 0));
+      const fallbackAmountKes = Math.round(Number(planConfig.kes || 0));
+      let amount = fallbackAmountKes;
+      let fxRateKesToUsd: number | null = null;
+      let fxSource: string | null = null;
+      let fxFetchedAt: Date | null = null;
+
+      try {
+        const usdAmount = Number(planConfig.usd || 0);
+        if (usdAmount > 0) {
+          const fx = await getKesToUsdRate(db, { forceRefresh: true });
+          const converted = convertUsdToKes(usdAmount, fx.rate);
+          if (converted > 0) {
+            amount = converted;
+            fxRateKesToUsd = fx.rate;
+            fxSource = fx.source;
+            fxFetchedAt = fx.fetchedAt;
+          }
+        }
+      } catch (fxErr) {
+        console.error("MPESA FX conversion failed, using fallback KES:", fxErr);
+      }
 
       const existing = await db.collection("payment_intents").findOne({
         userId: decoded.userId,
@@ -429,6 +476,15 @@ export async function POST(req: NextRequest) {
         provider: "mpesa",
         amount,
         currency: "KES",
+        amountKes: amount,
+        currencyKes: "KES",
+        amountUsd: Number(planConfig.usd || 0) || null,
+        currencyUsd: Number(planConfig.usd || 0) > 0 ? "USD" : null,
+        expectedAmountKes: amount,
+        amountSource: fxRateKesToUsd ? "live_fx_from_plan_usd" : "plan_fallback_kes",
+        fxRateKesToUsd,
+        fxSource,
+        fxFetchedAt,
         phone: formattedPhone,
         phoneNumber: formattedPhone,
         status: "pending",

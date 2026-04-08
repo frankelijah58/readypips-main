@@ -9,6 +9,18 @@ function extractCallbackItem(items: any[], name: string) {
   return items?.find((item) => item.Name === name)?.Value ?? null;
 }
 
+function parseAmount(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.replace(/[, ]+/g, "").trim();
+    const parsed = Number(normalized);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
 function parseMpesaDate(value: any) {
   if (!value) return null;
 
@@ -64,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     const items = CallbackMetadata?.Item || [];
 
-    const amountKes = extractCallbackItem(items, "Amount");
+    const amountKesRaw = extractCallbackItem(items, "Amount");
     const mpesaReceiptNumber = extractCallbackItem(items, "MpesaReceiptNumber");
     const transactionDate = extractCallbackItem(items, "TransactionDate");
     const callbackPhone = extractCallbackItem(items, "PhoneNumber");
@@ -95,9 +107,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const finalAmountKes = Number(
-      amountKes ?? paymentIntent.amountKes ?? paymentIntent.amount ?? 0
+    const callbackAmountKes = parseAmount(amountKesRaw);
+    const fallbackAmountKes = Number(
+      paymentIntent.amountKes ?? paymentIntent.amount ?? 0
     );
+    const finalAmountKes =
+      callbackAmountKes != null && callbackAmountKes > 0
+        ? callbackAmountKes
+        : fallbackAmountKes;
+    const expectedAmountKes = Number(paymentIntent.amountKes ?? paymentIntent.amount ?? 0);
+    const amountMismatch =
+      callbackAmountKes != null &&
+      Number.isFinite(expectedAmountKes) &&
+      expectedAmountKes > 0 &&
+      Math.abs(callbackAmountKes - expectedAmountKes) >= 1;
 
     const finalPhone =
       callbackPhone ?? paymentIntent.phone ?? paymentIntent.phoneNumber ?? null;
@@ -129,6 +152,16 @@ export async function POST(req: NextRequest) {
           currency: "KES",
           amountKes: finalAmountKes,
           currencyKes: "KES",
+          callbackAmountRaw: amountKesRaw,
+          callbackAmountKes,
+          amountSource:
+            callbackAmountKes != null && callbackAmountKes > 0
+              ? "mpesa_callback"
+              : "intent_fallback",
+          expectedAmountKes: Number.isFinite(expectedAmountKes)
+            ? expectedAmountKes
+            : null,
+          amountMismatch,
           amountUsd,
           currencyUsd: amountUsd != null ? "USD" : null,
           fxRateKesToUsd,
@@ -293,6 +326,9 @@ export async function POST(req: NextRequest) {
       ResultCode,
       ResultDesc,
       amountKes: finalAmountKes,
+      callbackAmountKes,
+      expectedAmountKes,
+      amountMismatch,
       mpesaReceiptNumber,
       transactionDate,
       phoneNumber: finalPhone,

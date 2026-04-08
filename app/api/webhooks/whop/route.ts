@@ -49,6 +49,15 @@ function looksLikeSuccessEvent(event: string): boolean {
   );
 }
 
+function parseNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/[, ]+/g, "").trim());
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   const db = await getDatabase();
   const receivedAt = new Date();
@@ -153,6 +162,19 @@ export async function POST(req: NextRequest) {
 
     const durationDays = plan.duration;
     const userId = intent.userId;
+    const paidAmountUsd =
+      parseNumber(body?.data?.amount_usd) ??
+      parseNumber(body?.data?.amount) ??
+      parseNumber(body?.data?.total) ??
+      parseNumber(body?.data?.price) ??
+      Number(intent.amountUsd ?? intent.amount ?? 0);
+    const expectedAmountUsd = Number(intent.expectedAmountUsd ?? plan.usd ?? 0);
+    const amountMismatch =
+      Number.isFinite(paidAmountUsd) &&
+      Number.isFinite(expectedAmountUsd) &&
+      expectedAmountUsd > 0
+        ? Math.abs(paidAmountUsd - expectedAmountUsd) >= 0.01
+        : false;
 
     /* ------------------------------------
        7️⃣ Decline other pending intents
@@ -179,6 +201,14 @@ export async function POST(req: NextRequest) {
       {
         $set: {
           status: "success",
+          amount: paidAmountUsd,
+          currency: "USD",
+          amountUsd: paidAmountUsd,
+          currencyUsd: "USD",
+          expectedAmountUsd: expectedAmountUsd || null,
+          amountMismatch,
+          amountSource: "whop_webhook",
+          webhookPayload: body,
           processedAt: new Date(),
         },
       }
@@ -206,7 +236,12 @@ export async function POST(req: NextRequest) {
         $set: {
           userId,
           planId: intent.planId,
-          amount: intent.amount,
+          amount: paidAmountUsd,
+          currency: "USD",
+          amountUsd: paidAmountUsd,
+          currencyUsd: "USD",
+          expectedAmountUsd: expectedAmountUsd || null,
+          amountMismatch,
           provider: "whop",
           paymentChannel: normalizePaymentChannel("whop"),
           status: "active",
