@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
-import { updateUserSubscription } from "@/lib/auth";
+import { ObjectId } from "mongodb";
 import { PLANS } from "@/lib/plans";
 import crypto from "crypto";
+import { normalizePaymentChannel } from "@/lib/payment-provider";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,28 +29,111 @@ export async function POST(req: NextRequest) {
       const reference = data.merchantTradeNo;
 
       const db = await getDatabase();
-      const intent = await db.collection("payment_intents").findOne({ reference, status: "pending" });
+      const intent = await db.collection("payment_intents").findOne({
+        reference,
+        status: { $in: ["pending", "initiated"] },
+      });
 
       if (intent) {
-        const planConfig = PLANS.find(p => p.id === intent.planId);
-        const duration = planConfig?.duration || 30;
-        
-        const endDate = new Date();
+        const planConfig = PLANS.find((p: any) => {
+          const normalizedIntentPlan = String(intent.planId || "")
+            .toLowerCase()
+            .replace(/\s+/g, "");
+          const pid = String(p.id || "").toLowerCase().replace(/\s+/g, "");
+          const ppid = String((p as any).planId || "")
+            .toLowerCase()
+            .replace(/\s+/g, "");
+          const pname = String(p.name || "").toLowerCase().replace(/\s+/g, "");
+          return (
+            pid === normalizedIntentPlan ||
+            ppid === normalizedIntentPlan ||
+            pname === normalizedIntentPlan
+          );
+        });
+        const duration = Number(planConfig?.duration || intent.duration || 30);
+        const userId = intent.userId;
+        const paidAmountUsd = Number(data?.totalFee || data?.orderAmount || intent.amountUsd || intent.amount || 0);
+        const expectedAmountUsd = Number(intent.expectedAmountUsd ?? planConfig?.usd ?? 0);
+        const amountMismatch =
+          expectedAmountUsd > 0
+            ? Math.abs(paidAmountUsd - expectedAmountUsd) >= 0.01
+            : false;
+
+        await db.collection("payment_intents").updateMany(
+          {
+            userId,
+            _id: { $ne: intent._id },
+            status: { $ne: "success" },
+          },
+          { $set: { status: "declined", processedAt: new Date(), updatedAt: new Date() } }
+        );
+
+        await db.collection("payment_intents").updateOne(
+          { _id: intent._id },
+          {
+            $set: {
+              status: "success",
+              processedAt: new Date(),
+              amount: paidAmountUsd,
+              currency: "USD",
+              amountUsd: paidAmountUsd,
+              currencyUsd: "USD",
+              expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
+              amountMismatch,
+              amountSource: "binance_webhook",
+              rawBinanceWebhook: body,
+              updatedAt: new Date(),
+            },
+          }
+        );
+
+        const existingSub = await db.collection("subscriptions").findOne({
+          userId,
+          status: "active",
+        });
+        let startDate = new Date();
+        if (existingSub?.endDate && new Date(existingSub.endDate) > startDate) {
+          startDate = new Date(existingSub.endDate);
+        }
+        const endDate = new Date(startDate);
         endDate.setDate(endDate.getDate() + duration);
 
-        // Update User Profile
-        await updateUserSubscription(intent.userId, {
-          subscriptionStatus: "active",
-          subscriptionType: intent.planId as any,
-          subscriptionEndDate: endDate,
-          subscriptionStartDate: new Date(),
-        });
-
-        // Mark intent as used
-        await db.collection("payment_intents").updateOne(
-          { reference },
-          { $set: { status: "completed", updatedAt: new Date() } }
+        await db.collection("subscriptions").updateOne(
+          { userId },
+          {
+            $set: {
+              userId,
+              planId: intent.planId,
+              amount: paidAmountUsd,
+              currency: "USD",
+              amountUsd: paidAmountUsd,
+              currencyUsd: "USD",
+              expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
+              amountMismatch,
+              provider: "binance",
+              paymentChannel: normalizePaymentChannel("binance"),
+              status: "active",
+              startDate,
+              endDate,
+              updatedAt: new Date(),
+            },
+          },
+          { upsert: true }
         );
+
+        if (ObjectId.isValid(String(userId || ""))) {
+          await db.collection("users").updateOne(
+            { _id: new ObjectId(String(userId)) },
+            {
+              $set: {
+                subscriptionStatus: "active",
+                subscriptionType: intent.planId,
+                subscriptionEndDate: endDate,
+                updatedAt: new Date(),
+              },
+            }
+          );
+        }
       }
     }
 

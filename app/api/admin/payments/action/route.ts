@@ -114,6 +114,15 @@ export async function PATCH(req: Request) {
       } else if (String(intent.currency || "").toUpperCase() === "USD") {
         amountUsd = Number(intent.amount || 0);
       }
+      const expectedAmountKes = Number(intent.expectedAmountKes ?? 0);
+      const expectedAmountUsd = Number(intent.expectedAmountUsd ?? 0);
+      const amountMismatch =
+        (amountKes > 0 && expectedAmountKes > 0
+          ? Math.abs(amountKes - expectedAmountKes) >= 1
+          : false) ||
+        (amountUsd != null && expectedAmountUsd > 0
+          ? Math.abs(amountUsd - expectedAmountUsd) >= 0.01
+          : false);
 
       // 2️⃣ Approve selected intent
       await db.collection("payment_intents").updateOne(
@@ -129,6 +138,9 @@ export async function PATCH(req: Request) {
             fxRateKesToUsd,
             fxSource,
             fxFetchedAt,
+            expectedAmountKes: expectedAmountKes > 0 ? expectedAmountKes : null,
+            expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
+            amountMismatch,
           },
         }
       );
@@ -166,6 +178,9 @@ export async function PATCH(req: Request) {
             fxRateKesToUsd,
             fxSource,
             fxFetchedAt,
+            expectedAmountKes: expectedAmountKes > 0 ? expectedAmountKes : null,
+            expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
+            amountMismatch,
             provider: intent.provider || null,
             paymentChannel: normalizePaymentChannel(intent.provider),
             status: "active",

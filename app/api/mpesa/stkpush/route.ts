@@ -8,6 +8,15 @@ import { PLANS } from "@/lib/plans";
 import { getDatabase } from "@/lib/mongodb";
 import { verifyToken, findUserById } from "@/lib/auth";
 import { sendSms } from "@/lib/sms";
+import { getKesToUsdRate } from "@/lib/currency-rates";
+
+function convertUsdToKes(usdAmount: number, kesToUsdRate: number): number {
+  const numericUsd = Number(usdAmount);
+  const numericRate = Number(kesToUsdRate);
+  if (!Number.isFinite(numericUsd) || numericUsd <= 0) return 0;
+  if (!Number.isFinite(numericRate) || numericRate <= 0) return 0;
+  return Math.round(numericUsd / numericRate);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -93,7 +102,29 @@ export async function POST(req: NextRequest) {
 
     const finalUserId = bodyUserId || decoded.userId || decoded.id || null;
 
-    const canonicalPlanAmountKes = Math.round(Number(planConfig.kes || 0));
+    const db = await getDatabase();
+    const fallbackAmountKes = Math.round(Number(planConfig.kes || 0));
+    let canonicalPlanAmountKes = fallbackAmountKes;
+    let fxRateKesToUsd: number | null = null;
+    let fxSource: string | null = null;
+    let fxFetchedAt: Date | null = null;
+
+    try {
+      const usdAmount = Number(planConfig.usd || 0);
+      if (usdAmount > 0) {
+        const fx = await getKesToUsdRate(db, { forceRefresh: true });
+        const converted = convertUsdToKes(usdAmount, fx.rate);
+        if (converted > 0) {
+          canonicalPlanAmountKes = converted;
+          fxRateKesToUsd = fx.rate;
+          fxSource = fx.source;
+          fxFetchedAt = fx.fetchedAt;
+        }
+      }
+    } catch (fxErr) {
+      console.error("STK live FX conversion failed, using fallback KES:", fxErr);
+    }
+
     if (!Number.isFinite(canonicalPlanAmountKes) || canonicalPlanAmountKes <= 0) {
       return NextResponse.json(
         {
@@ -106,7 +137,6 @@ export async function POST(req: NextRequest) {
 
     const normalizedPhone = normalizePhoneNumber(incomingPhone);
     const accountReference = generateReference("READYPIPS");
-    const db = await getDatabase();
 
     const resolvedPlanName = planName || planConfig.name || null;
     const resolvedDuration =
@@ -124,6 +154,15 @@ export async function POST(req: NextRequest) {
       provider: provider || "mpesa",
       amount: canonicalPlanAmountKes,
       currency: "KES",
+      amountKes: canonicalPlanAmountKes,
+      currencyKes: "KES",
+      amountUsd: Number(planConfig.usd || 0) || null,
+      currencyUsd: Number(planConfig.usd || 0) > 0 ? "USD" : null,
+      expectedAmountKes: canonicalPlanAmountKes,
+      amountSource: fxRateKesToUsd ? "live_fx_from_plan_usd" : "plan_fallback_kes",
+      fxRateKesToUsd,
+      fxSource,
+      fxFetchedAt,
       requestedAmount: Number.isFinite(Number(amount)) ? Number(amount) : null,
       requestedCurrency: currency || "KES",
 
