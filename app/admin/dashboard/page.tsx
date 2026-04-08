@@ -13,6 +13,8 @@ import PartnersManagement from './components/partners-management';
 import SupportManagement from './components/support-management';
 
 type AdminSection = 'dashboard' | 'users' | 'subscriptions' | 'partners' | 'support';
+const STORAGE_SECTION_KEY = "admin_dashboard_section";
+const STORAGE_SUB_PROVIDER_KEY = "admin_subscription_provider_filter";
 
 /** Typing `/users` + Enter (or bare `users`) switches sections; those strings are not used as table filters on Overview. */
 const NAV_TO_SECTION: Record<string, AdminSection> = {
@@ -39,7 +41,20 @@ function tryParseNavSection(query: string): AdminSection | null {
 export default function AdminDashboard() {
   const router = useRouter();
   const { toast } = useToast();
-  const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
+  const [currentSection, setCurrentSection] = useState<AdminSection>(() => {
+    if (typeof window === "undefined") return "dashboard";
+    const saved = localStorage.getItem(STORAGE_SECTION_KEY);
+    if (
+      saved === "dashboard" ||
+      saved === "users" ||
+      saved === "subscriptions" ||
+      saved === "partners" ||
+      saved === "support"
+    ) {
+      return saved;
+    }
+    return "dashboard";
+  });
   const [admin, setAdmin] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [headerSearch, setHeaderSearch] = useState('');
@@ -47,7 +62,19 @@ export default function AdminDashboard() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const [subscriptionProviderFilter, setSubscriptionProviderFilter] =
-    useState<"all" | "mpesa" | "binance" | "card">("all");
+    useState<"all" | "mpesa" | "binance" | "card">(() => {
+      if (typeof window === "undefined") return "all";
+      const saved = localStorage.getItem(STORAGE_SUB_PROVIDER_KEY);
+      if (
+        saved === "all" ||
+        saved === "mpesa" ||
+        saved === "binance" ||
+        saved === "card"
+      ) {
+        return saved;
+      }
+      return "all";
+    });
 
   const focusHeaderSearch = useCallback(() => {
     headerSearchRef.current?.focus();
@@ -84,6 +111,14 @@ export default function AdminDashboard() {
     document.addEventListener('pointerdown', onPointerDown);
     return () => document.removeEventListener('pointerdown', onPointerDown);
   }, [profileMenuOpen]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_SECTION_KEY, currentSection);
+  }, [currentSection]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_SUB_PROVIDER_KEY, subscriptionProviderFilter);
+  }, [subscriptionProviderFilter]);
 
   const fetchAdminProfile = async (token: string) => {
     try {
