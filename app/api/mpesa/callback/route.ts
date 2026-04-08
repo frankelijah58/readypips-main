@@ -4,21 +4,14 @@ import { ObjectId } from "mongodb";
 import { sendSms } from "@/lib/sms";
 import { convertKesToUsd, getKesToUsdRate } from "@/lib/currency-rates";
 import { normalizePaymentChannel } from "@/lib/payment-provider";
+import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
 
 function extractCallbackItem(items: any[], name: string) {
   return items?.find((item) => item.Name === name)?.Value ?? null;
 }
 
-function parseAmount(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string") {
-    const normalized = value.replace(/[, ]+/g, "").trim();
-    const parsed = Number(normalized);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return null;
+function parseAmount(value: any): number | null {
+  return normalizeMoney(value, 2);
 }
 
 function parseMpesaDate(value: any) {
@@ -116,11 +109,12 @@ export async function POST(req: NextRequest) {
         ? callbackAmountKes
         : fallbackAmountKes;
     const expectedAmountKes = Number(paymentIntent.amountKes ?? paymentIntent.amount ?? 0);
-    const amountMismatch =
-      callbackAmountKes != null &&
-      Number.isFinite(expectedAmountKes) &&
-      expectedAmountKes > 0 &&
-      Math.abs(callbackAmountKes - expectedAmountKes) >= 1;
+    const amountMismatch = computeMismatch(
+      callbackAmountKes,
+      expectedAmountKes,
+      100,
+      2
+    );
 
     const finalPhone =
       callbackPhone ?? paymentIntent.phone ?? paymentIntent.phoneNumber ?? null;
@@ -152,6 +146,10 @@ export async function POST(req: NextRequest) {
           currency: "KES",
           amountKes: finalAmountKes,
           currencyKes: "KES",
+          amount_paid_original: finalAmountKes,
+          currency_original: "KES",
+          amount_converted: finalAmountKes,
+          exchange_rate_used: 1,
           callbackAmountRaw: amountKesRaw,
           callbackAmountKes,
           amountSource:
@@ -236,6 +234,10 @@ export async function POST(req: NextRequest) {
             currency: "KES",
             amountKes: finalAmountKes,
             currencyKes: "KES",
+            amount_paid_original: finalAmountKes,
+            currency_original: "KES",
+            amount_converted: finalAmountKes,
+            exchange_rate_used: 1,
             amountUsd,
             currencyUsd: amountUsd != null ? "USD" : null,
             fxRateKesToUsd,

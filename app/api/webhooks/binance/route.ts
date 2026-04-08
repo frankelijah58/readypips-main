@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import { PLANS } from "@/lib/plans";
 import crypto from "crypto";
 import { normalizePaymentChannel } from "@/lib/payment-provider";
+import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,12 +53,15 @@ export async function POST(req: NextRequest) {
         });
         const duration = Number(planConfig?.duration || intent.duration || 30);
         const userId = intent.userId;
-        const paidAmountUsd = Number(data?.totalFee || data?.orderAmount || intent.amountUsd || intent.amount || 0);
-        const expectedAmountUsd = Number(intent.expectedAmountUsd ?? planConfig?.usd ?? 0);
-        const amountMismatch =
-          expectedAmountUsd > 0
-            ? Math.abs(paidAmountUsd - expectedAmountUsd) >= 0.01
-            : false;
+        const paidAmountUsd = normalizeMoney(
+          data?.totalFee || data?.orderAmount || intent.amountUsd || intent.amount || 0,
+          2
+        ) ?? 0;
+        const expectedAmountUsd = normalizeMoney(
+          intent.expectedAmountUsd ?? planConfig?.usd ?? 0,
+          2
+        ) ?? 0;
+        const amountMismatch = computeMismatch(paidAmountUsd, expectedAmountUsd, 1, 2);
 
         await db.collection("payment_intents").updateMany(
           {
@@ -78,6 +82,10 @@ export async function POST(req: NextRequest) {
               currency: "USD",
               amountUsd: paidAmountUsd,
               currencyUsd: "USD",
+              amount_paid_original: paidAmountUsd,
+              currency_original: "USD",
+              amount_converted: paidAmountUsd,
+              exchange_rate_used: 1,
               expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
               amountMismatch,
               amountSource: "binance_webhook",
@@ -108,6 +116,10 @@ export async function POST(req: NextRequest) {
               currency: "USD",
               amountUsd: paidAmountUsd,
               currencyUsd: "USD",
+              amount_paid_original: paidAmountUsd,
+              currency_original: "USD",
+              amount_converted: paidAmountUsd,
+              exchange_rate_used: 1,
               expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
               amountMismatch,
               provider: "binance",

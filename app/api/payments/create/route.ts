@@ -104,6 +104,13 @@ export async function POST(req: NextRequest) {
         currencyUsd: "USD",
         amountKes: Number(planConfig.kes || 0) || null,
         currencyKes: Number(planConfig.kes || 0) > 0 ? "KES" : null,
+        amount_paid_original: Number(planConfig.usd || 0),
+        currency_original: "USD",
+        amount_converted: Number(planConfig.kes || 0) || null,
+        exchange_rate_used:
+          Number(planConfig.usd || 0) > 0
+            ? Number(planConfig.kes || 0) / Number(planConfig.usd || 1)
+            : null,
         expectedAmountUsd: Number(planConfig.usd || 0),
         expectedAmountKes: Number(planConfig.kes || 0) || null,
         status: "pending",
@@ -173,6 +180,10 @@ export async function POST(req: NextRequest) {
         currencyKes: "KES",
         amountUsd: Number(planConfig.usd || 0) || null,
         currencyUsd: Number(planConfig.usd || 0) > 0 ? "USD" : null,
+        amount_paid_original: amountKes,
+        currency_original: "KES",
+        amount_converted: amountKes,
+        exchange_rate_used: 1,
         expectedAmountKes: amountKes,
         expectedAmountUsd: Number(planConfig.usd || 0) || null,
         status: "pending",
@@ -271,6 +282,13 @@ export async function POST(req: NextRequest) {
         currencyUsd: "USD",
         amountKes: Number(planConfig.kes || 0) || null,
         currencyKes: Number(planConfig.kes || 0) > 0 ? "KES" : null,
+        amount_paid_original: Number(planConfig.usd || 0),
+        currency_original: "USD",
+        amount_converted: Number(planConfig.kes || 0) || null,
+        exchange_rate_used:
+          Number(planConfig.usd || 0) > 0
+            ? Number(planConfig.kes || 0) / Number(planConfig.usd || 1)
+            : null,
         expectedAmountUsd: Number(planConfig.usd || 0),
         expectedAmountKes: Number(planConfig.kes || 0) || null,
         status: "pending",
@@ -480,6 +498,10 @@ export async function POST(req: NextRequest) {
         currencyKes: "KES",
         amountUsd: Number(planConfig.usd || 0) || null,
         currencyUsd: Number(planConfig.usd || 0) > 0 ? "USD" : null,
+        amount_paid_original: amount,
+        currency_original: "KES",
+        amount_converted: amount,
+        exchange_rate_used: 1,
         expectedAmountKes: amount,
         amountSource: fxRateKesToUsd ? "live_fx_from_plan_usd" : "plan_fallback_kes",
         fxRateKesToUsd,

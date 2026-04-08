@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
+import { normalizePaymentChannel } from "@/lib/payment-provider";
+import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
@@ -39,9 +41,10 @@ export async function POST(request: NextRequest) {
       try {
         const db = await getDatabase();
 
-        // Extract user ID and plan from metadata
+        // Extract user ID, plan and payment reference from metadata
         const userId = session.metadata?.userId;
         const plan = session.metadata?.plan;
+        const reference = session.metadata?.reference || null;
 
         if (!userId || !plan) {
           console.error("❌ [Stripe Webhook] Missing metadata:", {
@@ -54,22 +57,127 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Update user subscription status
-        const result = await db.collection("users").updateOne(
-          { _id: new ObjectId(userId) },
-          {
-            $set: {
-              subscriptionStatus: "active",
-              subscriptionType: plan,
-              updatedAt: new Date(),
-            },
-          }
+        const paidAmountUsd =
+          normalizeMoney((session.amount_total || 0) / 100, 2) ?? 0;
+
+        const intent = reference
+          ? await db.collection("payment_intents").findOne({
+              reference,
+              status: { $in: ["pending", "initiated"] },
+            })
+          : null;
+        const expectedAmountUsd =
+          normalizeMoney(intent?.expectedAmountUsd ?? intent?.amountUsd ?? 0, 2) ??
+          0;
+        const amountMismatch = computeMismatch(
+          paidAmountUsd,
+          expectedAmountUsd,
+          1,
+          2
         );
 
-        // console.log(
-        //   "✅ [Stripe Webhook] User subscription updated:",
-        //   result.modifiedCount
-        // );
+        if (intent) {
+          await db.collection("payment_intents").updateMany(
+            {
+              userId: intent.userId,
+              _id: { $ne: intent._id },
+              status: { $ne: "success" },
+            },
+            {
+              $set: {
+                status: "declined",
+                processedAt: new Date(),
+                updatedAt: new Date(),
+              },
+            }
+          );
+
+          await db.collection("payment_intents").updateOne(
+            { _id: intent._id },
+            {
+              $set: {
+                status: "success",
+                processedAt: new Date(),
+                amount: paidAmountUsd,
+                currency: "USD",
+                amountUsd: paidAmountUsd,
+                currencyUsd: "USD",
+                amount_paid_original: paidAmountUsd,
+                currency_original: "USD",
+                amount_converted: paidAmountUsd,
+                exchange_rate_used: 1,
+                expectedAmountUsd: expectedAmountUsd || null,
+                amountMismatch,
+                amountSource: "stripe_webhook",
+                rawStripeWebhook: event,
+                updatedAt: new Date(),
+              },
+            }
+          );
+
+          const existingSub = await db.collection("subscriptions").findOne({
+            userId: intent.userId,
+            status: "active",
+          });
+          let startDate = new Date();
+          if (existingSub?.endDate && new Date(existingSub.endDate) > startDate) {
+            startDate = new Date(existingSub.endDate);
+          }
+          const durationDays =
+            intent.duration || (plan === "weekly" ? 7 : plan === "monthly" ? 30 : 365);
+          const endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + Number(durationDays || 30));
+
+          await db.collection("subscriptions").updateOne(
+            { userId: intent.userId },
+            {
+              $set: {
+                userId: intent.userId,
+                planId: intent.planId || plan,
+                amount: paidAmountUsd,
+                currency: "USD",
+                amountUsd: paidAmountUsd,
+                currencyUsd: "USD",
+                amount_paid_original: paidAmountUsd,
+                currency_original: "USD",
+                amount_converted: paidAmountUsd,
+                exchange_rate_used: 1,
+                expectedAmountUsd: expectedAmountUsd || null,
+                amountMismatch,
+                provider: "stripe",
+                paymentChannel: normalizePaymentChannel("stripe"),
+                status: "active",
+                startDate,
+                endDate,
+                updatedAt: new Date(),
+              },
+            },
+            { upsert: true }
+          );
+
+          await db.collection("users").updateOne(
+            { _id: new ObjectId(String(intent.userId)) },
+            {
+              $set: {
+                subscriptionStatus: "active",
+                subscriptionType: intent.planId || plan,
+                subscriptionEndDate: endDate,
+                updatedAt: new Date(),
+              },
+            }
+          );
+        } else {
+          await db.collection("users").updateOne(
+            { _id: new ObjectId(userId) },
+            {
+              $set: {
+                subscriptionStatus: "active",
+                subscriptionType: plan,
+                updatedAt: new Date(),
+              },
+            }
+          );
+        }
 
         return NextResponse.json({ received: true });
       } catch (error) {

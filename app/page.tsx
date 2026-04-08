@@ -206,14 +206,15 @@ export default function HomePage() {
     ],
   };
 
-  const USD_TO_KES = 130;
-
   const convertToKes = (price: string | number) => {
+    if (typeof price === "number" && Number.isFinite(price) && price > 100) {
+      return Math.round(price);
+    }
     const amount =
       typeof price === "number"
         ? price
         : Number(String(price).replace(/[^0-9.]/g, ""));
-    return Math.round(amount * USD_TO_KES);
+    return Math.round(amount);
   };
 
   const handlePlanSelect = async (plan: {

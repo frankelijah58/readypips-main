@@ -204,14 +204,21 @@ export default function PricingPlans({
   const [paymentPhone, setPaymentPhone] = useState("");
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const USD_TO_KES = 130;
-
   const convertToKes = (price: string | number) => {
+    if (typeof price === "number" && Number.isFinite(price) && price > 100) {
+      return Math.round(price);
+    }
+    if (typeof price === "string") {
+      const kesInString = Number(String(price).replace(/[^0-9.]/g, ""));
+      if (Number.isFinite(kesInString) && String(price).toUpperCase().includes("KES")) {
+        return Math.round(kesInString);
+      }
+    }
     const amount =
       typeof price === "number"
         ? price
         : Number(String(price).replace(/[^0-9.]/g, ""));
-    return Math.round(amount * USD_TO_KES);
+    return Math.round(amount);
   };
 
   const clearPolling = () => {
@@ -551,6 +558,7 @@ export default function PricingPlans({
                       planId: plan.name.toLowerCase().replace(/\s+/g, ""),
                       name: plan.name,
                       price: plan.price,
+                      kes: (plan as any).kes,
                       duration: (plan as any).duration,
                     })
                   }

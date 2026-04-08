@@ -68,7 +68,9 @@ export default function PaymentProviderModal({
   const displayAmount = Number.isFinite(amount) ? amount : 0;
   const usdAmount = plan.usdPrice
     ? Number(plan.usdPrice)
-    : Number((displayAmount / 130).toFixed(2));
+    : typeof plan.price === "number"
+    ? Number(plan.price)
+    : Number(String(plan.price || 0).replace(/[^0-9.]/g, ""));
 
   const depositAddress = "TXpwFoc64Z8z7ZFBxEX95DATUeteZ4tk9n";
   const network = "TRC20";
