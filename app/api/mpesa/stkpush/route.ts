@@ -93,12 +93,12 @@ export async function POST(req: NextRequest) {
 
     const finalUserId = bodyUserId || decoded.userId || decoded.id || null;
 
-    const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    const canonicalPlanAmountKes = Math.round(Number(planConfig.kes || 0));
+    if (!Number.isFinite(canonicalPlanAmountKes) || canonicalPlanAmountKes <= 0) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid payment amount.",
+          message: "Plan amount is not configured correctly.",
         },
         { status: 400 }
       );
@@ -122,8 +122,10 @@ export async function POST(req: NextRequest) {
       planName: resolvedPlanName,
       duration: resolvedDuration,
       provider: provider || "mpesa",
-      amount: Math.round(numericAmount),
-      currency: currency || "KES",
+      amount: canonicalPlanAmountKes,
+      currency: "KES",
+      requestedAmount: Number.isFinite(Number(amount)) ? Number(amount) : null,
+      requestedCurrency: currency || "KES",
 
       // normalized storage field
       phone: normalizedPhone,
@@ -138,7 +140,7 @@ export async function POST(req: NextRequest) {
     });
 
     const stk = await initiateStkPush({
-      amount: Math.round(numericAmount),
+      amount: canonicalPlanAmountKes,
       phoneNumber: normalizedPhone,
       accountReference,
       transactionDesc: resolvedPlanName
@@ -220,7 +222,7 @@ export async function POST(req: NextRequest) {
       const smsResult = await sendSms({
         mobile: normalizedPhone,
         message: `ReadyPips: We have sent an M-Pesa prompt for KES ${Math.round(
-          numericAmount
+          canonicalPlanAmountKes
         ).toLocaleString()}. Enter your PIN to complete payment for ${
           resolvedPlanName || planConfig.name
         }. Ref: ${accountReference}.`,

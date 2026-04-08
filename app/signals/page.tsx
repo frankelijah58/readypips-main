@@ -99,7 +99,10 @@ export default function SignalsPage() {
       }
 
       if (plan.provider === "mpesa") {
-        const amountKES = convertToKes(plan.price);
+        const amountKES =
+          typeof (plan as any).kesPrice === "number"
+            ? Number((plan as any).kesPrice)
+            : convertToKes(plan.price);
 
         const res = await fetch("/api/mpesa/stkpush", {
           method: "POST",

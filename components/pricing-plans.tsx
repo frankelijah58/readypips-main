@@ -235,7 +235,10 @@ export default function PricingPlans({
           plan.planId ||
           plan.id ||
           plan.name?.toLowerCase().replace(/\s+/g, ""),
-        kesPrice: convertToKes(plan.price || 0),
+        kesPrice:
+          typeof (plan as any).kes === "number"
+            ? Number((plan as any).kes)
+            : convertToKes(plan.price || 0),
       };
 
       setSelectedPlanForPayment(safePlan);
@@ -582,7 +585,10 @@ export default function PricingPlans({
           selectedPlanForPayment
             ? {
                 ...selectedPlanForPayment,
-                kesPrice: convertToKes(selectedPlanForPayment.price || 0),
+                kesPrice:
+                  typeof selectedPlanForPayment.kesPrice === "number"
+                    ? selectedPlanForPayment.kesPrice
+                    : convertToKes(selectedPlanForPayment.price || 0),
               }
             : null
         }
@@ -596,7 +602,9 @@ export default function PricingPlans({
         message={paymentMessage}
         amount={
           selectedPlanForPayment
-            ? convertToKes(selectedPlanForPayment.price || 0)
+            ? typeof selectedPlanForPayment.kesPrice === "number"
+              ? selectedPlanForPayment.kesPrice
+              : convertToKes(selectedPlanForPayment.price || 0)
             : undefined
         }
         planName={selectedPlanForPayment?.name}

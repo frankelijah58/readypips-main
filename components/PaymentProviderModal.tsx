@@ -65,8 +65,6 @@ export default function PaymentProviderModal({
       : typeof plan.price === "number"
       ? plan.price
       : Number(String(plan.price || 0).replace(/[^0-9.]/g, ""));
-      const amountKes = 5; // TEST MODE
-
   const displayAmount = Number.isFinite(amount) ? amount : 0;
   const usdAmount = plan.usdPrice
     ? Number(plan.usdPrice)
