@@ -20,6 +20,8 @@ import {
 interface AdminSidebarProps {
   currentSection: string;
   onSectionChange: (section: any) => void;
+  subscriptionProviderFilter?: "all" | "mpesa" | "binance" | "card";
+  onSubscriptionProviderChange?: (provider: "all" | "mpesa" | "binance" | "card") => void;
   admin: any;
   onLogout: () => void;
 }
@@ -41,6 +43,8 @@ const externalLinks = [
 export default function AdminSidebar({
   currentSection,
   onSectionChange,
+  subscriptionProviderFilter = "all",
+  onSubscriptionProviderChange,
   admin,
   onLogout,
 }: AdminSidebarProps) {
@@ -117,6 +121,34 @@ export default function AdminSidebar({
               );
             })}
         </div>
+
+        {/* Submenu under Subscriptions */}
+        {!collapsed && currentSection === "subscriptions" && (
+          <div className="mt-2 ml-4 border-l border-white/10 pl-3 space-y-1">
+            {[
+              { id: "all", label: "All Payments" },
+              { id: "mpesa", label: "M-Pesa Payments" },
+              { id: "binance", label: "Binance Payments" },
+              { id: "card", label: "Card Payments" },
+            ].map((sub) => (
+              <button
+                key={sub.id}
+                onClick={() =>
+                  onSubscriptionProviderChange?.(
+                    sub.id as "all" | "mpesa" | "binance" | "card",
+                  )
+                }
+                className={`w-full text-left px-3 py-1.5 rounded-md text-xs transition-all ${
+                  subscriptionProviderFilter === sub.id
+                    ? "bg-[#8C57FF]/20 text-[#d7c7ff] font-semibold"
+                    : "text-white/55 hover:text-white/85 hover:bg-[#18181b]/[0.04]"
+                }`}
+              >
+                {sub.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* External Links */}
         {!collapsed && (

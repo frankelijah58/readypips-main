@@ -7,13 +7,21 @@ export async function GET(req: Request) {
 
     const page = Math.max(parseInt(searchParams.get('page') || '1'), 1);
     const limit = Math.max(parseInt(searchParams.get('limit') || '5'), 1);
+    const providerFilter = String(searchParams.get("provider") || "all").toLowerCase();
     const skip = (page - 1) * limit;
 
     const db = await getDatabase();
 
+    const pendingMatch: Record<string, any> = { status: "pending" };
+    if (providerFilter === "mpesa" || providerFilter === "binance") {
+      pendingMatch.provider = providerFilter;
+    } else if (providerFilter === "card") {
+      pendingMatch.provider = { $in: ["whop", "stripe", "paystack", "pesapal", "card"] };
+    }
+
     const result = await db.collection('payment_intents').aggregate([
       // 1. Filter for pending status first for performance
-      { $match: { status: 'pending' } },
+      { $match: pendingMatch },
 
       // 2. CONVERSION: Ensure userId matches the User collection _id type
       {
@@ -54,6 +62,12 @@ export async function GET(req: Request) {
                 planId: 1,
                 provider: 1,
                 amount: 1,
+                amountKes: 1,
+                amountUsd: 1,
+                currency: 1,
+                fxRateKesToUsd: 1,
+                fxSource: 1,
+                fxFetchedAt: 1,
                 createdAt: 1,
                 email: 1,
                 userName: {

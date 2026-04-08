@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Pencil, ShieldCheck, Trash2, Loader2 } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -15,6 +16,8 @@ interface User {
   createdAt: string;
   freeTrialEndDate?: string;
   subscriptionEndDate?: string;
+  isAdmin?: boolean;
+  role?: string;
 }
 
 export default function UserManagement({
@@ -48,6 +51,9 @@ export default function UserManagement({
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [actionUserId, setActionUserId] = useState<string | null>(null);
+  const [actionKind, setActionKind] = useState<'make-admin' | 'delete' | null>(null);
+  const [savingUser, setSavingUser] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -125,7 +131,24 @@ export default function UserManagement({
 
   const handleUpdateUser = async () => {
     if (!editingUser) return;
+    if (!editingUser.firstName?.trim() || !editingUser.lastName?.trim()) {
+      toast({
+        title: 'Missing name',
+        description: 'First and last name are required.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!editingUser.email?.trim()) {
+      toast({
+        title: 'Missing email',
+        description: 'Email is required.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
+    setSavingUser(true);
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/admin/users/${editingUser._id}`, {
@@ -142,44 +165,127 @@ export default function UserManagement({
         }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (response.ok) {
         toast({
           title: 'Success',
           description: 'User updated successfully',
         });
         setShowEditModal(false);
+        setEditingUser(null);
         fetchUsers();
       } else {
-        throw new Error('Failed to update user');
+        throw new Error(
+          data.details || data.error || 'Failed to update user',
+        );
       }
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to update user',
+        description:
+          error instanceof Error ? error.message : 'Failed to update user',
         variant: 'destructive',
       });
+    } finally {
+      setSavingUser(false);
     }
   };
 
   const handleMakeAdmin = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to promote this user to an Admin?')) return;
+    if (
+      !window.confirm(
+        'Grant this user admin privileges? They will be able to access the admin dashboard.',
+      )
+    ) {
+      return;
+    }
+    setActionUserId(userId);
+    setActionKind('make-admin');
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/admin/users/${userId}/make-admin`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
+      const data = await response.json().catch(() => ({}));
       if (response.ok) {
-        toast({ title: 'Success', description: 'User promoted to Admin successfully' });
+        toast({
+          title: 'Success',
+          description: data.message || 'User promoted to admin',
+        });
         fetchUsers();
       } else {
-        const error = await response.json();
-        toast({ title: 'Error', description: error.error || 'Failed to promote user', variant: 'destructive' });
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to promote user',
+          variant: 'destructive',
+        });
       }
     } catch {
-      toast({ title: 'Error', description: 'Failed to promote user', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: 'Failed to promote user',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionUserId(null);
+      setActionKind(null);
     }
   };
+
+  const handleDeleteUser = async (user: User) => {
+    const label = `${user.firstName} ${user.lastName}`.trim() || user.email;
+    if (
+      !window.confirm(
+        `Permanently delete ${label}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setActionUserId(user._id);
+    setActionKind('delete');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/admin/users/${user._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) {
+        toast({
+          title: 'User removed',
+          description: data.message || 'The user was deleted.',
+        });
+        fetchUsers();
+        fetchStats();
+      } else {
+        toast({
+          title: 'Could not delete',
+          description: data.details || data.error || 'Delete failed',
+          variant: 'destructive',
+        });
+      }
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user',
+        variant: 'destructive',
+      });
+    } finally {
+      setActionUserId(null);
+      setActionKind(null);
+    }
+  };
+
+  const isRowBusy = (id: string) =>
+    actionUserId === id && actionKind !== null;
+
+  const isAlreadyAdmin = (user: User) =>
+    user.isAdmin === true ||
+    ['admin', 'super_admin', 'superadmin'].includes(
+      String(user.role || '').toLowerCase(),
+    );
 
   if (loading) {
     return (
@@ -248,7 +354,9 @@ export default function UserManagement({
                   <th className="px-6 py-3 text-left text-sm font-semibold text-white">Expires On</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-white/90">Email Verified</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-white/90">Joined</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-white/90">Actions</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-white/90 w-[200px]">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -288,20 +396,67 @@ export default function UserManagement({
                       <td className="px-6 py-4 text-sm text-white/70">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 text-sm space-x-3">
-                        <button 
-                          onClick={() => handleEditUser(user)}
-                          className="text-[#8C57FF] hover:text-[#8C57FF]/80 transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => handleMakeAdmin(user._id)}
-                          className="text-emerald-400 hover:text-emerald-300 transition-colors"
-                        >
-                          Make Admin
-                        </button>
-                        <button className="text-rose-400 hover:text-rose-300 transition-colors">Delete</button>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            title="Edit user"
+                            onClick={() => handleEditUser(user)}
+                            disabled={isRowBusy(user._id)}
+                            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#8C57FF]/40 bg-[#8C57FF]/10 px-3 text-xs font-medium text-[#c4b5fd] transition-colors hover:border-[#8C57FF]/70 hover:bg-[#8C57FF]/20 disabled:opacity-40"
+                          >
+                            <Pencil className="h-3.5 w-3.5" aria-hidden />
+                            Edit
+                          </button>
+                          {!isAlreadyAdmin(user) ? (
+                            <button
+                              type="button"
+                              title="Grant admin access"
+                              onClick={() => handleMakeAdmin(user._id)}
+                              disabled={isRowBusy(user._id)}
+                              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-3 text-xs font-medium text-emerald-300 transition-colors hover:border-emerald-400/60 hover:bg-emerald-500/20 disabled:opacity-40"
+                            >
+                              {actionUserId === user._id &&
+                              actionKind === 'make-admin' ? (
+                                <Loader2
+                                  className="h-3.5 w-3.5 animate-spin"
+                                  aria-hidden
+                                />
+                              ) : (
+                                <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+                              )}
+                              Make admin
+                            </button>
+                          ) : (
+                            <span
+                              className="inline-flex h-9 items-center rounded-lg border border-white/10 bg-white/[0.03] px-3 text-[10px] font-semibold uppercase tracking-wide text-white/35"
+                              title="Already has admin access"
+                            >
+                              Admin
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            title="Delete user"
+                            onClick={() => handleDeleteUser(user)}
+                            disabled={
+                              isRowBusy(user._id) ||
+                              String(user._id) === String(admin?._id ?? '')
+                            }
+                            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-rose-500/35 bg-rose-500/10 px-3 text-xs font-medium text-rose-300 transition-colors hover:border-rose-400/60 hover:bg-rose-500/20 disabled:pointer-events-none disabled:opacity-30"
+                          >
+                            {actionUserId === user._id &&
+                            actionKind === 'delete' ? (
+                              <Loader2
+                                className="h-3.5 w-3.5 animate-spin"
+                                aria-hidden
+                              />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                            )}
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -345,7 +500,7 @@ export default function UserManagement({
 
       {/* Edit User Modal */}
       {showEditModal && editingUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div className="bg-[#18181b] rounded-xl p-8 max-w-md w-full mx-4 border border-white/10 shadow-2xl">
             <h3 className="text-xl font-bold text-white mb-6">Edit User</h3>
             <div className="space-y-4">
@@ -414,10 +569,15 @@ export default function UserManagement({
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleUpdateUser}
-                className="px-4 py-2 text-white bg-[#8C57FF] rounded-lg hover:bg-[#8C57FF]/90 shadow-[0_2px_6px_rgba(140,87,255,0.4)] transition-all"
+                disabled={savingUser}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-white bg-[#8C57FF] rounded-lg hover:bg-[#8C57FF]/90 shadow-[0_2px_6px_rgba(140,87,255,0.4)] transition-all disabled:opacity-50"
               >
-                Save Changes
+                {savingUser ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : null}
+                Save changes
               </button>
             </div>
           </div>

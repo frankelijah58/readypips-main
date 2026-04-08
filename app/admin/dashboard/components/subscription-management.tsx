@@ -34,10 +34,12 @@ export default function SubscriptionManagement({
   admin,
   headerSearch,
   onHeaderSearchChange,
+  paymentProviderFilter = "all",
 }: {
   admin: any;
   headerSearch: string;
   onHeaderSearchChange: (value: string) => void;
+  paymentProviderFilter?: "all" | "mpesa" | "binance" | "card";
 }) {
   const { toast } = useToast();
 
@@ -90,12 +92,13 @@ export default function SubscriptionManagement({
     try {
       
       const dateFilters = `&startDate=${startDate}&endDate=${endDate}`;
+      const providerFilter = `&provider=${encodeURIComponent(paymentProviderFilter)}`;
 
       const statusFilter = activeTab === 'all' ? '' : `&status=${activeTab}`;
       const [subRes, revRes, pendRes] = await Promise.all([
-        fetch(`/api/admin/subscriptions?page=${currentPage}&limit=10&search=${encodeURIComponent(headerSearch)}${statusFilter}${dateFilters}`, { headers: authHeaders() }),
+        fetch(`/api/admin/subscriptions?page=${currentPage}&limit=10&search=${encodeURIComponent(headerSearch)}${statusFilter}${providerFilter}${dateFilters}`, { headers: authHeaders() }),
         fetch('/api/admin/revenuev2', { headers: authHeaders() }),
-        fetch(`/api/admin/payments/pending?page=${pendingPage}&limit=4`, { headers: authHeaders() }) // Adjusted limit for vertical flow
+        fetch(`/api/admin/payments/pending?page=${pendingPage}&limit=4&provider=${encodeURIComponent(paymentProviderFilter)}`, { headers: authHeaders() }) // Adjusted limit for vertical flow
       ]);
 
       const subData = await subRes.json();
@@ -118,7 +121,7 @@ export default function SubscriptionManagement({
     } finally {
       setLoading(false);
     }
-  }, [currentPage, headerSearch, activeTab, pendingPage, startDate, endDate, authHeaders, toast]);
+  }, [currentPage, headerSearch, activeTab, pendingPage, startDate, endDate, authHeaders, toast, paymentProviderFilter]);
 
   useEffect(() => {
     const timer = setTimeout(fetchData, 400);
@@ -248,6 +251,12 @@ useEffect(() => {
             Subscription Management
           </h1>
           <p className="text-white/60 text-sm mt-1">Manage user access and verify incoming payments.</p>
+          <p className="text-white/40 text-xs mt-1">
+            Provider filter:{" "}
+            <span className="text-[#8C57FF] font-semibold uppercase">
+              {paymentProviderFilter}
+            </span>
+          </p>
         </div>
 
         {/* Date Picker Group */}
@@ -431,7 +440,23 @@ useEffect(() => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right font-mono font-bold text-white/80">
-                      ${sub.price}
+                      <div className="leading-tight">
+                        {typeof sub.priceKes === 'number' && sub.priceKes > 0 && (
+                          <div>KES {Number(sub.priceKes).toLocaleString()}</div>
+                        )}
+                        {typeof sub.priceUsd === 'number' && sub.priceUsd > 0 ? (
+                          <div className="text-[#8C57FF]">${Number(sub.priceUsd).toLocaleString()}</div>
+                        ) : (
+                          <div className="text-[#8C57FF]">
+                            ${Number(sub.price || 0).toLocaleString()}
+                          </div>
+                        )}
+                        {sub.fxRateKesToUsd ? (
+                          <div className="text-[10px] font-normal text-white/40">
+                            FX {Number(sub.fxRateKesToUsd).toFixed(6)}
+                          </div>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button className="p-2 text-white/40 hover:text-white transition-colors">
@@ -552,6 +577,19 @@ useEffect(() => {
 /* -------------------- REFINED COMPONENTS -------------------- */
 
 function PendingCard({ pay, onAction, processingId }: any) {
+  const kesAmount =
+    typeof pay.amountKes === "number"
+      ? pay.amountKes
+      : String(pay.currency || "").toUpperCase() === "KES"
+      ? Number(pay.amount || 0)
+      : null;
+  const usdAmount =
+    typeof pay.amountUsd === "number" && pay.amountUsd > 0
+      ? pay.amountUsd
+      : String(pay.currency || "").toUpperCase() === "USD"
+      ? Number(pay.amount || 0)
+      : null;
+
   return (
     <div className="bg-[#18181b] border border-white/[0.04] rounded-2xl p-4 shadow-sm hover:shadow-lg hover:border-white/10 transition-all">
       <div className="flex justify-between items-start mb-3">
@@ -562,7 +600,16 @@ function PendingCard({ pay, onAction, processingId }: any) {
             <p className="text-[10px] text-white/40 font-bold uppercase">{pay.provider}</p>
           </div>
         </div>
-        <span className="text-sm font-black text-[#8C57FF]">${pay.amount}</span>
+        <div className="text-right">
+          {kesAmount != null ? (
+            <div className="text-xs font-black text-white/80">
+              KES {Number(kesAmount).toLocaleString()}
+            </div>
+          ) : null}
+          <span className="text-sm font-black text-[#8C57FF]">
+            ${Number(usdAmount ?? 0).toLocaleString()}
+          </span>
+        </div>
       </div>
       <div className="text-[11px] text-white/60 mb-4 bg-black/20 p-2 rounded-lg truncate">
         {pay.email}

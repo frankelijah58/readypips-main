@@ -4,7 +4,16 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, KeyRound, Loader2 } from 'lucide-react';
+import { ArrowLeft, KeyRound, Loader2, User } from 'lucide-react';
+
+type AdminProfile = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role?: string;
+  lastLogin?: string;
+  createdAt?: string;
+};
 
 export default function AdminAccountSettingsPage() {
   const router = useRouter();
@@ -14,6 +23,7 @@ export default function AdminAccountSettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [profile, setProfile] = useState<AdminProfile | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -37,9 +47,38 @@ export default function AdminAccountSettingsPage() {
           return;
         }
         const { user } = await verifyRes.json();
-        if (!user.isAdmin && !user.role) {
+        const role = String(user.role || '');
+        const isAdminAccess =
+          user.isAdmin === true ||
+          role === 'admin' ||
+          role === 'super_admin' ||
+          role === 'moderator';
+        if (!isAdminAccess) {
           router.replace('/signals');
           return;
+        }
+
+        const profileRes = await fetch('/api/admin/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (profileRes.ok) {
+          const data = await profileRes.json();
+          const a = data.admin as AdminProfile;
+          setProfile({
+            email: a.email,
+            firstName: a.firstName,
+            lastName: a.lastName,
+            role: a.role,
+            lastLogin: a.lastLogin,
+            createdAt: a.createdAt,
+          });
+        } else {
+          setProfile({
+            email: user.email,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            role: user.role,
+          });
         }
       } catch {
         router.replace('/admin/dashboard');
@@ -128,6 +167,31 @@ export default function AdminAccountSettingsPage() {
             </p>
           </div>
         </div>
+
+        {profile && (
+          <div className="mb-8 flex gap-4 rounded-xl border border-white/10 bg-[#18181b] p-5 shadow-lg shadow-black/30">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/5 text-[#8C57FF]">
+              <User className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-1 text-sm">
+              <p className="font-medium text-white">
+                {profile.firstName} {profile.lastName}
+              </p>
+              <p className="truncate text-white/60">{profile.email}</p>
+              {profile.role && (
+                <p className="text-xs uppercase tracking-wide text-white/40">
+                  Role: {String(profile.role).replace(/_/g, ' ')}
+                </p>
+              )}
+              {profile.lastLogin && (
+                <p className="text-xs text-white/35">
+                  Last sign-in:{' '}
+                  {new Date(profile.lastLogin).toLocaleString()}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         <form
           onSubmit={handlePasswordChange}

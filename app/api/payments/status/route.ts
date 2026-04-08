@@ -20,8 +20,12 @@ export async function POST(req: NextRequest) {
 
     const payment = await db.collection("payment_intents").findOne({
       $or: [
-        ...(merchantRequestID ? [{ merchantRequestID }] : []),
-        ...(checkoutRequestID ? [{ checkoutRequestID }] : []),
+        ...(merchantRequestID
+          ? [{ merchantRequestID }, { merchantRequestId: merchantRequestID }]
+          : []),
+        ...(checkoutRequestID
+          ? [{ checkoutRequestID }, { checkoutRequestId: checkoutRequestID }]
+          : []),
       ],
     });
 
@@ -29,7 +33,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ status: "waiting" });
     }
 
-    if (payment.status === "success" || payment.paid === true) {
+    const normalizedStatus = String(payment.status || "").toLowerCase();
+    if (
+      ["success", "paid", "completed", "active"].includes(normalizedStatus) ||
+      payment.paid === true
+    ) {
       return NextResponse.json({
         status: "success",
         paid: true,
@@ -37,7 +45,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (payment.status === "failed") {
+    if (["failed", "declined", "cancelled", "canceled", "timeout"].includes(normalizedStatus)) {
       return NextResponse.json({
         status: "failed",
         message: payment.failureReason || payment.resultDesc || "Payment failed",

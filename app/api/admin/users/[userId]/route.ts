@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { verifyToken } from '@/lib/auth';
+import {
+  hasAdminPrivileges,
+  resolveAdminRequester,
+} from '@/lib/admin-requester';
 
 // GET single user
 export async function GET(
@@ -17,13 +21,18 @@ export async function GET(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = await verifyToken(token);
+    const decoded = verifyToken(token);
 
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
     const db = await getDatabase();
+    const requester = await resolveAdminRequester(decoded.userId);
+    if (!hasAdminPrivileges(requester)) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
     const user = await db.collection('users').findOne({
       _id: new ObjectId(userId)
     });
@@ -60,83 +69,38 @@ export async function PUT(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = await verifyToken(token);
+    const decoded = verifyToken(token);
 
     if (!decoded) {
       console.error('Token verification failed');
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // console.log('Decoded token:', decoded);
-
-    // Verify admin has permission
-    const db = await getDatabase();
-    
-    // Try to find admin user with multiple approaches
-    // console.log('Looking for admin user with ID:', decoded.userId);
-    
-    let adminUser = await db.collection('users').findOne({
-      _id: new ObjectId(decoded.userId)
-    });
-    
-    // If not found with ObjectId, try with string ID
-    if (!adminUser) {
-      // console.log('Not found with ObjectId in users, trying string ID...');
-      adminUser = await db.collection('users').findOne({
-        _id: decoded.userId as any
-      });
-    }
-    
-    // If still not found, check the admins collection (for separate admin system)
-    if (!adminUser) {
-      // console.log('Not found in users collection, checking admins collection...');
-      const admin = await db.collection('admins').findOne({
-        _id: new ObjectId(decoded.userId)
-      }) || await db.collection('admins').findOne({
-        _id: decoded.userId as any
-      });
-      
-      if (admin) {
-        // console.log('Found in admins collection:', admin.email);
-        // Convert admin to user format for compatibility
-        adminUser = {
-          ...admin,
-          isAdmin: true,
-          role: admin.role || 'admin'
-        } as any;
-      }
-    }
-
-    // console.log('Admin user found:', adminUser ? {
-    //   id: adminUser._id?.toString(),
-    //   email: adminUser.email,
-    //   isAdmin: adminUser.isAdmin,
-    //   role: adminUser.role,
-    //   firstName: adminUser.firstName,
-    //   lastName: adminUser.lastName
-    // } : 'NULL - User not found in database');
+    const adminUser = await resolveAdminRequester(decoded.userId);
 
     if (!adminUser) {
       console.error('Admin user not found in database with ID:', decoded.userId);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Admin user not found',
-        details: 'Your user account could not be found. Please log out and log in again.'
+        details: 'Your user account could not be found. Please log out and log in again.',
       }, { status: 403 });
     }
 
-    if (!adminUser.isAdmin && adminUser.role !== 'admin' && adminUser.role !== 'superadmin') {
+    if (!hasAdminPrivileges(adminUser)) {
       console.error('User lacks admin permissions:', {
         isAdmin: adminUser.isAdmin,
-        role: adminUser.role
+        role: adminUser.role,
       });
-      return NextResponse.json({ 
-        error: 'Admin access required',
-        details: 'You do not have permission to perform this action'
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: 'Admin access required',
+          details: 'You do not have permission to perform this action',
+        },
+        { status: 403 },
+      );
     }
 
-    // console.log('Admin verification passed');
-
+    const db = await getDatabase();
     const { firstName, lastName, email, phoneNumber } = await request.json();
 
     // Build update object
@@ -199,56 +163,42 @@ export async function DELETE(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = await verifyToken(token);
+    const decoded = verifyToken(token);
 
     if (!decoded) {
       console.error('Token verification failed (DELETE)');
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Verify admin has permission
-    const db = await getDatabase();
-    
-    // Check both users and admins collections
-    let adminUser = await db.collection('users').findOne({
-      _id: new ObjectId(decoded.userId)
-    }) || await db.collection('users').findOne({
-      _id: decoded.userId as any
-    });
-    
-    // If not found in users, check admins collection
-    if (!adminUser) {
-      const admin = await db.collection('admins').findOne({
-        _id: new ObjectId(decoded.userId)
-      }) || await db.collection('admins').findOne({
-        _id: decoded.userId as any
-      });
-      
-      if (admin) {
-        adminUser = {
-          ...admin,
-          isAdmin: true,
-          role: admin.role || 'admin'
-        } as any;
-      }
-    }
+    const adminUser = await resolveAdminRequester(decoded.userId);
 
     if (!adminUser) {
       console.error('Admin user not found in database (DELETE)');
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Admin user not found',
-        details: 'Your user account could not be found. Please log out and log in again.'
+        details: 'Your user account could not be found. Please log out and log in again.',
       }, { status: 403 });
     }
 
-    if (!adminUser.isAdmin && adminUser.role !== 'admin' && adminUser.role !== 'superadmin') {
+    if (!hasAdminPrivileges(adminUser)) {
       console.error('User lacks admin permissions (DELETE)');
-      return NextResponse.json({ 
-        error: 'Admin access required',
-        details: 'You do not have permission to perform this action'
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: 'Admin access required',
+          details: 'You do not have permission to perform this action',
+        },
+        { status: 403 },
+      );
     }
 
+    if (userId === decoded.userId) {
+      return NextResponse.json(
+        { error: 'You cannot delete your own account from this panel' },
+        { status: 400 },
+      );
+    }
+
+    const db = await getDatabase();
     // Delete user
     const result = await db.collection('users').deleteOne({
       _id: new ObjectId(userId)
