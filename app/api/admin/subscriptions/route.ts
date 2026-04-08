@@ -10,26 +10,46 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
     const statusFilter = searchParams.get("status");
+    const providerFilter = String(searchParams.get("provider") || "all").toLowerCase();
     const startDateParam = searchParams.get("startDate");
     const endDateParam = searchParams.get("endDate");
     const skip = (page - 1) * limit;
 
     // 1. Build Match Stage
     const matchStage: any = {};
+    const andConditions: any[] = [];
 
     // Search logic
     if (search) {
-      matchStage.$or = [
+      andConditions.push({
+        $or: [
         { "userDetails.firstName": { $regex: search, $options: "i" } },
         { "userDetails.lastName": { $regex: search, $options: "i" } },
         { "userDetails.email": { $regex: search, $options: "i" } },
         { planId: { $regex: search, $options: "i" } }
-      ];
+      ]});
     }
 
     // Status logic
     if (statusFilter && statusFilter !== 'all') {
       matchStage.status = statusFilter;
+    }
+
+    // Provider/channel logic
+    if (providerFilter && providerFilter !== "all") {
+      if (providerFilter === "card") {
+        andConditions.push({
+          $or: [
+          { paymentChannel: "card" },
+          { provider: { $in: ["whop", "stripe", "paystack", "pesapal", "card"] } },
+        ]});
+      } else if (providerFilter === "mpesa" || providerFilter === "binance") {
+        andConditions.push({
+          $or: [
+          { paymentChannel: providerFilter },
+          { provider: providerFilter },
+        ]});
+      }
     }
 
     // DATE FILTER LOGIC
@@ -55,6 +75,9 @@ export async function GET(req: Request) {
         end.setHours(23, 59, 59, 999); // Ensure it includes the entire end day
         matchStage.updatedAt.$lte = end;
       }
+    }
+    if (andConditions.length) {
+      matchStage.$and = andConditions;
     }
 
     const pipeline = [
@@ -83,6 +106,70 @@ export async function GET(req: Request) {
                 _id: 1,
                 plan: "$planId",
                 price: "$amount",
+                priceKes: {
+                  $cond: [
+                    { $gt: [{ $ifNull: ["$amountKes", 0] }, 0] },
+                    "$amountKes",
+                    {
+                      $cond: [
+                        { $eq: [{ $toUpper: { $ifNull: ["$currency", ""] } }, "KES"] },
+                        "$amount",
+                        null,
+                      ],
+                    },
+                  ],
+                },
+                priceUsd: {
+                  $cond: [
+                    { $gt: [{ $ifNull: ["$amountUsd", 0] }, 0] },
+                    "$amountUsd",
+                    {
+                      $cond: [
+                        { $eq: [{ $toUpper: { $ifNull: ["$currency", ""] } }, "USD"] },
+                        "$amount",
+                        null,
+                      ],
+                    },
+                  ],
+                },
+                currency: { $ifNull: ["$currency", null] },
+                fxRateKesToUsd: { $ifNull: ["$fxRateKesToUsd", null] },
+                fxSource: { $ifNull: ["$fxSource", null] },
+                fxFetchedAt: { $ifNull: ["$fxFetchedAt", null] },
+                provider: { $ifNull: ["$provider", null] },
+                paymentChannel: {
+                  $switch: {
+                    branches: [
+                      {
+                        case: {
+                          $in: [
+                            { $toLower: { $ifNull: ["$paymentChannel", ""] } },
+                            ["mpesa", "binance", "card"],
+                          ],
+                        },
+                        then: { $toLower: "$paymentChannel" },
+                      },
+                      {
+                        case: { $eq: [{ $toLower: { $ifNull: ["$provider", ""] } }, "mpesa"] },
+                        then: "mpesa",
+                      },
+                      {
+                        case: { $eq: [{ $toLower: { $ifNull: ["$provider", ""] } }, "binance"] },
+                        then: "binance",
+                      },
+                      {
+                        case: {
+                          $in: [
+                            { $toLower: { $ifNull: ["$provider", ""] } },
+                            ["whop", "stripe", "paystack", "pesapal", "card"],
+                          ],
+                        },
+                        then: "card",
+                      },
+                    ],
+                    default: "card",
+                  },
+                },
                 status: 1,
                 startDate: 1,
                 endDate: 1,

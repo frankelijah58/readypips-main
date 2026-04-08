@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +13,8 @@ import PartnersManagement from './components/partners-management';
 import SupportManagement from './components/support-management';
 
 type AdminSection = 'dashboard' | 'users' | 'subscriptions' | 'partners' | 'support';
+const STORAGE_SECTION_KEY = "admin_dashboard_section";
+const STORAGE_SUB_PROVIDER_KEY = "admin_subscription_provider_filter";
 
 /** Typing `/users` + Enter (or bare `users`) switches sections; those strings are not used as table filters on Overview. */
 const NAV_TO_SECTION: Record<string, AdminSection> = {
@@ -38,11 +41,40 @@ function tryParseNavSection(query: string): AdminSection | null {
 export default function AdminDashboard() {
   const router = useRouter();
   const { toast } = useToast();
-  const [currentSection, setCurrentSection] = useState<AdminSection>('dashboard');
+  const [currentSection, setCurrentSection] = useState<AdminSection>(() => {
+    if (typeof window === "undefined") return "dashboard";
+    const saved = localStorage.getItem(STORAGE_SECTION_KEY);
+    if (
+      saved === "dashboard" ||
+      saved === "users" ||
+      saved === "subscriptions" ||
+      saved === "partners" ||
+      saved === "support"
+    ) {
+      return saved;
+    }
+    return "dashboard";
+  });
   const [admin, setAdmin] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [headerSearch, setHeaderSearch] = useState('');
   const headerSearchRef = useRef<HTMLInputElement>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const [subscriptionProviderFilter, setSubscriptionProviderFilter] =
+    useState<"all" | "mpesa" | "binance" | "card">(() => {
+      if (typeof window === "undefined") return "all";
+      const saved = localStorage.getItem(STORAGE_SUB_PROVIDER_KEY);
+      if (
+        saved === "all" ||
+        saved === "mpesa" ||
+        saved === "binance" ||
+        saved === "card"
+      ) {
+        return saved;
+      }
+      return "all";
+    });
 
   const focusHeaderSearch = useCallback(() => {
     headerSearchRef.current?.focus();
@@ -68,6 +100,26 @@ export default function AdminDashboard() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [focusHeaderSearch]);
 
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const el = profileMenuRef.current;
+      if (el && !el.contains(e.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [profileMenuOpen]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_SECTION_KEY, currentSection);
+  }, [currentSection]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_SUB_PROVIDER_KEY, subscriptionProviderFilter);
+  }, [subscriptionProviderFilter]);
+
   const fetchAdminProfile = async (token: string) => {
     try {
       const response = await fetch('/api/auth/verify', {
@@ -86,7 +138,13 @@ export default function AdminDashboard() {
 
       const data = await response.json();
       
-      if (!data.user.isAdmin && !data.user.role) {
+      const role = String(data.user.role || '');
+      const isAdminAccess =
+        data.user.isAdmin === true ||
+        role === 'admin' ||
+        role === 'super_admin' ||
+        role === 'moderator';
+      if (!isAdminAccess) {
         toast({
           title: 'Access Denied',
           description: 'You do not have permission to access the admin dashboard',
@@ -157,7 +215,14 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <AdminSidebar
         currentSection={currentSection}
-        onSectionChange={setCurrentSection}
+        onSectionChange={(section) => {
+          setCurrentSection(section);
+          if (section !== "subscriptions") {
+            setSubscriptionProviderFilter("all");
+          }
+        }}
+        subscriptionProviderFilter={subscriptionProviderFilter}
+        onSubscriptionProviderChange={setSubscriptionProviderFilter}
         admin={admin}
         onLogout={handleLogout}
       />
@@ -165,7 +230,7 @@ export default function AdminDashboard() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Top Navbar (Materio style) */}
-        <div className="sticky top-0 z-10 bg-[#18181b]/80 backdrop-blur-md border-b border-white/[0.04]">
+        <div className="sticky top-0 z-50 bg-[#18181b]/95 backdrop-blur-md border-b border-white/[0.04]">
           <div className="px-6 py-4 flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold text-white">
@@ -213,13 +278,13 @@ export default function AdminDashboard() {
               </div>
               
               {/* Profile Details Dropdown */}
-              <div className="relative border-l border-white/10 pl-6">
-                <div 
-                  className="flex items-center gap-3 cursor-pointer group"
-                  onClick={() => {
-                    const el = document.getElementById('profile-dropdown');
-                    if (el) el.classList.toggle('hidden');
-                  }}
+              <div className="relative z-[200] border-l border-white/10 pl-6" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  aria-expanded={profileMenuOpen}
+                  aria-haspopup="menu"
+                  className="flex items-center gap-3 cursor-pointer group text-left"
+                  onClick={() => setProfileMenuOpen((o) => !o)}
                 >
                   <div className="text-right hidden sm:block">
                     <p className="text-white text-sm font-semibold leading-tight group-hover:text-[#8C57FF] transition-colors">{admin?.firstName || 'Admin'}</p>
@@ -230,33 +295,61 @@ export default function AdminDashboard() {
                   <div className="w-10 h-10 rounded-full bg-[#8C57FF] flex items-center justify-center text-white font-bold text-base flex-shrink-0 ring-2 ring-[#8C57FF]/30 group-hover:ring-[#8C57FF]/60 transition-all shadow-lg">
                     {admin?.firstName?.charAt(0) || 'A'}
                   </div>
-                </div>
+                </button>
 
-                {/* Dropdown Menu */}
-                <div id="profile-dropdown" className="hidden absolute right-0 top-full mt-3 w-56 bg-[#18181b] rounded-lg shadow-xl shadow-black/40 border border-white/10 overflow-hidden transform origin-top-right transition-all">
-                  <div className="px-4 py-3 border-b border-white/5 bg-[#18181b]/[0.02]">
-                    <p className="text-sm font-semibold text-white">{admin?.firstName} {admin?.lastName}</p>
-                    <p className="text-xs text-white/50 truncate max-w-full">{admin?.email}</p>
+                {profileMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full mt-3 w-60 overflow-hidden rounded-xl border border-white/15 bg-[#27272a] shadow-2xl shadow-black/70 ring-1 ring-black/50"
+                  >
+                    <div className="border-b border-white/10 bg-[#3f3f46] px-4 py-3">
+                      <p className="text-sm font-semibold text-white">
+                        {admin?.firstName} {admin?.lastName}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-zinc-300">{admin?.email}</p>
+                    </div>
+                    <div className="bg-[#27272a] py-1">
+                      <Link
+                        href="/admin/profile"
+                        role="menuitem"
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-zinc-100 transition-colors hover:bg-white/10"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <svg className="h-4 w-4 shrink-0 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        My Profile
+                      </Link>
+                      <Link
+                        href="/admin/account-settings"
+                        role="menuitem"
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-zinc-100 transition-colors hover:bg-white/10"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <svg className="h-4 w-4 shrink-0 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Account Settings
+                      </Link>
+                      <div className="my-1 border-t border-white/10" />
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          void handleLogout();
+                        }}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-sm font-medium text-[#FF4C51] transition-colors hover:bg-[#FF4C51]/15"
+                      >
+                        <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                      </button>
+                    </div>
                   </div>
-                  <div className="py-1">
-                    <button className="w-full text-left px-4 py-2 text-sm text-white/70 hover:bg-[#18181b]/5 hover:text-white transition-colors flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                      My Profile
-                    </button>
-                    <button className="w-full text-left px-4 py-2 text-sm text-white/70 hover:bg-[#18181b]/5 hover:text-white transition-colors flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      Account Settings
-                    </button>
-                    <div className="my-1 border-t border-white/5"></div>
-                    <button 
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-[#FF4C51] hover:bg-[#FF4C51]/10 transition-colors flex items-center gap-2 font-medium"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                      Logout
-                    </button>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -279,6 +372,7 @@ export default function AdminDashboard() {
               admin={admin}
               headerSearch={headerSearch}
               onHeaderSearchChange={setHeaderSearch}
+              paymentProviderFilter={subscriptionProviderFilter}
             />
           )}
           {currentSection === 'partners' && (

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { sendSms } from "@/lib/sms";
+import { convertKesToUsd, getKesToUsdRate } from "@/lib/currency-rates";
+import { normalizePaymentChannel } from "@/lib/payment-provider";
 
 function extractCallbackItem(items: any[], name: string) {
   return items?.find((item) => item.Name === name)?.Value ?? null;
@@ -100,6 +102,20 @@ export async function POST(req: NextRequest) {
     const finalPhone =
       callbackPhone ?? paymentIntent.phone ?? paymentIntent.phoneNumber ?? null;
 
+    let fxRateKesToUsd: number | null = null;
+    let amountUsd: number | null = null;
+    let fxSource: string | null = null;
+    let fxFetchedAt: Date | null = null;
+    try {
+      const fx = await getKesToUsdRate(db, { forceRefresh: isSuccessful });
+      fxRateKesToUsd = fx.rate;
+      fxSource = fx.source;
+      fxFetchedAt = fx.fetchedAt;
+      amountUsd = convertKesToUsd(finalAmountKes, fx.rate);
+    } catch (fxError) {
+      console.error("FX conversion failed for M-Pesa callback:", fxError);
+    }
+
     await db.collection("payment_intents").updateOne(
       { _id: paymentIntent._id },
       {
@@ -113,6 +129,11 @@ export async function POST(req: NextRequest) {
           currency: "KES",
           amountKes: finalAmountKes,
           currencyKes: "KES",
+          amountUsd,
+          currencyUsd: amountUsd != null ? "USD" : null,
+          fxRateKesToUsd,
+          fxSource,
+          fxFetchedAt,
 
           mpesaReceiptNumber: mpesaReceiptNumber ?? null,
           transactionDate: transactionDate ?? null,
@@ -176,11 +197,17 @@ export async function POST(req: NextRequest) {
             planId: paymentIntent.planId || null,
             planName: paymentIntent.planName || paymentIntent.planId || null,
             provider: "mpesa",
+            paymentChannel: normalizePaymentChannel("mpesa"),
 
             amount: finalAmountKes,
             currency: "KES",
             amountKes: finalAmountKes,
             currencyKes: "KES",
+            amountUsd,
+            currencyUsd: amountUsd != null ? "USD" : null,
+            fxRateKesToUsd,
+            fxSource,
+            fxFetchedAt,
 
             status: "active",
             startDate,
@@ -206,6 +233,7 @@ export async function POST(req: NextRequest) {
               subscriptionPlanName:
                 paymentIntent.planName || paymentIntent.planId || null,
               subscriptionProvider: "mpesa",
+              paymentChannel: normalizePaymentChannel("mpesa"),
               subscriptionStartedAt: startDate,
               subscriptionExpiresAt: endDate,
               subscriptionEndDate: endDate,
@@ -220,6 +248,11 @@ export async function POST(req: NextRequest) {
                 currency: "KES",
                 amountKes: finalAmountKes,
                 currencyKes: "KES",
+                amountUsd,
+                currencyUsd: amountUsd != null ? "USD" : null,
+                fxRateKesToUsd,
+                fxSource,
+                fxFetchedAt,
                 mpesaReceiptNumber: mpesaReceiptNumber ?? null,
                 checkoutRequestID: CheckoutRequestID ?? null,
                 merchantRequestID: MerchantRequestID ?? null,

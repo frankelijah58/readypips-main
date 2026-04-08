@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { PLANS } from "@/lib/plans";
+import { normalizePaymentChannel } from "@/lib/payment-provider";
 // import { grantTradingViewAccess } from "@/lib/tradingview-private";
 
 // import { grantTradingViewAccess } from "@/lib/tradingview-service";
@@ -35,6 +36,19 @@ const SUCCESS_EVENTS = new Set([
   "order.succeeded",
 ]);
 
+function looksLikeSuccessEvent(event: string): boolean {
+  const v = String(event || "").toLowerCase();
+  return (
+    v.includes("succeeded") ||
+    v.includes("paid") ||
+    v.includes("completed") ||
+    v.includes("activated") ||
+    v.includes("went_active") ||
+    v.includes("renewed") ||
+    v.includes("reactivated")
+  );
+}
+
 export async function POST(req: NextRequest) {
   const db = await getDatabase();
   const receivedAt = new Date();
@@ -57,7 +71,11 @@ export async function POST(req: NextRequest) {
     reference =
       body?.data?.membership_metadata?.custom_id ||
       body?.data?.membership?.metadata?.custom_id ||
-      body?.data?.metadata?.custom_id;
+      body?.data?.metadata?.custom_id ||
+      body?.data?.custom_id ||
+      body?.data?.checkout?.metadata?.custom_id ||
+      body?.data?.subscription?.metadata?.custom_id ||
+      body?.data?.order?.metadata?.custom_id;
 
     /* ------------------------------------
        2️⃣ Log webhook attempt FIRST (always)
@@ -75,7 +93,7 @@ export async function POST(req: NextRequest) {
     /* ------------------------------------
        3️⃣ Ignore non-success events
     ------------------------------------ */
-    if (!SUCCESS_EVENTS.has(event)) {
+    if (!SUCCESS_EVENTS.has(event) && !looksLikeSuccessEvent(event)) {
       await db.collection("whop_webhook_attempts").updateOne(
         { _id: attemptId },
         {
@@ -94,6 +112,10 @@ export async function POST(req: NextRequest) {
     /* ------------------------------------
        4️⃣ Validate reference
     ------------------------------------ */
+    if (!reference && body?.data?.id) {
+      reference = String(body.data.id);
+    }
+
     if (!reference) {
       throw new Error("Missing custom_id reference");
     }
@@ -103,7 +125,7 @@ export async function POST(req: NextRequest) {
     ------------------------------------ */
     const intent = await db.collection("payment_intents").findOne({
       reference,
-      status: { $in: ["pending", "initiated"] },
+      status: { $in: ["pending", "initiated", "submitted_waiting_admin_approval"] },
     });
 
     if (!intent) {
@@ -185,6 +207,8 @@ export async function POST(req: NextRequest) {
           userId,
           planId: intent.planId,
           amount: intent.amount,
+          provider: "whop",
+          paymentChannel: normalizePaymentChannel("whop"),
           status: "active",
           startDate,
           endDate,
@@ -197,16 +221,30 @@ export async function POST(req: NextRequest) {
     /* ------------------------------------
        🔟 Update user record
     ------------------------------------ */
-    await db.collection("users").updateOne(
-      { _id: new ObjectId(userId) },
-      {
-        $set: {
-          subscriptionStatus: "active",
-          subscriptionType: intent.planId,
-          subscriptionEndDate: endDate,
-        },
-      }
-    );
+    const userQuery =
+      ObjectId.isValid(String(userId || ""))
+        ? { _id: new ObjectId(String(userId)) }
+        : userId
+        ? { userId }
+        : null;
+
+    if (userQuery) {
+      await db.collection("users").updateOne(
+        userQuery as any,
+        {
+          $set: {
+            subscriptionStatus: "active",
+            subscriptionType: intent.planId,
+            subscriptionEndDate: endDate,
+          },
+        }
+      );
+    } else {
+      console.warn("Whop webhook: skipped user update due to missing/invalid userId", {
+        reference,
+        userId,
+      });
+    }
 
     /* ------------------------------------
        1️⃣1️⃣ Mark webhook processed

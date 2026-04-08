@@ -33,11 +33,43 @@ export default function AdminPartnerView() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [allRecipientsCount, setAllRecipientsCount] = useState<number | null>(
+    null,
+  );
+  const [recipientStatsLoading, setRecipientStatsLoading] = useState(true);
 
   const router = useRouter();
 
+  const fetchRecipientStats = async () => {
+    setRecipientStatsLoading(true);
+    try {
+      const res = await fetch("/api/admin/send-emails", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      });
+      const data = (await res.json()) as {
+        recipientCount?: number;
+        message?: string;
+      };
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to load recipient count");
+      }
+      setAllRecipientsCount(
+        typeof data.recipientCount === "number" ? data.recipientCount : 0,
+      );
+    } catch {
+      setAllRecipientsCount(null);
+      toast.error("Could not load total user recipient count");
+    } finally {
+      setRecipientStatsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAdminData();
+    fetchRecipientStats();
   }, []);
 
   const fetchAdminData = async () => {
@@ -69,14 +101,26 @@ export default function AdminPartnerView() {
     );
   }, [partners, search]);
 
-  const recipientCount = useMemo(() => {
-    if (sendMode === "all") return partners.length;
-
-    return manualEmails
+  const manualRecipientCount = useMemo(() => {
+    const parts = manualEmails
       .split(",")
-      .map((e) => e.trim())
-      .filter(Boolean).length;
-  }, [sendMode, manualEmails, partners.length]);
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    return new Set(parts).size;
+  }, [manualEmails]);
+
+  const displayedRecipientCount = useMemo(() => {
+    if (sendMode === "all") {
+      if (recipientStatsLoading || allRecipientsCount === null) return null;
+      return allRecipientsCount;
+    }
+    return manualRecipientCount;
+  }, [
+    sendMode,
+    allRecipientsCount,
+    recipientStatsLoading,
+    manualRecipientCount,
+  ]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
@@ -140,6 +184,7 @@ export default function AdminPartnerView() {
       setManualEmails("");
       setFiles([]);
       setSendMode("all");
+      void fetchRecipientStats();
     } catch (error: any) {
       toast.error(error.message || "Failed to send emails");
     } finally {
@@ -295,7 +340,19 @@ export default function AdminPartnerView() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-2">
             <div className="text-sm text-zinc-400">
               Recipients:{" "}
-              <span className="text-white font-semibold">{recipientCount}</span>
+              <span className="text-white font-semibold">
+                {sendMode === "all" && recipientStatsLoading
+                  ? "…"
+                  : displayedRecipientCount === null
+                    ? "—"
+                    : displayedRecipientCount}
+              </span>
+              {sendMode === "all" && !recipientStatsLoading && (
+                <span className="text-zinc-500 font-normal">
+                  {" "}
+                  (all users with an email on file)
+                </span>
+              )}
             </div>
 
             <button

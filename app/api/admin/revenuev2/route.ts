@@ -13,16 +13,49 @@ export async function GET(req: Request) {
 
     const db = await getDatabase();
 
-    // Aggregate total revenue from successful payments
+    // Aggregate total revenue in USD from completed payments.
     const revenueStats = await db.collection("payment_intents").aggregate([
-      { $match: { status: "success" } }, // Only count completed payments
+      { $match: { status: { $in: ["success", "paid"] } } },
+      {
+        $addFields: {
+          normalizedUsd: {
+            $cond: [
+              { $gt: ["$amountUsd", 0] },
+              "$amountUsd",
+              {
+                $cond: [
+                  { $eq: [{ $toUpper: { $ifNull: ["$currency", ""] } }, "USD"] },
+                  { $ifNull: ["$amount", 0] },
+                  {
+                    $cond: [
+                      {
+                        $and: [
+                          {
+                            $eq: [
+                              { $toUpper: { $ifNull: ["$currency", ""] } },
+                              "KES",
+                            ],
+                          },
+                          { $gt: ["$fxRateKesToUsd", 0] },
+                        ],
+                      },
+                      { $multiply: [{ $ifNull: ["$amount", 0] }, "$fxRateKesToUsd"] },
+                      0,
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      },
       {
         $group: {
           _id: null,
-          total: { $sum: "$amount" },
-          count: { $sum: 1 }
-        }
-      }
+          total: { $sum: "$normalizedUsd" },
+          count: { $sum: 1 },
+        },
+      },
     ]).toArray();
 
     const totalRevenue = revenueStats.length > 0 ? revenueStats[0].total : 0;

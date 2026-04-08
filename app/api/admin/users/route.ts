@@ -64,10 +64,15 @@ export async function GET(req: NextRequest) {
           data: [
             { $sort: { createdAt: -1 } },
             { $skip: skip },
-            { $limit: limit }
-          ]
-        }
-      }
+            { $limit: limit },
+            {
+              $project: {
+                password: 0,
+              },
+            },
+          ],
+        },
+      },
     ]).toArray();
 
     const users = result[0].data;

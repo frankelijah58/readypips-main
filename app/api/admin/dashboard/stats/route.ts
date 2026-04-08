@@ -39,6 +39,15 @@ export async function GET(req: NextRequest) {
       return `${m}m`;
     };
 
+    let systemUptime = "N/A";
+    try {
+      const adminDb = db.admin();
+      const serverStatus = await adminDb.serverStatus();
+      systemUptime = formatUptime(Number(serverStatus?.uptime || 0));
+    } catch (uptimeErr) {
+      console.error("Mongo serverStatus uptime error:", uptimeErr);
+    }
+
     return NextResponse.json({
       stats: {
         totalUsers,
@@ -46,7 +55,7 @@ export async function GET(req: NextRequest) {
         expired,
         trial,
         pending,
-        systemUptime: formatUptime(process.uptime()),
+        systemUptime,
         toolAccessMetrics,
         revenue: {
           total: revenue.total,

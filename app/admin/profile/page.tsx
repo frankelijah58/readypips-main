@@ -46,7 +46,13 @@ export default function AdminProfilePage() {
           return;
         }
         const { user } = await verifyRes.json();
-        if (!user.isAdmin && !user.role) {
+        const role = String(user.role || '');
+        const isAdminAccess =
+          user.isAdmin === true ||
+          role === 'admin' ||
+          role === 'super_admin' ||
+          role === 'moderator';
+        if (!isAdminAccess) {
           router.replace('/signals');
           return;
         }

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { verifyToken } from '@/lib/auth';
+import {
+  hasAdminPrivileges,
+  resolveAdminRequester,
+} from '@/lib/admin-requester';
 
 export async function POST(
   request: NextRequest,
@@ -16,29 +20,32 @@ export async function POST(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = await verifyToken(token);
+    const decoded = verifyToken(token);
 
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const db = await getDatabase();
-    
-    // Check if the requester is an admin (super_admin)
-    let requester = await db.collection('users').findOne({ _id: new ObjectId(decoded.userId) });
-    if (!requester) {
-      requester = await db.collection('admins').findOne({ _id: new ObjectId(decoded.userId) });
-    }
+    const requester = await resolveAdminRequester(decoded.userId);
 
-    if (!requester || (!requester.isAdmin && requester.role !== 'super_admin' && requester.role !== 'admin')) {
+    if (!requester || !hasAdminPrivileges(requester)) {
       return NextResponse.json({ error: 'Admin access required to promote users' }, { status: 403 });
     }
 
-    // Check if user exists
+    const db = await getDatabase();
+
     const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
     
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (user.isAdmin === true || String(user.role || '').toLowerCase() === 'admin') {
+      return NextResponse.json({ message: 'User is already an admin' });
+    }
+
+    if (userId === decoded.userId) {
+      return NextResponse.json({ error: 'Invalid operation' }, { status: 400 });
     }
 
     // Update user to be an admin

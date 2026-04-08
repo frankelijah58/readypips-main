@@ -1,41 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import { MongoClient } from "mongodb";
-import jwt from "jsonwebtoken";
-
-const mongoUri = process.env.MONGODB_URI as string;
-const dbName = process.env.MONGODB_DB_NAME as string;
-const jwtSecret = process.env.JWT_SECRET as string;
-
-if (!mongoUri) {
-  throw new Error("MONGODB_URI is missing");
-}
-
-if (!dbName) {
-  throw new Error("MONGODB_DB_NAME is missing");
-}
-
-if (!jwtSecret) {
-  throw new Error("JWT_SECRET is missing");
-}
-
-if (
-  !process.env.MAIL_SMTP_HOST ||
-  !process.env.MAIL_SMTP_PORT ||
-  !process.env.MAIL_SMTP_USER ||
-  !process.env.MAIL_SMTP_PASS ||
-  !process.env.SMTP_FROM_EMAIL
-) {
-  throw new Error("SMTP variables are missing");
-}
-
-const client = new MongoClient(mongoUri);
-
-type JwtPayload = {
-  id?: string;
-  email?: string;
-  role?: string;
-};
+import { getDatabase } from "@/lib/mongodb";
+import { verifyToken } from "@/lib/auth";
 
 type UserDoc = {
   _id?: string;
@@ -43,6 +9,69 @@ type UserDoc = {
   firstName?: string;
   lastName?: string;
 };
+
+function getFromEmail(): string {
+  return (
+    (process.env.SMTP_FROM_EMAIL || process.env.MAIL_SMTP_USER || "").trim() ||
+    ""
+  );
+}
+
+function assertSmtpConfigured(): string | NextResponse {
+  if (
+    !process.env.MAIL_SMTP_HOST ||
+    !process.env.MAIL_SMTP_PORT ||
+    !process.env.MAIL_SMTP_USER ||
+    !process.env.MAIL_SMTP_PASS
+  ) {
+    return NextResponse.json(
+      { message: "MAIL_SMTP_HOST, PORT, USER, and PASS must be configured" },
+      { status: 500 },
+    );
+  }
+  const from = getFromEmail();
+  if (!from) {
+    return NextResponse.json(
+      {
+        message:
+          "Set SMTP_FROM_EMAIL or use MAIL_SMTP_USER as the sender address",
+      },
+      { status: 500 },
+    );
+  }
+  return from;
+}
+
+function requireAdmin(req: NextRequest): NextResponse | null {
+  const authHeader = req.headers.get("authorization");
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    return NextResponse.json(
+      { message: "Unauthorized: missing token" },
+      { status: 401 },
+    );
+  }
+
+  const token = authHeader.split(" ")[1];
+  const decoded = verifyToken(token);
+
+  if (!decoded) {
+    return NextResponse.json(
+      { message: "Unauthorized: invalid or expired token" },
+      { status: 401 },
+    );
+  }
+
+  const role = String(decoded.role ?? "");
+  if (role !== "admin" && !decoded.isAdmin) {
+    return NextResponse.json(
+      { message: "Forbidden: admin access required" },
+      { status: 403 },
+    );
+  }
+
+  return null;
+}
 
 function escapeHtml(text: string) {
   return text
@@ -62,6 +91,7 @@ function getHtmlTemplate(params: {
   const appUrl = process.env.APP_URL || "https://readypips.com";
   const logoUrl =
     process.env.EMAIL_LOGO_URL || "https://readypips.com/logo.png";
+  const fromEmail = getFromEmail();
 
   const unsubscribeUrl = `${appUrl}/unsubscribe?email=${encodeURIComponent(
     params.email,
@@ -125,7 +155,7 @@ function getHtmlTemplate(params: {
           <div style="padding:18px 30px;background:#f8fafc;border-top:1px solid #e2e8f0;">
             <p style="margin:0 0 8px 0;font-size:12px;line-height:1.7;color:#64748b;">
               This email was sent by ReadyPips from
-              <strong>${process.env.SMTP_FROM_EMAIL}</strong>.
+              <strong>${escapeHtml(fromEmail)}</strong>.
             </p>
             <p style="margin:0;font-size:12px;line-height:1.7;color:#64748b;">
               If you no longer want to receive these emails,
@@ -147,29 +177,54 @@ function parseManualEmails(value: string | null) {
     .filter(Boolean);
 }
 
-export async function POST(req: NextRequest) {
-  let connected = false;
+function dedupeRecipientsByEmail(recipients: UserDoc[]): UserDoc[] {
+  const seen = new Set<string>();
+  const out: UserDoc[] = [];
+  for (const u of recipients) {
+    const e = (u.email || "").toLowerCase();
+    if (!e || seen.has(e)) continue;
+    seen.add(e);
+    out.push(u);
+  }
+  return out;
+}
+
+const usersWithEmailFilter = {
+  email: {
+    $exists: true,
+    $type: "string",
+    $ne: "",
+  },
+} as const;
+
+export async function GET(req: NextRequest) {
+  const authError = requireAdmin(req);
+  if (authError) return authError;
 
   try {
-    const authHeader = req.headers.get("authorization");
+    const db = await getDatabase();
+    const recipientCount = await db
+      .collection("users")
+      .countDocuments(usersWithEmailFilter);
 
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { message: "Unauthorized: missing token" },
-        { status: 401 },
-      );
-    }
+    return NextResponse.json({ recipientCount });
+  } catch (error: any) {
+    return NextResponse.json(
+      { message: error.message || "Server error" },
+      { status: 500 },
+    );
+  }
+}
 
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+export async function POST(req: NextRequest) {
+  try {
+    const authError = requireAdmin(req);
+    if (authError) return authError;
 
-    /*  if (!decoded || decoded.role !== "admin") {
-      return NextResponse.json(
-        { message: "Unauthorized: admin access required" },
-        { status: 403 }
-      );
-    }
-*/
+    const smtpCheck = assertSmtpConfigured();
+    if (typeof smtpCheck !== "string") return smtpCheck;
+    const fromEmail = smtpCheck;
+
     const formData = await req.formData();
 
     const mode = String(formData.get("mode") || "").trim();
@@ -191,23 +246,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await client.connect();
-    connected = true;
-
-    const db = client.db(dbName);
+    const db = await getDatabase();
 
     let recipients: UserDoc[] = [];
 
     if (mode === "all") {
       const users = await db
         .collection<UserDoc>("users")
-        .find({
-          email: {
-            $exists: true,
-            $type: "string",
-            $ne: "",
-          },
-        })
+        .find(usersWithEmailFilter)
         .project({
           email: 1,
           firstName: 1,
@@ -251,10 +297,12 @@ export async function POST(req: NextRequest) {
         lastName: "",
       }));
 
-      recipients = [...users, ...fallbackRecipients];
+      recipients = dedupeRecipientsByEmail([...users, ...fallbackRecipients]);
     } else {
       return NextResponse.json({ message: "Invalid mode" }, { status: 400 });
     }
+
+    recipients = dedupeRecipientsByEmail(recipients);
 
     if (!recipients.length) {
       return NextResponse.json(
@@ -301,7 +349,7 @@ export async function POST(req: NextRequest) {
           `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Trader";
 
         await transporter.sendMail({
-          from: `"${process.env.SMTP_FROM_NAME || "ReadyPips"}" <${process.env.SMTP_FROM_EMAIL}>`,
+          from: `"${process.env.SMTP_FROM_NAME || "ReadyPips"}" <${fromEmail}>`,
           to: user.email,
           subject,
           html: getHtmlTemplate({
@@ -331,9 +379,5 @@ export async function POST(req: NextRequest) {
       { message: error.message || "Server error" },
       { status: 500 },
     );
-  } finally {
-    if (connected) {
-      await client.close();
-    }
   }
 }

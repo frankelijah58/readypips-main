@@ -116,17 +116,31 @@ export default function DashboardOverview({
   const [planRevenue, setPlanRevenue] = useState<PlanRevenue[]>([]);
   const [recentSubs, setRecentSubs] = useState<RecentSubscription[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const LIVE_REFRESH_MS = 15000;
 
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
 
+      const nonce = Date.now();
       const [statsRes, usersRes, plansRes, subsRes] = await Promise.all([
-        fetch('/api/admin/dashboard/stats', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/dashboard/recent-users', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/dashboard/plan-revenue', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/admin/dashboard/recent-subscriptions', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`/api/admin/dashboard/stats?t=${nonce}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        }),
+        fetch(`/api/admin/dashboard/recent-users?t=${nonce}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        }),
+        fetch(`/api/admin/dashboard/plan-revenue?t=${nonce}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        }),
+        fetch(`/api/admin/dashboard/recent-subscriptions?t=${nonce}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        }),
       ]);
 
       if (statsRes.ok) {
@@ -170,6 +184,10 @@ export default function DashboardOverview({
 
   useEffect(() => {
     fetchDashboardData();
+    const interval = window.setInterval(() => {
+      fetchDashboardData();
+    }, LIVE_REFRESH_MS);
+    return () => window.clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

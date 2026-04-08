@@ -3,6 +3,8 @@ import { getDatabase } from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { PLANS } from "@/lib/plans";
+import { convertKesToUsd, getKesToUsdRate } from "@/lib/currency-rates";
+import { normalizePaymentChannel } from "@/lib/payment-provider";
 
 export async function PATCH(req: Request) {
   try {
@@ -70,6 +72,31 @@ export async function PATCH(req: Request) {
         }
       );
 
+      let amountUsd: number | null = null;
+      let fxRateKesToUsd: number | null = null;
+      let fxSource: string | null = null;
+      let fxFetchedAt: Date | null = null;
+
+      const amountKes = Number(
+        intent.amountKes ??
+          (String(intent.currency || "").toUpperCase() === "KES"
+            ? intent.amount
+            : 0),
+      );
+      if (amountKes > 0) {
+        try {
+          const fx = await getKesToUsdRate(db, { forceRefresh: true });
+          fxRateKesToUsd = fx.rate;
+          fxSource = fx.source;
+          fxFetchedAt = fx.fetchedAt;
+          amountUsd = convertKesToUsd(amountKes, fx.rate);
+        } catch (fxErr) {
+          console.error("FX conversion failed during manual approval:", fxErr);
+        }
+      } else if (String(intent.currency || "").toUpperCase() === "USD") {
+        amountUsd = Number(intent.amount || 0);
+      }
+
       // 2️⃣ Approve selected intent
       await db.collection("payment_intents").updateOne(
         { _id: new ObjectId(intentId) },
@@ -77,6 +104,13 @@ export async function PATCH(req: Request) {
           $set: {
             status: "success",
             processedAt: new Date(),
+            amountKes: amountKes > 0 ? amountKes : null,
+            currencyKes: amountKes > 0 ? "KES" : null,
+            amountUsd,
+            currencyUsd: amountUsd != null ? "USD" : null,
+            fxRateKesToUsd,
+            fxSource,
+            fxFetchedAt,
           },
         }
       );
@@ -102,7 +136,20 @@ export async function PATCH(req: Request) {
           $set: {
             userId,
             planId: intent.planId,
-            amount: intent.amount,
+            amount: amountKes > 0 ? amountKes : intent.amount,
+            currency:
+              amountKes > 0
+                ? "KES"
+                : String(intent.currency || "USD").toUpperCase(),
+            amountKes: amountKes > 0 ? amountKes : null,
+            currencyKes: amountKes > 0 ? "KES" : null,
+            amountUsd,
+            currencyUsd: amountUsd != null ? "USD" : null,
+            fxRateKesToUsd,
+            fxSource,
+            fxFetchedAt,
+            provider: intent.provider || null,
+            paymentChannel: normalizePaymentChannel(intent.provider),
             status: "active",
             startDate,
             endDate,

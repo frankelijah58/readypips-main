@@ -21,10 +21,28 @@ type WebhookAttempt = {
   error?: string;
   createdAt: string;
   processedAt?: string;
+  diagnostics?: {
+    intentFound: boolean;
+    intentStatus?: string | null;
+    intentUserId?: string | null;
+    intentProvider?: string | null;
+    planId?: string | null;
+    subscriptionStatus?: string | null;
+    userSubscriptionStatus?: string | null;
+    reflected: boolean;
+  };
 };
 
 export default function AdminWebhookAttempts() {
   const [attempts, setAttempts] = useState<WebhookAttempt[]>([]);
+  const [stats, setStats] = useState<{
+    total: number;
+    processed: number;
+    failed: number;
+    ignored: number;
+    reflected: number;
+    missingIntent: number;
+  } | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<WebhookAttempt | null>(null);
@@ -43,8 +61,10 @@ export default function AdminWebhookAttempts() {
 
       if (!res.ok) throw new Error("Unauthorized");
 
-      const data = (await res.json()).data as WebhookAttempt[];
-      setAttempts(data || []);
+      const json = await res.json();
+      const data = (json?.data || []) as WebhookAttempt[];
+      setAttempts(data);
+      setStats(json?.stats || null);
     } catch {
       toast.error("Failed to load webhook attempts");
     } finally {
@@ -84,6 +104,17 @@ export default function AdminWebhookAttempts() {
         </div>
 
         {/* Table */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <Stat label="Total" value={stats.total} />
+            <Stat label="Processed" value={stats.processed} />
+            <Stat label="Reflected" value={stats.reflected} />
+            <Stat label="Failed" value={stats.failed} />
+            <Stat label="Ignored" value={stats.ignored} />
+            <Stat label="Missing Intent" value={stats.missingIntent} />
+          </div>
+        )}
+
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -91,6 +122,7 @@ export default function AdminWebhookAttempts() {
                 <th className="px-6 py-4">Event</th>
                 <th className="px-6 py-4">Reference</th>
                 <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Reflected</th>
                 <th className="px-6 py-4">Created</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -129,6 +161,22 @@ export default function AdminWebhookAttempts() {
                       <Status
                         icon={<XCircle className="w-4 h-4" />}
                         label="Failed"
+                        color="red"
+                      />
+                    )}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    {a.diagnostics?.reflected ? (
+                      <Status
+                        icon={<CheckCircle className="w-4 h-4" />}
+                        label="Yes"
+                        color="emerald"
+                      />
+                    ) : (
+                      <Status
+                        icon={<XCircle className="w-4 h-4" />}
+                        label="No"
                         color="red"
                       />
                     )}
@@ -195,13 +243,26 @@ function Status({
   label: string;
   color: "emerald" | "amber" | "red";
 }) {
+  const colorClass: Record<"emerald" | "amber" | "red", string> = {
+    emerald: "bg-emerald-500/10 text-emerald-400",
+    amber: "bg-amber-500/10 text-amber-400",
+    red: "bg-red-500/10 text-red-400",
+  };
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase
-      bg-${color}-500/10 text-${color}-400`}
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase ${colorClass[color]}`}
     >
       {icon}
       {label}
     </span>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3">
+      <p className="text-[11px] uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="text-lg font-semibold text-white">{value}</p>
+    </div>
   );
 }
