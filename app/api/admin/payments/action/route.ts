@@ -51,7 +51,25 @@ export async function PATCH(req: Request) {
        APPROVE FLOW
     ------------------------------------ */
     if (action === "approve") {
-      const plan = PLANS.find((p) => p.id === intent.planId);
+      const normalizedIntentPlanId = String(intent.planId || "")
+        .toLowerCase()
+        .replace(/\s+/g, "");
+      const plan = PLANS.find((p: any) => {
+        const planId = String(p.id || "")
+          .toLowerCase()
+          .replace(/\s+/g, "");
+        const altPlanId = String((p as any).planId || "")
+          .toLowerCase()
+          .replace(/\s+/g, "");
+        const planName = String(p.name || "")
+          .toLowerCase()
+          .replace(/\s+/g, "");
+        return (
+          planId === normalizedIntentPlanId ||
+          altPlanId === normalizedIntentPlanId ||
+          planName === normalizedIntentPlanId
+        );
+      });
       if (!plan) {
         return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
       }

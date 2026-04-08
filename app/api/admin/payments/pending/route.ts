@@ -12,7 +12,9 @@ export async function GET(req: Request) {
 
     const db = await getDatabase();
 
-    const pendingMatch: Record<string, any> = { status: "pending" };
+    const pendingMatch: Record<string, any> = {
+      status: { $in: ["pending", "submitted_waiting_admin_approval"] },
+    };
     if (providerFilter === "mpesa" || providerFilter === "binance") {
       pendingMatch.provider = providerFilter;
     } else if (providerFilter === "card") {

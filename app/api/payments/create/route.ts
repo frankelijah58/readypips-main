@@ -366,7 +366,19 @@ export async function POST(req: NextRequest) {
         createdAt: { $gt: new Date(Date.now() - 2 * 60 * 1000) },
       });
 
-      if (existing) {
+      const existingHasTrackingIds = Boolean(
+        existing?.merchantRequestID ||
+          existing?.merchantRequestId ||
+          existing?.checkoutRequestID ||
+          existing?.checkoutRequestId
+      );
+      const existingPromptWasSent =
+        existing?.smsPromptSent === true ||
+        String(existing?.responseCode ?? "") === "0";
+      const canReuseExistingPending =
+        Boolean(existing) && existingHasTrackingIds && existingPromptWasSent;
+
+      if (existing && canReuseExistingPending) {
         console.log("REUSING EXISTING MPESA PENDING:", {
           reference: existing.reference,
           merchantRequestID:
@@ -391,6 +403,20 @@ export async function POST(req: NextRequest) {
             existing.customerMessage || "Pending payment found",
           reusedPending: true,
         });
+      }
+
+      if (existing && !canReuseExistingPending) {
+        await db.collection("payment_intents").updateOne(
+          { _id: existing._id },
+          {
+            $set: {
+              status: "failed",
+              failureReason:
+                "Invalid pending payment state. Creating a new STK prompt.",
+              updatedAt: new Date(),
+            },
+          }
+        );
       }
 
       await db.collection("payment_intents").insertOne({
@@ -508,6 +534,7 @@ export async function POST(req: NextRequest) {
                   : null,
               responseDescription: stkData?.ResponseDescription || null,
               customerMessage: stkData?.CustomerMessage || null,
+            smsPromptSent: false,
               updatedAt: new Date(),
             },
           }
@@ -545,6 +572,7 @@ export async function POST(req: NextRequest) {
             responseDescription: stkData?.ResponseDescription || null,
             customerMessage: stkData?.CustomerMessage || null,
             rawStkResponse: stkData,
+            smsPromptSent: true,
             updatedAt: new Date(),
           },
         }

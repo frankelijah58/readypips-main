@@ -49,8 +49,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const existingIntentByTx = await db.collection("payment_intents").findOne({
+      provider: "binance",
+      $or: [
+        { transactionId: transactionId.trim() },
+        { "rawBinanceResponse.transactionId": transactionId.trim() },
+      ],
+    });
+    if (existingIntentByTx) {
+      return NextResponse.json(
+        { message: "This Binance transaction ID has already been submitted" },
+        { status: 409 }
+      );
+    }
+
     const reference = randomUUID();
     const planConfig = resolvePlan(planId);
+    if (!planConfig) {
+      return NextResponse.json({ message: "Invalid plan" }, { status: 400 });
+    }
+    const canonicalUsdAmount = Number(planConfig.usd || 0);
+    if (!Number.isFinite(canonicalUsdAmount) || canonicalUsdAmount <= 0) {
+      return NextResponse.json(
+        { message: "Plan USD amount is not configured correctly" },
+        { status: 400 }
+      );
+    }
 
     const paymentDoc = {
       reference,
@@ -58,8 +82,12 @@ export async function POST(req: NextRequest) {
       email: email || "",
       planId,
       provider: "binance",
-      amount: Number(amount),
+      amount: canonicalUsdAmount,
       currency: "USDT",
+      amountUsd: canonicalUsdAmount,
+      currencyUsd: "USD",
+      requestedAmount: Number(amount),
+      requestedCurrency: "USDT",
       status: "submitted_waiting_admin_approval",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -92,8 +120,12 @@ export async function POST(req: NextRequest) {
       email: email || "",
       planId,
       provider: "binance",
-      amount: Number(amount),
+      amount: canonicalUsdAmount,
       currency: "USDT",
+      amountUsd: canonicalUsdAmount,
+      currencyUsd: "USD",
+      requestedAmount: Number(amount),
+      requestedCurrency: "USDT",
       status: "submitted_waiting_admin_approval",
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -103,6 +135,7 @@ export async function POST(req: NextRequest) {
       responseCode: "MANUAL_SUBMITTED",
       responseDescription:
         "Binance manual payment submitted by user and awaiting admin approval",
+      transactionId: transactionId.trim(),
       rawBinanceResponse: {
         manualFlow: true,
         transactionId: transactionId.trim(),
