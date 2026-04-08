@@ -4,6 +4,7 @@ import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { PLANS } from "@/lib/plans";
 import { normalizePaymentChannel } from "@/lib/payment-provider";
+import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,13 +59,10 @@ export async function POST(request: NextRequest) {
       });
       if (!plan) return NextResponse.json({ received: true });
 
-      const expectedAmountKes = Number(intent.expectedAmountKes ?? plan.kes ?? 0);
-      const expectedAmountUsd = Number(intent.expectedAmountUsd ?? plan.usd ?? 0);
-      const paidAmountKes = Number(data?.amount || 0) / 100;
-      const amountMismatch =
-        expectedAmountKes > 0
-          ? Math.abs(paidAmountKes - expectedAmountKes) >= 1
-          : false;
+      const expectedAmountKes = normalizeMoney(intent.expectedAmountKes ?? plan.kes ?? 0, 2) ?? 0;
+      const expectedAmountUsd = normalizeMoney(intent.expectedAmountUsd ?? plan.usd ?? 0, 2) ?? 0;
+      const paidAmountKes = normalizeMoney((Number(data?.amount || 0) / 100), 2) ?? 0;
+      const amountMismatch = computeMismatch(paidAmountKes, expectedAmountKes, 100, 2);
 
       await db.collection("payment_intents").updateOne(
         { _id: intent._id },
@@ -78,6 +76,10 @@ export async function POST(request: NextRequest) {
             currencyKes: "KES",
             amountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
             currencyUsd: expectedAmountUsd > 0 ? "USD" : null,
+            amount_paid_original: paidAmountKes,
+            currency_original: "KES",
+            amount_converted: paidAmountKes,
+            exchange_rate_used: 1,
             expectedAmountKes: expectedAmountKes > 0 ? expectedAmountKes : null,
             expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
             amountMismatch,
@@ -128,6 +130,10 @@ export async function POST(request: NextRequest) {
             currencyKes: "KES",
             amountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
             currencyUsd: expectedAmountUsd > 0 ? "USD" : null,
+            amount_paid_original: paidAmountKes,
+            currency_original: "KES",
+            amount_converted: paidAmountKes,
+            exchange_rate_used: 1,
             expectedAmountKes: expectedAmountKes > 0 ? expectedAmountKes : null,
             expectedAmountUsd: expectedAmountUsd > 0 ? expectedAmountUsd : null,
             amountMismatch,

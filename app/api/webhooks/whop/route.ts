@@ -3,6 +3,7 @@ import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { PLANS } from "@/lib/plans";
 import { normalizePaymentChannel } from "@/lib/payment-provider";
+import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
 // import { grantTradingViewAccess } from "@/lib/tradingview-private";
 
 // import { grantTradingViewAccess } from "@/lib/tradingview-service";
@@ -49,13 +50,8 @@ function looksLikeSuccessEvent(event: string): boolean {
   );
 }
 
-function parseNumber(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number(value.replace(/[, ]+/g, "").trim());
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return null;
+function parseNumber(value: any): number | null {
+  return normalizeMoney(value, 2);
 }
 
 export async function POST(req: NextRequest) {
@@ -169,12 +165,12 @@ export async function POST(req: NextRequest) {
       parseNumber(body?.data?.price) ??
       Number(intent.amountUsd ?? intent.amount ?? 0);
     const expectedAmountUsd = Number(intent.expectedAmountUsd ?? plan.usd ?? 0);
-    const amountMismatch =
-      Number.isFinite(paidAmountUsd) &&
-      Number.isFinite(expectedAmountUsd) &&
-      expectedAmountUsd > 0
-        ? Math.abs(paidAmountUsd - expectedAmountUsd) >= 0.01
-        : false;
+    const amountMismatch = computeMismatch(
+      paidAmountUsd,
+      expectedAmountUsd,
+      1,
+      2
+    );
 
     /* ------------------------------------
        7️⃣ Decline other pending intents
@@ -205,6 +201,10 @@ export async function POST(req: NextRequest) {
           currency: "USD",
           amountUsd: paidAmountUsd,
           currencyUsd: "USD",
+          amount_paid_original: paidAmountUsd,
+          currency_original: "USD",
+          amount_converted: paidAmountUsd,
+          exchange_rate_used: 1,
           expectedAmountUsd: expectedAmountUsd || null,
           amountMismatch,
           amountSource: "whop_webhook",
@@ -240,6 +240,10 @@ export async function POST(req: NextRequest) {
           currency: "USD",
           amountUsd: paidAmountUsd,
           currencyUsd: "USD",
+          amount_paid_original: paidAmountUsd,
+          currency_original: "USD",
+          amount_converted: paidAmountUsd,
+          exchange_rate_used: 1,
           expectedAmountUsd: expectedAmountUsd || null,
           amountMismatch,
           provider: "whop",

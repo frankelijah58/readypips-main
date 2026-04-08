@@ -118,7 +118,10 @@ export function toSmallestUnit(amount: number): number {
  * set USD_TO_KES_RATE in env. Example: 130
  */
 export function convertUsdToKes(amountUsd: number): number {
-  const rate = Number(process.env.USD_TO_KES_RATE || "130");
+  const rate = Number(process.env.USD_TO_KES_RATE || "0");
+  if (!Number.isFinite(rate) || rate <= 0) {
+    throw new Error("USD_TO_KES_RATE is not configured");
+  }
   return Math.round(amountUsd * rate * 100) / 100;
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import Stripe from "stripe";
 import { ObjectId } from "mongodb";
+import crypto from "crypto";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
@@ -71,6 +72,7 @@ export async function POST(request: NextRequest) {
     if (!price) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
+    const reference = crypto.randomUUID();
 
     // Get user email for pre-filling
     const user = await db.collection("users").findOne({ _id: userId });
@@ -125,6 +127,28 @@ export async function POST(request: NextRequest) {
 
     const billingInterval = getBillingInterval(plan);
 
+    await db.collection("payment_intents").insertOne({
+      reference,
+      userId: decoded.userId,
+      email: decoded.email,
+      planId: plan,
+      planName: plan,
+      duration: plan === "weekly" ? 7 : plan === "monthly" ? 30 : 365,
+      provider: "stripe",
+      amount: price / 100,
+      currency: "USD",
+      amountUsd: price / 100,
+      currencyUsd: "USD",
+      amount_paid_original: price / 100,
+      currency_original: "USD",
+      amount_converted: price / 100,
+      exchange_rate_used: 1,
+      expectedAmountUsd: price / 100,
+      status: "pending",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -152,6 +176,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         userId: decoded.userId,
         plan: plan,
+        reference,
       },
       customer_email: user?.email, // Pre-fill email if available
     });
@@ -197,7 +222,18 @@ export async function POST(request: NextRequest) {
       // console.log("  - Actual:", session.success_url);
     }
 
-    return NextResponse.json({ url: session.url });
+    await db.collection("payment_intents").updateOne(
+      { reference },
+      {
+        $set: {
+          checkoutUrl: session.url,
+          stripeSessionId: session.id,
+          updatedAt: new Date(),
+        },
+      }
+    );
+
+    return NextResponse.json({ url: session.url, reference });
   } catch (error) {
     console.error("Error creating checkout session:", error);
     return NextResponse.json(

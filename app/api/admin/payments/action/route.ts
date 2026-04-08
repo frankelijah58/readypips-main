@@ -5,6 +5,7 @@ import { ObjectId } from "mongodb";
 import { PLANS } from "@/lib/plans";
 import { convertKesToUsd, getKesToUsdRate } from "@/lib/currency-rates";
 import { normalizePaymentChannel } from "@/lib/payment-provider";
+import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
 
 export async function PATCH(req: Request) {
   try {
@@ -95,12 +96,12 @@ export async function PATCH(req: Request) {
       let fxSource: string | null = null;
       let fxFetchedAt: Date | null = null;
 
-      const amountKes = Number(
+      const amountKes = normalizeMoney(
         intent.amountKes ??
           (String(intent.currency || "").toUpperCase() === "KES"
             ? intent.amount
             : 0),
-      );
+      ) ?? 0;
       if (amountKes > 0) {
         try {
           const fx = await getKesToUsdRate(db, { forceRefresh: true });
@@ -112,17 +113,13 @@ export async function PATCH(req: Request) {
           console.error("FX conversion failed during manual approval:", fxErr);
         }
       } else if (String(intent.currency || "").toUpperCase() === "USD") {
-        amountUsd = Number(intent.amount || 0);
+        amountUsd = normalizeMoney(intent.amount, 2);
       }
-      const expectedAmountKes = Number(intent.expectedAmountKes ?? 0);
-      const expectedAmountUsd = Number(intent.expectedAmountUsd ?? 0);
+      const expectedAmountKes = normalizeMoney(intent.expectedAmountKes, 2) ?? 0;
+      const expectedAmountUsd = normalizeMoney(intent.expectedAmountUsd, 2) ?? 0;
       const amountMismatch =
-        (amountKes > 0 && expectedAmountKes > 0
-          ? Math.abs(amountKes - expectedAmountKes) >= 1
-          : false) ||
-        (amountUsd != null && expectedAmountUsd > 0
-          ? Math.abs(amountUsd - expectedAmountUsd) >= 0.01
-          : false);
+        computeMismatch(amountKes, expectedAmountKes, 100, 2) ||
+        computeMismatch(amountUsd, expectedAmountUsd, 1, 2);
 
       // 2️⃣ Approve selected intent
       await db.collection("payment_intents").updateOne(
@@ -135,6 +132,13 @@ export async function PATCH(req: Request) {
             currencyKes: amountKes > 0 ? "KES" : null,
             amountUsd,
             currencyUsd: amountUsd != null ? "USD" : null,
+            amount_paid_original:
+              amountKes > 0 ? amountKes : amountUsd != null ? amountUsd : null,
+            currency_original:
+              amountKes > 0 ? "KES" : amountUsd != null ? "USD" : null,
+            amount_converted:
+              amountKes > 0 ? amountKes : amountUsd != null ? amountUsd : null,
+            exchange_rate_used: amountKes > 0 ? 1 : null,
             fxRateKesToUsd,
             fxSource,
             fxFetchedAt,
@@ -175,6 +179,13 @@ export async function PATCH(req: Request) {
             currencyKes: amountKes > 0 ? "KES" : null,
             amountUsd,
             currencyUsd: amountUsd != null ? "USD" : null,
+            amount_paid_original:
+              amountKes > 0 ? amountKes : amountUsd != null ? amountUsd : null,
+            currency_original:
+              amountKes > 0 ? "KES" : amountUsd != null ? "USD" : null,
+            amount_converted:
+              amountKes > 0 ? amountKes : amountUsd != null ? amountUsd : null,
+            exchange_rate_used: amountKes > 0 ? 1 : null,
             fxRateKesToUsd,
             fxSource,
             fxFetchedAt,

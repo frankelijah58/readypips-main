@@ -577,19 +577,26 @@ useEffect(() => {
 /* -------------------- REFINED COMPONENTS -------------------- */
 
 function PendingCard({ pay, onAction, processingId }: any) {
-  const kesAmount =
-    typeof pay.amountKes === "number"
+  const originalAmount =
+    typeof pay.amount_paid_original === "number"
+      ? pay.amount_paid_original
+      : typeof pay.amountUsd === "number"
+      ? pay.amountUsd
+      : typeof pay.amountKes === "number"
+      ? pay.amountKes
+      : Number(pay.amount || 0);
+  const originalCurrency = String(
+    pay.currency_original ||
+      (typeof pay.amountUsd === "number" ? "USD" : pay.currency || "KES")
+  ).toUpperCase();
+  const convertedKes =
+    typeof pay.amount_converted === "number"
+      ? pay.amount_converted
+      : typeof pay.amountKes === "number"
       ? pay.amountKes
       : String(pay.currency || "").toUpperCase() === "KES"
       ? Number(pay.amount || 0)
       : null;
-  const usdAmount =
-    typeof pay.amountUsd === "number" && pay.amountUsd > 0
-      ? pay.amountUsd
-      : String(pay.currency || "").toUpperCase() === "USD"
-      ? Number(pay.amount || 0)
-      : null;
-
   return (
     <div className="bg-[#18181b] border border-white/[0.04] rounded-2xl p-4 shadow-sm hover:shadow-lg hover:border-white/10 transition-all">
       <div className="flex justify-between items-start mb-3">
@@ -601,14 +608,17 @@ function PendingCard({ pay, onAction, processingId }: any) {
           </div>
         </div>
         <div className="text-right">
-          {kesAmount != null ? (
+          {convertedKes != null ? (
             <div className="text-xs font-black text-white/80">
-              KES {Number(kesAmount).toLocaleString()}
+              KES {Number(convertedKes).toLocaleString()}
             </div>
           ) : null}
           <span className="text-sm font-black text-[#8C57FF]">
-            ${Number(usdAmount ?? 0).toLocaleString()}
+            {originalCurrency} {Number(originalAmount ?? 0).toLocaleString()}
           </span>
+          {pay.amountMismatch === true ? (
+            <div className="text-[10px] font-bold text-rose-400 mt-1">Mismatch</div>
+          ) : null}
         </div>
       </div>
       <div className="text-[11px] text-white/60 mb-4 bg-black/20 p-2 rounded-lg truncate">

@@ -35,7 +35,7 @@ export default function BinanceManualModal({ isOpen, onClose, plan, user }: Prop
   const usdAmount =
     typeof plan.priceUSD === "number"
       ? plan.priceUSD.toFixed(2)
-      : (plan.priceKES / 130).toFixed(2); // fallback conversion
+      : "0.00";
 
   const copyText = async (text: string) => {
     try {

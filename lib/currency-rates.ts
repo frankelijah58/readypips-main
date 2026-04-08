@@ -1,4 +1,5 @@
 import type { Db } from "mongodb";
+import { convertByRate } from "@/lib/payment-amounts";
 
 type FxRateDoc = {
   pair: string;
@@ -82,6 +83,5 @@ export async function getKesToUsdRate(
 }
 
 export function convertKesToUsd(amountKes: number, rate: number): number {
-  const value = Number(amountKes) * Number(rate);
-  return Math.round(value * 100) / 100;
+  return convertByRate(amountKes, rate, { mode: "multiply", scale: 2 }) ?? 0;
 }
