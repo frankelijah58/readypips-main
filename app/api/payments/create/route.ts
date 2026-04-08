@@ -378,7 +378,7 @@ export async function POST(req: NextRequest) {
       const canReuseExistingPending =
         Boolean(existing) && existingHasTrackingIds && existingPromptWasSent;
 
-      if (canReuseExistingPending) {
+      if (existing && canReuseExistingPending) {
         console.log("REUSING EXISTING MPESA PENDING:", {
           reference: existing.reference,
           merchantRequestID:
