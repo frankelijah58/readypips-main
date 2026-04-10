@@ -422,35 +422,59 @@ export default function HomePage() {
             Join thousands of successful traders using our proprietary algorithm.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            {!authLoading && (
-              <>
-                {user ? (
-                  <Link href="/dashboard">
-                    <Button
-                      size="lg"
-                      className="bg-green-600 hover:bg-green-700 text-white font-semibold"
-                    >
-                      <Home className="mr-2 w-4 h-4" />
-                      Indicator
-                      <ArrowRight className="ml-2 w-4 h-4" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link href="/signals">
-                    <Button
-                      size="lg"
-                      className="bg-green-600 hover:bg-green-700 text-white font-semibold"
-                    >
-                      <BarChart3 className="mr-2 w-4 h-4" />
-                      Indicator
-                      <ArrowRight className="ml-2 w-4 h-4" />
-                    </Button>
-                  </Link>
-                )}
-              </>
-            )}
-          </div>
+          <div className="flex flex-row flex-wrap sm:flex-row gap-4 justify-center items-center mb-12">
+  {!authLoading && (
+    <>
+      {/* Existing Indicator Button */}
+      {user ? (
+        <Link href="/dashboard">
+          <Button
+            size="lg"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center"
+          >
+            <Home className="mr-2 w-4 h-4" />
+            Indicator
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </Button>
+        </Link>
+      ) : (
+        <Link href="/signals">
+          <Button
+            size="lg"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold flex items-center"
+          >
+            <BarChart3 className="mr-2 w-4 h-4" />
+            Indicator
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </Button>
+        </Link>
+      )}
+
+      {/* Telegram Button */}
+      <a
+        href="https://t.me/tradecafeafrica"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Button
+          size="lg"
+          className="bg-[#229ED9] hover:bg-[#1b8cc4] text-white font-semibold flex items-center"
+        >
+          {/* Optional: Telegram Icon (if you have one) */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="mr-2 w-4 h-4"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M9.04 15.38l-.38 5.35c.54 0 .77-.23 1.04-.5l2.5-2.39 5.18 3.78c.95.52 1.63.25 1.88-.88l3.41-16c.31-1.43-.52-2-1.43-1.66L1.67 9.7c-1.4.55-1.38 1.34-.24 1.7l4.9 1.53 11.38-7.17c.54-.33 1.04-.15.64.18"/>
+          </svg>
+          Join Telegram
+        </Button>
+      </a>
+    </>
+  )}
+</div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <div className="text-center">
