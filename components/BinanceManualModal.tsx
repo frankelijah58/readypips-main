@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { X, Copy, CheckCircle2, Loader2, Wallet, ShieldAlert } from "lucide-react";
+import { X, CheckCircle2, Loader2, Wallet, ShieldAlert } from "lucide-react";
+import { useAuth } from "@/components/auth-context";
 
 type Plan = {
   id: string;
@@ -15,7 +16,7 @@ type Props = {
   isOpen: boolean;
   onClose: () => void;
   plan: Plan;
-  user: {
+  user?: {
     id?: string;
     name?: string;
     email?: string;
@@ -23,6 +24,14 @@ type Props = {
 };
 
 export default function BinanceManualModal({ isOpen, onClose, plan, user }: Props) {
+  const { user: authUser } = useAuth();
+  console.log("user from the binance manual model", user);
+  
+  const effectiveUserId = authUser?._id || user?.id || null;
+  const effectiveUserName = authUser
+    ? `${authUser.firstName || ""} ${authUser.lastName || ""}`.trim() || authUser.email || "Guest User"
+    : user?.name || "Guest User";
+  const effectiveUserEmail = authUser?.email || user?.email || "";
   const [transactionId, setTransactionId] = useState("");
   const [senderWallet, setSenderWallet] = useState("");
   const [note, setNote] = useState("");
@@ -55,10 +64,14 @@ export default function BinanceManualModal({ isOpen, onClose, plan, user }: Prop
     setSubmitting(true);
 
     try {
+      // Grab the token from localStorage
+      const token = localStorage.getItem('token');
+
       const res = await fetch("/api/payments/binance/manual-submit", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           provider: "binance_manual",
@@ -71,16 +84,17 @@ export default function BinanceManualModal({ isOpen, onClose, plan, user }: Prop
           transactionId: transactionId.trim(),
           senderWallet: senderWallet.trim(),
           note: note.trim(),
-          userId: user?.id || null,
-          userName: user?.name || "Guest User",
-          userEmail: user?.email || "",
+          userId: effectiveUserId,
+          userName: effectiveUserName,
+          userEmail: effectiveUserEmail,
         }),
       });
+      
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.message || "Failed to submit payment");
+        throw new Error(data?.error || data?.message || "Failed to submit payment");
       }
 
       setSubmitted(true);
