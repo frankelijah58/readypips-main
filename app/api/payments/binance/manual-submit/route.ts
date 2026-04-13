@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getDatabase } from "@/lib/mongodb";
 import { PLANS } from "@/lib/plans";
+import { findUserById, verifyToken } from "@/lib/auth";
 
 function resolvePlan(planId: string) {
   return PLANS.find(
     (p: any) =>
       p.id === planId ||
       p.planId === planId ||
-      p.name?.toLowerCase().replace(/\s+/g, "") === planId
+      p.name?.toLowerCase().replace(/\s+/g, "") === planId,
   );
 }
 
@@ -16,9 +17,30 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
+    const authHeader = req.headers.get("authorization");
+
+    // console.log(" auth header: ", authHeader);
+
+    // Check header first, then fallback to the body
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : body.token;
+
+    if (!token) {
+      return NextResponse.json({ error: "Token is required" }, { status: 400 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    const user = await findUserById(decoded.userId);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 401 });
+    }
+
     const {
-      userId,
-      email,
       planId,
       amount,
       transactionId,
@@ -28,10 +50,16 @@ export async function POST(req: NextRequest) {
       note,
     } = body;
 
+    console.log(
+      " user ID and email from token: ",
+      decoded.userId,
+      decoded.email,
+    );
+
     if (!planId || !amount || !transactionId) {
       return NextResponse.json(
         { message: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -45,7 +73,7 @@ export async function POST(req: NextRequest) {
     if (existing) {
       return NextResponse.json(
         { message: "This transaction ID has already been submitted" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -59,7 +87,7 @@ export async function POST(req: NextRequest) {
     if (existingIntentByTx) {
       return NextResponse.json(
         { message: "This Binance transaction ID has already been submitted" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -72,14 +100,14 @@ export async function POST(req: NextRequest) {
     if (!Number.isFinite(canonicalUsdAmount) || canonicalUsdAmount <= 0) {
       return NextResponse.json(
         { message: "Plan USD amount is not configured correctly" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const paymentDoc = {
       reference,
-      userId: userId || null,
-      email: email || "",
+      userId: decoded.userId || "",
+      email: decoded.email || "",
       planId,
       provider: "binance",
       amount: canonicalUsdAmount,
@@ -106,8 +134,7 @@ export async function POST(req: NextRequest) {
       transactionId: transactionId.trim(),
       senderWallet: senderWallet?.trim() || "",
       network: network || "TRC20",
-      depositAddress:
-        depositAddress || "TXpwFoc64Z8z7ZFBxEX95DATUeteZ4tk9n",
+      depositAddress: depositAddress || "TXpwFoc64Z8z7ZFBxEX95DATUeteZ4tk9n",
       note: note?.trim() || "",
 
       rawStkResponse: null,
@@ -120,8 +147,8 @@ export async function POST(req: NextRequest) {
 
     const intentDoc = {
       reference,
-      userId: userId || null,
-      email: email || "",
+      userId: user._id || null,
+      email: user.email || "",
       planId,
       provider: "binance",
       amount: canonicalUsdAmount,
@@ -149,8 +176,7 @@ export async function POST(req: NextRequest) {
         transactionId: transactionId.trim(),
         senderWallet: senderWallet?.trim() || "",
         network: network || "TRC20",
-        depositAddress:
-          depositAddress || "TXpwFoc64Z8z7ZFBxEX95DATUeteZ4tk9n",
+        depositAddress: depositAddress || "TXpwFoc64Z8z7ZFBxEX95DATUeteZ4tk9n",
         note: note?.trim() || "",
         paymentsInsertId: result.insertedId.toString(),
         planName: planConfig?.name ?? null,
@@ -161,14 +187,17 @@ export async function POST(req: NextRequest) {
     try {
       await db.collection("payment_intents").insertOne(intentDoc);
     } catch (intentErr) {
-      console.error("payment_intents insert failed (manual binance):", intentErr);
+      console.error(
+        "payment_intents insert failed (manual binance):",
+        intentErr,
+      );
       await db.collection("payments").deleteOne({ _id: result.insertedId });
       return NextResponse.json(
         {
           message:
             "Could not record payment intent. Please try again or contact support.",
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -183,7 +212,7 @@ export async function POST(req: NextRequest) {
     console.error("BINANCE MANUAL SUBMIT ERROR:", error);
     return NextResponse.json(
       { message: "Server error while submitting payment" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

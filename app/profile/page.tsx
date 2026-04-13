@@ -144,12 +144,11 @@ export default function ProfilePage() {
   };
 
   const getPlanDisplayName = (type: string | null) => {
-    if (!type) return "Free Plan";
+    if (!type) return "Wrrkly Plan";
     const planNames: Record<string, string> = {
       basic: "Weekly Plan",
       premium: "Monthly Plan",
-      pro: "3 Months Plan",
-      free: "Free Plan"
+      pro: "3 Months Plan"
     };
     return planNames[type.toLowerCase()] || type;
   };
@@ -475,17 +474,17 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Free Plan Info */}
-                    {subscriptionInfo.isFreePlan && !subscriptionInfo.isFreeTrialExpired && (
+                    {/* {subscriptionInfo.isFreePlan && !subscriptionInfo.isFreeTrialExpired && (
                       <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-2">
                         <p>🎁 Enjoying your free trial? Upgrade for unlimited access!</p>
                       </div>
-                    )}
+                    )} */}
 
-                    {subscriptionInfo.isFreeTrialExpired && (
+                    {/* {subscriptionInfo.isFreeTrialExpired && (
                       <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-2">
                         <p>⏰ Free trial expired - Subscribe to continue</p>
                       </div>
-                    )}
+                    )} */}
 
                     {/* Pending Subscription Alert */}
                     {subscriptionInfo.pendingSubscription && (

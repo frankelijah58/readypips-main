@@ -11,8 +11,9 @@ import UserManagement from './components/user-management';
 import SubscriptionManagement from './components/subscription-management';
 import PartnersManagement from './components/partners-management';
 import SupportManagement from './components/support-management';
+import TransactionsManagement from './components/transactions-management';
 
-type AdminSection = 'dashboard' | 'users' | 'subscriptions' | 'partners' | 'support';
+type AdminSection = 'dashboard' | 'users' | 'subscriptions' | 'transactions' | 'partners' | 'support';
 const STORAGE_SECTION_KEY = "admin_dashboard_section";
 const STORAGE_SUB_PROVIDER_KEY = "admin_subscription_provider_filter";
 
@@ -21,6 +22,7 @@ const NAV_TO_SECTION: Record<string, AdminSection> = {
   '/dashboard': 'dashboard',
   '/users': 'users',
   '/subscriptions': 'subscriptions',
+  '/transactions': 'transactions',
   '/partners': 'partners',
   '/support': 'support',
   dashboard: 'dashboard',
@@ -28,6 +30,7 @@ const NAV_TO_SECTION: Record<string, AdminSection> = {
   user: 'users',
   subscriptions: 'subscriptions',
   subs: 'subscriptions',
+  transactions: 'transactions',
   partners: 'partners',
   partner: 'partners',
   support: 'support',
@@ -48,6 +51,7 @@ export default function AdminDashboard() {
       saved === "dashboard" ||
       saved === "users" ||
       saved === "subscriptions" ||
+      saved === "transactions" ||
       saved === "partners" ||
       saved === "support"
     ) {
@@ -137,7 +141,7 @@ export default function AdminDashboard() {
       }
 
       const data = await response.json();
-      
+
       const role = String(data.user.role || '');
       const isAdminAccess =
         data.user.isAdmin === true ||
@@ -276,7 +280,7 @@ export default function AdminDashboard() {
                   className="bg-transparent border-none outline-none text-white text-sm w-full placeholder:text-white/30"
                 />
               </div>
-              
+
               {/* Profile Details Dropdown */}
               <div className="relative z-[200] border-l border-white/10 pl-6" ref={profileMenuRef}>
                 <button
@@ -375,6 +379,13 @@ export default function AdminDashboard() {
               paymentProviderFilter={subscriptionProviderFilter}
             />
           )}
+          {currentSection === 'transactions' && (
+            <TransactionsManagement
+              admin={admin}
+              headerSearch={headerSearch}
+              onHeaderSearchChange={setHeaderSearch}
+            />
+          )}
           {currentSection === 'partners' && (
             <PartnersManagement
               admin={admin}
@@ -396,6 +407,7 @@ function getSectionTitle(section: AdminSection): string {
     subscriptions: 'Subscription Management',
     partners: 'Partners Management',
     support: 'Support Requests',
+    transactions: 'Transactions'
   };
   return titles[section];
 }

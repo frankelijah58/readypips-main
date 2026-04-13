@@ -102,18 +102,20 @@ export async function POST(req: NextRequest) {
 
     const callbackAmountKes = parseAmount(amountKesRaw);
     const fallbackAmountKes = Number(
-      paymentIntent.amountKes ?? paymentIntent.amount ?? 0
+      paymentIntent.amountKes ?? paymentIntent.amount ?? 0,
     );
     const finalAmountKes =
       callbackAmountKes != null && callbackAmountKes > 0
         ? callbackAmountKes
         : fallbackAmountKes;
-    const expectedAmountKes = Number(paymentIntent.amountKes ?? paymentIntent.amount ?? 0);
+    const expectedAmountKes = Number(
+      paymentIntent.amountKes ?? paymentIntent.amount ?? 0,
+    );
     const amountMismatch = computeMismatch(
       callbackAmountKes,
       expectedAmountKes,
       100,
-      2
+      2,
     );
 
     const finalPhone =
@@ -166,23 +168,28 @@ export async function POST(req: NextRequest) {
           fxSource,
           fxFetchedAt,
 
+          transactionId: mpesaReceiptNumber,
           mpesaReceiptNumber: mpesaReceiptNumber ?? null,
-          transactionDate: transactionDate ?? null,
+          transactionDate: transactionDate ? String(transactionDate) : null,
           paidAt: isSuccessful ? paidAt || now : null,
 
           phone: finalPhone,
           phoneNumber: finalPhone,
 
-          merchantRequestID: MerchantRequestID ?? paymentIntent.merchantRequestID ?? null,
-          checkoutRequestID: CheckoutRequestID ?? paymentIntent.checkoutRequestID ?? null,
-          merchantRequestId: MerchantRequestID ?? paymentIntent.merchantRequestId ?? null,
-          checkoutRequestId: CheckoutRequestID ?? paymentIntent.checkoutRequestId ?? null,
+          merchantRequestID:
+            MerchantRequestID ?? paymentIntent.merchantRequestID ?? null,
+          checkoutRequestID:
+            CheckoutRequestID ?? paymentIntent.checkoutRequestID ?? null,
+          merchantRequestId:
+            MerchantRequestID ?? paymentIntent.merchantRequestId ?? null,
+          checkoutRequestId:
+            CheckoutRequestID ?? paymentIntent.checkoutRequestId ?? null,
 
           callbackPayload: payload,
           processedAt: now,
           updatedAt: now,
         },
-      }
+      },
     );
 
     if (isSuccessful) {
@@ -201,7 +208,7 @@ export async function POST(req: NextRequest) {
             processedAt: now,
             updatedAt: now,
           },
-        }
+        },
       );
 
       const existingSub = await db.collection("subscriptions").findOne({
@@ -252,7 +259,7 @@ export async function POST(req: NextRequest) {
             updatedAt: now,
           },
         },
-        { upsert: true }
+        { upsert: true },
       );
 
       const userQuery = buildUserQuery(userId);
@@ -295,7 +302,7 @@ export async function POST(req: NextRequest) {
                 paidAt: paidAt || now,
               },
             },
-          } as any
+          } as any,
         );
       }
 

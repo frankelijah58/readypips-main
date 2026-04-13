@@ -63,14 +63,14 @@ export default function PaymentProviderModal({
     typeof plan.kesPrice === "number"
       ? plan.kesPrice
       : typeof plan.price === "number"
-      ? plan.price
-      : Number(String(plan.price || 0).replace(/[^0-9.]/g, ""));
+        ? plan.price
+        : Number(String(plan.price || 0).replace(/[^0-9.]/g, ""));
   const displayAmount = Number.isFinite(amount) ? amount : 0;
   const usdAmount = plan.usdPrice
     ? Number(plan.usdPrice)
     : typeof plan.price === "number"
-    ? Number(plan.price)
-    : Number(String(plan.price || 0).replace(/[^0-9.]/g, ""));
+      ? Number(plan.price)
+      : Number(String(plan.price || 0).replace(/[^0-9.]/g, ""));
 
   const depositAddress = "TXpwFoc64Z8z7ZFBxEX95DATUeteZ4tk9n";
   const network = "TRC20";
@@ -118,13 +118,22 @@ export default function PaymentProviderModal({
     try {
       setBinanceSubmitting(true);
 
+      const token =
+        localStorage.getItem("token");
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const response = await fetch("/api/payments/binance/manual-submit", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
-          userId: session?.user?.id || null,
+          token,
+          userId: session?.user.id || null,
           email: session?.user?.email || "",
           planId: plan.planId || plan.id,
           amount: usdAmount,
@@ -137,7 +146,7 @@ export default function PaymentProviderModal({
       });
 
       const data = await response.json();
-      console.log("BINANCE SUBMIT RESPONSE:", data);
+      console.log("BINANCE SUBMIT RESPONSE FROM PAYMENT PROVIDER MODAL:", data);
 
       if (!response.ok) {
         throw new Error(data?.message || "Failed to submit Binance payment.");
@@ -207,34 +216,34 @@ export default function PaymentProviderModal({
             </button>
             {showPaystack && (
 
-            <button
-              type="button"
-              onClick={() => handleSelect("paystack")}
-              disabled={loading}
-              className="group relative flex items-center justify-between rounded-xl border p-4 text-left transition-all hover:border-blue-500 hover:bg-blue-50/50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-blue-950/10"
-            >
-              <div className="flex items-center gap-4">
-                <div className="rounded-lg bg-blue-100 p-2 transition-transform group-hover:scale-110 dark:bg-blue-900/30">
-                  <CreditCard className="h-6 w-6 text-blue-600" />
+              <button
+                type="button"
+                onClick={() => handleSelect("paystack")}
+                disabled={loading}
+                className="group relative flex items-center justify-between rounded-xl border p-4 text-left transition-all hover:border-blue-500 hover:bg-blue-50/50 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-blue-950/10"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="rounded-lg bg-blue-100 p-2 transition-transform group-hover:scale-110 dark:bg-blue-900/30">
+                    <CreditCard className="h-6 w-6 text-blue-600" />
+                  </div>
+
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">
+                      Paystack
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Secure card and bank checkout via Paystack
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">
-                    Paystack
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Secure card and bank checkout via Paystack
-                  </p>
-                </div>
-              </div>
-
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              ) : (
-                <div className="h-2 w-2 rounded-full bg-gray-300 transition-colors group-hover:bg-blue-500" />
-              )}
-            </button>
-)}
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                ) : (
+                  <div className="h-2 w-2 rounded-full bg-gray-300 transition-colors group-hover:bg-blue-500" />
+                )}
+              </button>
+            )}
 
             <button
               type="button"
@@ -249,7 +258,7 @@ export default function PaymentProviderModal({
 
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-gray-100">
-                   Card Payment
+                    Card Payment
                   </p>
                   <p className="text-xs text-gray-500">
                     Secure checkout via Whop (Card / Apple Pay)
@@ -314,7 +323,7 @@ export default function PaymentProviderModal({
                   </DialogDescription>
                 </div>
 
-                
+
               </div>
             </DialogHeader>
 
@@ -422,13 +431,13 @@ export default function PaymentProviderModal({
                           Transaction ID / Hash(TxID){" "}
                           <span className="text-red-500">*</span>
                         </label>
-                      
+
                         <input
-                        type="text"
-                        value={txId}
-                        onChange={(e) => setTxId(e.target.value)}
-                        placeholder="Enter blockchain transaction hash"
-                        className="w-full rounded-lg border px-3 py-3 text-base font-mono tracking-wide outline-none focus:border-yellow-500 dark:border-gray-700 dark:bg-gray-800 break-all"
+                          type="text"
+                          value={txId}
+                          onChange={(e) => setTxId(e.target.value)}
+                          placeholder="Enter blockchain transaction hash"
+                          className="w-full rounded-lg border px-3 py-3 text-base font-mono tracking-wide outline-none focus:border-yellow-500 dark:border-gray-700 dark:bg-gray-800 break-all"
                         />
                       </div>
 

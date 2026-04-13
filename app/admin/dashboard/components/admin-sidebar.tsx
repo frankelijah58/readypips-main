@@ -10,11 +10,10 @@ import {
   Handshake,
   Home,
   Mail,
-  Wallet,
-  LogOut,
-  ChevronLeft,
+  Wallet, ChevronLeft,
   ChevronRight,
   Headphones,
+  Receipt
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -30,6 +29,7 @@ const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, category: 'main' },
   { id: 'users', label: 'Users', icon: Users, category: 'main' },
   { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, category: 'main' },
+  { id: 'transactions', label: 'Transactions', icon: Receipt, category: 'main' },
   { id: 'partners', label: 'Partners', icon: Handshake, category: 'main' },
   { id: 'support', label: 'Support', icon: Headphones, category: 'main' },
 ];
@@ -52,9 +52,8 @@ export default function AdminSidebar({
 
   return (
     <div
-      className={`${
-        collapsed ? 'w-[78px]' : 'w-[260px]'
-      } h-screen bg-[#2F3349] flex flex-col transition-all duration-300 shadow-[4px_0_10px_rgba(0,0,0,0.15)]`}
+      className={`${collapsed ? 'w-[78px]' : 'w-[260px]'
+        } h-screen bg-[#2F3349] flex flex-col transition-all duration-300 shadow-[4px_0_10px_rgba(0,0,0,0.15)]`}
     >
       {/* Header / Brand */}
       <div className="flex items-center justify-between px-5 py-5 border-b border-white/[0.04]">
@@ -109,11 +108,10 @@ export default function AdminSidebar({
                   key={item.id}
                   onClick={() => onSectionChange(item.id)}
                   title={collapsed ? item.label : undefined}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm transition-all duration-200 ${
-                    currentSection === item.id
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm transition-all duration-200 ${currentSection === item.id
                       ? 'bg-[#8C57FF] text-white shadow-[0_2px_6px_rgba(140,87,255,0.4)] font-medium'
                       : 'text-white/60 hover:text-white/90 hover:bg-[#18181b]/[0.04]'
-                  } ${collapsed ? 'justify-center px-0' : ''}`}
+                    } ${collapsed ? 'justify-center px-0' : ''}`}
                 >
                   <IconComponent className="w-5 h-5 flex-shrink-0" />
                   {!collapsed && <span>{item.label}</span>}
@@ -138,11 +136,10 @@ export default function AdminSidebar({
                     sub.id as "all" | "mpesa" | "binance" | "card",
                   )
                 }
-                className={`w-full text-left px-3 py-1.5 rounded-md text-xs transition-all ${
-                  subscriptionProviderFilter === sub.id
+                className={`w-full text-left px-3 py-1.5 rounded-md text-xs transition-all ${subscriptionProviderFilter === sub.id
                     ? "bg-[#8C57FF]/20 text-[#d7c7ff] font-semibold"
                     : "text-white/55 hover:text-white/85 hover:bg-[#18181b]/[0.04]"
-                }`}
+                  }`}
               >
                 {sub.label}
               </button>
