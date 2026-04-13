@@ -48,10 +48,10 @@ export interface User {
   tradingviewUsername?: string;
 
   subscriptionStatus: "active" | "inactive" | "expired";
-  subscriptionType: "free" | "basic" | "premium" | "pro" | null;
+  subscriptionType: "basic" | "premium" | "pro" | null;
   subscriptionEndDate?: Date;
   subscriptionStartDate?: Date;
-  freeTrialEndDate?: Date; // 3-day free trial for new users
+  // freeTrialEndDate?: Date; // 3-day free trial for new users
   // Pending subscription (scheduled to activate after current expires)
   pendingSubscription?: {
     type: "basic" | "premium" | "pro";
@@ -95,6 +95,12 @@ export function verifyToken(
   }
 }
 
+/**
+ * Newly registered users will not get a free 3 day trial
+ * After user registration, subscription type is set to null, it will be update when a user subscribes to either basic, premium or pro.
+ * Subscription status is also set to inactive until a user subscribes to a plan.
+ */
+
 export async function createUser(
   userData: Omit<User, "_id" | "createdAt" | "updatedAt">
 ): Promise<User> {
@@ -102,8 +108,8 @@ export async function createUser(
   const hashedPassword = await hashPassword(userData.password!);
 
   // Calculate 3-day free trial end date
-  const freeTrialEndDate = new Date();
-  freeTrialEndDate.setDate(freeTrialEndDate.getDate() + 3);
+  // const freeTrialEndDate = new Date();
+  // freeTrialEndDate.setDate(freeTrialEndDate.getDate() + 3);
 
   const user = {
     ...userData,
@@ -119,10 +125,9 @@ export async function createUser(
     tradingviewUsername: userData.tradingviewUsername || undefined,
 
     // Default to free plan for all new users with 3-day trial
-    subscriptionStatus: "active" as "active" | "inactive" | "expired",
-    subscriptionType: "free" as "free" | "basic" | "premium" | "pro" | null,
+    subscriptionStatus: "inactive" as "inactive" | "active" | "expired",
+    subscriptionType: null as null | "basic" | "premium" | "pro" | null,
     subscriptionEndDate: undefined,
-    freeTrialEndDate, // 3-day free trial
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -155,7 +160,7 @@ export async function findUser(email: string): Promise<User | null> {
     subscriptionStatus: user.subscriptionStatus || "inactive",
     subscriptionType: user.subscriptionType || null,
     subscriptionEndDate: user.subscriptionEndDate,
-    freeTrialEndDate: user.freeTrialEndDate,
+    // freeTrialEndDate: user.freeTrialEndDate,
     emailVerified: user.emailVerified || false,
     emailVerifiedAt: user.emailVerifiedAt,
     provider: user.provider || "credentials",
@@ -223,7 +228,7 @@ export async function findUserById(id: string): Promise<User | null> {
     subscriptionStatus: user.subscriptionStatus || "inactive",
     subscriptionType: user.subscriptionType || null,
     subscriptionEndDate: user.subscriptionEndDate,
-    freeTrialEndDate: user.freeTrialEndDate,
+    // freeTrialEndDate: user.freeTrialEndDate,
     emailVerified: user.emailVerified || false,
     emailVerifiedAt: user.emailVerifiedAt,
     provider: user.provider || "credentials",
