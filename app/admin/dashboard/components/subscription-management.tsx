@@ -10,16 +10,10 @@ import {
   ChevronLeft,
   AlertCircle,
   TrendingUp,
-  UserCheck,
-  Phone,
-  Mail,
-  ShieldAlert,
-  Filter,
-  MoreVertical,
+  UserCheck, ShieldAlert, MoreVertical,
   Calendar,
   CreditCard,
-  ChevronDown,
-  X,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -47,7 +41,7 @@ export default function SubscriptionManagement({
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [pendingPayments, setPendingPayments] = useState<any[]>([]);
   const [stats, setStats] = useState({ active: 0, expired: 0, pending: 0, revenue: 0 });
-  
+
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -60,7 +54,7 @@ export default function SubscriptionManagement({
   const [pendingTotalPages, setPendingTotalPages] = useState(1);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkConfirmData, setBulkConfirmData] = useState<{ type: 'status' | 'extend'; value: string | number; label: string; } | null>(null);
- const [isQueueOpen, setIsQueueOpen] = useState(() => {
+  const [isQueueOpen, setIsQueueOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('admin_queue_expanded');
       return saved !== null ? JSON.parse(saved) : true;
@@ -69,7 +63,7 @@ export default function SubscriptionManagement({
   });
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -90,7 +84,7 @@ export default function SubscriptionManagement({
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      
+
       const dateFilters = `&startDate=${startDate}&endDate=${endDate}`;
       const providerFilter = `&provider=${encodeURIComponent(paymentProviderFilter)}`;
 
@@ -164,25 +158,25 @@ export default function SubscriptionManagement({
     }
   };
 
- 
 
-// 2. Sync changes to localStorage
-useEffect(() => {
-  localStorage.setItem('admin_queue_expanded', JSON.stringify(isQueueOpen));
-}, [isQueueOpen]);
-  
+
+  // 2. Sync changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('admin_queue_expanded', JSON.stringify(isQueueOpen));
+  }, [isQueueOpen]);
+
   // Example usage for an "Extend 7 Days" button:
   const extendSevenDays = (sub: any) => {
     const currentEnd = new Date(sub.endDate);
     currentEnd.setDate(currentEnd.getDate() + 7);
     handleUpdateSubscription(sub._id, { endDate: currentEnd.toISOString() });
   };
-  
+
   // Example usage for a "Revoke" button:
   const revokeAccess = (id: string) => {
     handleUpdateSubscription(id, { status: 'expired' });
   };
-  
+
   const handleBulkAction = async (updates: { status?: string; extendDays?: number }) => {
     setLoading(true);
     try {
@@ -197,19 +191,19 @@ useEffect(() => {
           ...updates,
         }),
       });
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) throw new Error(data.error || 'Bulk update failed');
-  
+
       toast({
         title: 'Bulk Action Complete',
         description: `Successfully updated ${selectedIds.length} subscriptions.`,
       });
-  
+
       // Reset selection and refresh data
       setSelectedIds([]);
-      fetchData(); 
+      fetchData();
     } catch (err: any) {
       toast({
         title: 'Error',
@@ -221,28 +215,28 @@ useEffect(() => {
     }
   };
 
-  
+
   // Triggered by the Floating Bar buttons
   const initiateBulkConfirm = (type: 'status' | 'extend', value: string | number, label: string) => {
     setBulkConfirmData({ type, value, label });
   };
-  
+
   // The actual execution
   const confirmAndExecute = () => {
     if (!bulkConfirmData) return;
-    
-    const updates = bulkConfirmData.type === 'status' 
+
+    const updates = bulkConfirmData.type === 'status'
       ? { status: bulkConfirmData.value as string }
       : { extendDays: bulkConfirmData.value as number };
-  
+
     handleBulkAction(updates);
     setBulkConfirmData(null); // Close modal
   };
-  
+
 
   return (
     <div className="space-y-10 font-sans text-white h-full relative">
-      
+
       {/* 1. HEADER */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
@@ -302,23 +296,22 @@ useEffect(() => {
       <hr className="border-white/[0.04]" />
 
       <section className="space-y-6 transition-all duration-300">
-        <div 
+        <div
           className="flex items-center justify-between cursor-pointer group select-none"
           onClick={() => setIsQueueOpen(!isQueueOpen)}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${
-              isQueueOpen ? 'bg-amber-500/10 border-amber-500/20' : 'bg-[#18181b]/5 border-white/10'
-            }`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${isQueueOpen ? 'bg-amber-500/10 border-amber-500/20' : 'bg-[#18181b]/5 border-white/10'
+              }`}>
               <ShieldAlert className={`w-5 h-5 ${isQueueOpen ? 'text-amber-500' : 'text-white/40'}`} />
             </div>
             <div>
               <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                 Verification Queue
                 {!isQueueOpen && stats.pending > 0 && (
-                   <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">
-                     {stats.pending}
-                   </span>
+                  <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">
+                    {stats.pending}
+                  </span>
                 )}
               </h3>
               <p className="text-[11px] text-white/50 font-medium">
@@ -330,26 +323,26 @@ useEffect(() => {
           <div className="flex items-center gap-3">
             {isQueueOpen && (
               <div className="hidden md:flex items-center gap-2 mr-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-8 w-8 p-0"
-                  disabled={pendingPage === 1} 
+                  disabled={pendingPage === 1}
                   onClick={(e) => { e.stopPropagation(); setPendingPage(p => p - 1); }}
                 >
-                  <ChevronLeft className="w-4 h-4"/>
+                  <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
                   {pendingPage} / {pendingTotalPages}
                 </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-8 w-8 p-0"
-                  disabled={pendingPage === pendingTotalPages} 
+                  disabled={pendingPage === pendingTotalPages}
                   onClick={(e) => { e.stopPropagation(); setPendingPage(p => p + 1); }}
                 >
-                  <ChevronRight className="w-4 h-4"/>
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             )}
@@ -385,9 +378,8 @@ useEffect(() => {
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setCurrentPage(1); }}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  activeTab === tab.id ? 'bg-[#18181b] text-white shadow-sm' : 'text-white/50 hover:text-white'
-                }`}
+                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === tab.id ? 'bg-[#18181b] text-white shadow-sm' : 'text-white/50 hover:text-white'
+                  }`}
               >
                 {tab.label}
               </button>
@@ -401,7 +393,7 @@ useEffect(() => {
               <thead className="bg-black/20 border-b border-white/[0.04]">
                 <tr className="text-[10px] uppercase tracking-widest text-white/50">
                   <th className="px-6 py-4 text-center w-10">
-                    <input type="checkbox" checked={selectedIds.length === subscriptions.length} onChange={() => {toggleSelectAll()}} className="rounded accent-[#8C57FF]" />
+                    <input type="checkbox" checked={selectedIds.length === subscriptions.length} onChange={() => { toggleSelectAll() }} className="rounded accent-[#8C57FF]" />
                   </th>
                   <th className="px-6 py-4 text-left font-bold">Subscriber</th>
                   <th className="px-6 py-4 text-left font-bold">Status</th>
@@ -414,7 +406,7 @@ useEffect(() => {
                 {subscriptions.map((sub) => (
                   <tr key={sub._id} className="hover:bg-[#18181b]/[0.02] transition-colors group">
                     <td className="px-6 py-4 text-center">
-                      <input type="checkbox" checked={selectedIds.includes(sub._id)} onChange={() => {toggleSelect(sub._id)}} className="rounded accent-[#8C57FF]" />
+                      <input type="checkbox" checked={selectedIds.includes(sub._id)} onChange={() => { toggleSelect(sub._id) }} className="rounded accent-[#8C57FF]" />
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -460,29 +452,29 @@ useEffect(() => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button className="p-2 text-white/40 hover:text-white transition-colors">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="hover:bg-[#18181b]/5"><MoreVertical className="w-4 h-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-[#18181b] border-white/10 text-white">
-                              <DropdownMenuItem className="focus:bg-[#18181b]/5 focus:text-white" onClick={() => extendSevenDays(sub)}>
-                                Extend 7 Days
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400" onClick={() => revokeAccess(sub._id)}>
-                                Revoke Access
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="hover:bg-[#18181b]/5"><MoreVertical className="w-4 h-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-[#18181b] border-white/10 text-white">
+                            <DropdownMenuItem className="focus:bg-[#18181b]/5 focus:text-white" onClick={() => extendSevenDays(sub)}>
+                              Extend 7 Days
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-rose-400 focus:bg-rose-500/10 focus:text-rose-400" onClick={() => revokeAccess(sub._id)}>
+                              Revoke Access
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            
+
           </div>
-          
+
           <div className="p-4 border-t border-white/[0.04] bg-black/20 flex items-center justify-between">
             <p className="text-xs font-medium text-white/50">Page {currentPage} of {totalPages}</p>
             <div className="flex gap-2">
@@ -495,46 +487,46 @@ useEffect(() => {
 
       {/* Floating Bulk Action Bar (Same as before) */}
       {selectedIds.length > 0 && (
-              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#18181b]/5 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-in slide-in-from-bottom-4 z-50">
-                <span className="text-sm font-bold border-r border-slate-700 pr-6">
-                  {selectedIds.length} Selected
-                </span>
-                
-                <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      className="bg-emerald-600"
-                      onClick={() => initiateBulkConfirm('status', 'active', 'Set to Active')}
-                    >
-                      Activate All
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      className="text-white border-slate-700"
-                      onClick={() => initiateBulkConfirm('status', 'expired', 'Mark as Expired')}
-                    >
-                      Expire All
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="text-white border-slate-700"
-                      onClick={() => initiateBulkConfirm('extend', 7, 'Extend by 7 Days')}
-                    >
-                      +7 Days Access
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-white/40"
-                      onClick={() => setSelectedIds([])}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                             </div>
-            )}
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#18181b]/5 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 animate-in slide-in-from-bottom-4 z-50">
+          <span className="text-sm font-bold border-r border-slate-700 pr-6">
+            {selectedIds.length} Selected
+          </span>
+
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="bg-emerald-600"
+              onClick={() => initiateBulkConfirm('status', 'active', 'Set to Active')}
+            >
+              Activate All
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-white border-slate-700"
+              onClick={() => initiateBulkConfirm('status', 'expired', 'Mark as Expired')}
+            >
+              Expire All
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-white border-slate-700"
+              onClick={() => initiateBulkConfirm('extend', 7, 'Extend by 7 Days')}
+            >
+              +7 Days Access
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-white/40"
+              onClick={() => setSelectedIds([])}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
 
       {bulkConfirmData && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#18181b]/5 backdrop-blur-sm animate-in fade-in duration-200">
@@ -542,23 +534,23 @@ useEffect(() => {
             <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
               <AlertCircle className="w-6 h-6 text-amber-600" />
             </div>
-            
+
             <h3 className="text-xl font-black text-white mb-2">Are you absolutely sure?</h3>
             <p className="text-white/60 text-sm leading-relaxed mb-8">
-              You are about to <span className="font-bold text-white">{bulkConfirmData.label}</span> for 
-              <span className="font-bold text-indigo-600"> {selectedIds.length} users</span>. 
+              You are about to <span className="font-bold text-white">{bulkConfirmData.label}</span> for
+              <span className="font-bold text-indigo-600"> {selectedIds.length} users</span>.
               This action will update the database immediately.
             </p>
 
             <div className="flex gap-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex-1 rounded-xl h-12 font-bold border-white/10 text-white/80"
                 onClick={() => setBulkConfirmData(null)}
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 className="flex-1 rounded-xl h-12 font-bold bg-[#18181b]/5 hover:bg-black text-white"
                 onClick={confirmAndExecute}
                 disabled={loading}
@@ -581,24 +573,47 @@ function PendingCard({ pay, onAction, processingId }: any) {
     typeof pay.amount_paid_original === "number"
       ? pay.amount_paid_original
       : typeof pay.amountUsd === "number"
-      ? pay.amountUsd
-      : typeof pay.amountKes === "number"
-      ? pay.amountKes
-      : Number(pay.amount || 0);
+        ? pay.amountUsd
+        : typeof pay.amountKes === "number"
+          ? pay.amountKes
+          : Number(pay.amount || 0);
   const originalCurrency = String(
     pay.currency_original ||
-      (typeof pay.amountUsd === "number" ? "USD" : pay.currency || "KES")
+    (typeof pay.amountUsd === "number" ? "USD" : pay.currency || "KES")
   ).toUpperCase();
   const convertedKes =
     typeof pay.amount_converted === "number"
       ? pay.amount_converted
       : typeof pay.amountKes === "number"
-      ? pay.amountKes
-      : String(pay.currency || "").toUpperCase() === "KES"
-      ? Number(pay.amount || 0)
-      : null;
+        ? pay.amountKes
+        : String(pay.currency || "").toUpperCase() === "KES"
+          ? Number(pay.amount || 0)
+          : null;
+
+  const status = String(pay.status || 'pending').toLowerCase();
+  const statusColorClass = status.includes('pending')
+    ? 'bg-yellow-500/10 border-yellow-500/20'
+    : status.includes('paid') || status.includes('success')
+      ? 'bg-emerald-500/10 border-emerald-500/20'
+      : status.includes('failed') || status.includes('decline')
+        ? 'bg-rose-500/10 border-rose-500/20'
+        : 'bg-yellow-500/10 border-yellow-500/20';
+  const statusTextClass = status.includes('pending')
+    ? 'text-yellow-400'
+    : status.includes('paid') || status.includes('success')
+      ? 'text-emerald-400'
+      : status.includes('failed') || status.includes('decline')
+        ? 'text-rose-400'
+        : 'text-yellow-400';
+
+  const transactionId =
+    pay.transactionId || pay.rawBinanceResponse?.transactionId || '';
+  const walletAddress =
+    pay.walletAddress || pay.senderWallet || pay.rawBinanceResponse?.senderWallet || pay.rawBinanceResponse?.depositAddress || '';
+  const notes = pay.notes || pay.note || pay.rawBinanceResponse?.note || '';
+
   return (
-    <div className="bg-[#18181b] border border-white/[0.04] rounded-2xl p-4 shadow-sm hover:shadow-lg hover:border-white/10 transition-all">
+    <div className={`border rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all bg-[#18181b] ${statusColorClass} hover:border-white/10`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#18181b]/5 flex items-center justify-center font-bold text-xs text-white">{pay.userName?.charAt(0)}</div>
@@ -619,20 +634,47 @@ function PendingCard({ pay, onAction, processingId }: any) {
           {pay.amountMismatch === true ? (
             <div className="text-[10px] font-bold text-rose-400 mt-1">Mismatch</div>
           ) : null}
+          {pay.status && (
+            <div className={`text-[10px] font-bold uppercase mt-1 ${statusTextClass}`}>
+              {pay.status}
+            </div>
+          )}
         </div>
       </div>
       <div className="text-[11px] text-white/60 mb-4 bg-black/20 p-2 rounded-lg truncate">
         {pay.email}
       </div>
+      {pay.provider === 'binance' && (transactionId || walletAddress || notes) && (
+        <div className="mb-4 space-y-2 bg-black/20 p-2.5 rounded-lg">
+          {transactionId && (
+            <div>
+              <p className="text-[9px] font-bold uppercase text-white/40 mb-0.5">Transaction ID</p>
+              <p className="text-[10px] text-white/80 break-all font-mono">{transactionId}</p>
+            </div>
+          )}
+          {walletAddress && (
+            <div>
+              <p className="text-[9px] font-bold uppercase text-white/40 mb-0.5">Wallet Address</p>
+              <p className="text-[10px] text-white/80 break-all font-mono">{walletAddress}</p>
+            </div>
+          )}
+          {notes && (
+            <div>
+              <p className="text-[9px] font-bold uppercase text-white/40 mb-0.5">Notes</p>
+              <p className="text-[10px] text-white/70 line-clamp-2">{notes}</p>
+            </div>
+          )}
+        </div>
+      )}
       <div className="flex gap-2">
-        <Button 
+        <Button
           onClick={() => onAction(pay._id, 'approve')}
           className="flex-1 h-8 text-[10px] font-bold bg-[#8C57FF] hover:bg-[#8C57FF]/90 text-white shadow-[0_2px_6px_rgba(140,87,255,0.4)]"
           disabled={!!processingId}
         >
           {processingId === pay._id ? <RefreshCw className="animate-spin w-3 h-3" /> : 'Approve'}
         </Button>
-        <Button 
+        <Button
           variant="outline"
           onClick={() => onAction(pay._id, 'reject')}
           className="flex-1 h-8 text-[10px] font-bold hover:bg-rose-500/10 text-rose-400 border-rose-500/20"
