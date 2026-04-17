@@ -451,7 +451,7 @@ export default function SubscriptionManagement({
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-white/40 hover:text-white transition-colors">
+                     
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="hover:bg-[#18181b]/5"><MoreVertical className="w-4 h-4" /></Button>
@@ -465,7 +465,7 @@ export default function SubscriptionManagement({
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </button>
+                      
                     </td>
                   </tr>
                 ))}
