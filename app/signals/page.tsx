@@ -444,10 +444,10 @@ export default function SignalsPage() {
                     <Button
                       className="w-full bg-white text-[#0088cc] hover:bg-blue-50 font-black tracking-tight"
                       onClick={() =>
-                        window.open("https://t.me/readypips_pro_bot", "_blank")
+                        window.open("https://t.me/tradecafeafrica", "_blank")
                       }
                     >
-                      CONNECT TELEGRAM
+                      Join Our Telegram
                     </Button>
                   </div>
                   <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
