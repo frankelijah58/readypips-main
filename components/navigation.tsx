@@ -138,11 +138,7 @@ export function Navigation() {
   };
 
   const moreItems = [
-    {
-      name: "Support",
-      href: "/support",
-      icon: HelpCircle,
-    },
+   
     {
       name: "FAQs",
       href: "/faqs",
@@ -340,6 +336,14 @@ export function Navigation() {
         {/* User Actions */}
         <div className="flex items-center space-x-2">
           <ThemeSwitcher />
+          <Link href="/support">
+                <Button
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Support
+                </Button>
+              </Link>
           {user && <CreditDisplay />}
 
           {user ? (
