@@ -282,7 +282,7 @@ export default function SignalsPage() {
                 <div className="flex items-center gap-3 w-full md:w-auto">
                   {!hasAccess ? (
                     <Button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/20">
-                      Upgrade Now
+                      Expired
                     </Button>
                   ) : (
                     <div className="text-right hidden md:block">
