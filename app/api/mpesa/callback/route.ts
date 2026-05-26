@@ -77,6 +77,18 @@ export async function POST(req: NextRequest) {
     const isSuccessful = String(ResultCode) === "0";
     const now = new Date();
 
+    console.log("[CALLBACK] Parsed fields:", {
+      MerchantRequestID,
+      CheckoutRequestID,
+      ResultCode,
+      ResultDesc,
+      amountKesRaw,
+      mpesaReceiptNumber,
+      transactionDate,
+      callbackPhone,
+      isSuccessful,
+    });
+
     const db = await getDatabase();
 
     const paymentIntent = await db.collection("payment_intents").findOne({
@@ -89,9 +101,15 @@ export async function POST(req: NextRequest) {
     });
 
     if (!paymentIntent) {
-      console.warn("No payment_intent found for callback", {
+      console.warn("[CALLBACK] No payment_intent found for callback:", {
         MerchantRequestID,
         CheckoutRequestID,
+        searchedFields: [
+          "checkoutRequestID",
+          "merchantRequestID",
+          "checkoutRequestId",
+          "merchantRequestId",
+        ],
       });
 
       return NextResponse.json({
@@ -99,6 +117,14 @@ export async function POST(req: NextRequest) {
         ResultDesc: "Accepted",
       });
     }
+
+    console.log("[CALLBACK] Found payment_intent:", {
+      _id: paymentIntent._id,
+      reference: paymentIntent.reference,
+      userId: paymentIntent.userId,
+      currentStatus: paymentIntent.status,
+      expectedAmountKes: paymentIntent.amountKes ?? paymentIntent.amount,
+    });
 
     const callbackAmountKes = parseAmount(amountKesRaw);
     const fallbackAmountKes = Number(
@@ -135,7 +161,17 @@ export async function POST(req: NextRequest) {
       console.error("FX conversion failed for M-Pesa callback:", fxError);
     }
 
-    await db.collection("payment_intents").updateOne(
+    console.log("[CALLBACK] Updating payment_intent:", {
+      intentId: paymentIntent._id,
+      newStatus: isSuccessful ? "paid" : "failed",
+      finalAmountKes,
+      callbackAmountKes,
+      expectedAmountKes,
+      amountMismatch,
+      mpesaReceiptNumber,
+    });
+
+    const updateResult = await db.collection("payment_intents").updateOne(
       { _id: paymentIntent._id },
       {
         $set: {
@@ -192,11 +228,18 @@ export async function POST(req: NextRequest) {
       },
     );
 
+    console.log("[CALLBACK] payment_intent updated:", {
+      intentId: paymentIntent._id,
+      matchedCount: updateResult.matchedCount,
+      modifiedCount: updateResult.modifiedCount,
+      status: isSuccessful ? "paid" : "failed",
+    });
+
     if (isSuccessful) {
       const userId = String(paymentIntent.userId || "");
       const durationDays = Number(paymentIntent.duration || 0);
 
-      await db.collection("payment_intents").updateMany(
+      const declinedResult = await db.collection("payment_intents").updateMany(
         {
           userId: paymentIntent.userId,
           _id: { $ne: paymentIntent._id },
@@ -210,6 +253,11 @@ export async function POST(req: NextRequest) {
           },
         },
       );
+
+      console.log("[CALLBACK] Declined other pending intents:", {
+        userId: paymentIntent.userId,
+        declinedCount: declinedResult.modifiedCount,
+      });
 
       const existingSub = await db.collection("subscriptions").findOne({
         userId: paymentIntent.userId,
@@ -262,10 +310,19 @@ export async function POST(req: NextRequest) {
         { upsert: true },
       );
 
+      console.log("[CALLBACK] Subscription upserted:", {
+        userId: paymentIntent.userId,
+        planId: paymentIntent.planId,
+        startDate,
+        endDate,
+        durationDays,
+        mpesaReceiptNumber,
+      });
+
       const userQuery = buildUserQuery(userId);
 
       if (userQuery) {
-        await db.collection("users").updateOne(
+        const userUpdateResult = await db.collection("users").updateOne(
           userQuery as any,
           {
             $set: {
@@ -304,11 +361,19 @@ export async function POST(req: NextRequest) {
             },
           } as any,
         );
+
+        console.log("[CALLBACK] User updated:", {
+          userId,
+          subscriptionStatus: "active",
+          matchedCount: userUpdateResult.matchedCount,
+          modifiedCount: userUpdateResult.modifiedCount,
+          endDate,
+        });
       }
 
       try {
         if (finalPhone) {
-          await sendSms({
+          const smsResult = await sendSms({
             mobile: String(finalPhone),
             message: `ReadyPips: Payment of KES ${finalAmountKes.toLocaleString()} received successfully. Receipt ${mpesaReceiptNumber || "-"}. Your ${paymentIntent.planName || paymentIntent.planId || "subscription"} access is now active.`,
           });
