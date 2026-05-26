@@ -247,6 +247,10 @@ export async function POST(req: NextRequest) {
         },
       );
 
+      console.log("[CALLBACK] Declined other pending intents:", {
+        userId: paymentIntent.userId,
+      });
+
       const existingSub = await db.collection("subscriptions").findOne({
         userId: paymentIntent.userId,
         status: "active",
