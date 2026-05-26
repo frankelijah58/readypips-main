@@ -322,7 +322,7 @@ export async function POST(req: NextRequest) {
       const userQuery = buildUserQuery(userId);
 
       if (userQuery) {
-        const userUpdateResult = await db.collection("users").updateOne(
+        await db.collection("users").updateOne(
           userQuery as any,
           {
             $set: {
@@ -362,18 +362,12 @@ export async function POST(req: NextRequest) {
           } as any,
         );
 
-        console.log("[CALLBACK] User updated:", {
-          userId,
-          subscriptionStatus: "active",
-          matchedCount: userUpdateResult.matchedCount,
-          modifiedCount: userUpdateResult.modifiedCount,
-          endDate,
-        });
+        console.log("[CALLBACK] User updated:", { userId, subscriptionStatus: "active", endDate });
       }
 
       try {
         if (finalPhone) {
-          const smsResult = await sendSms({
+          await sendSms({
             mobile: String(finalPhone),
             message: `ReadyPips: Payment of KES ${finalAmountKes.toLocaleString()} received successfully. Receipt ${mpesaReceiptNumber || "-"}. Your ${paymentIntent.planName || paymentIntent.planId || "subscription"} access is now active.`,
           });
