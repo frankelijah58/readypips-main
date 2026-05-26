@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
       mpesaReceiptNumber,
     });
 
-    const updateResult = await db.collection("payment_intents").updateOne(
+    await db.collection("payment_intents").updateOne(
       { _id: paymentIntent._id },
       {
         $set: {
@@ -227,13 +227,6 @@ export async function POST(req: NextRequest) {
         },
       },
     );
-
-    console.log("[CALLBACK] payment_intent updated:", {
-      intentId: paymentIntent._id,
-      matchedCount: updateResult.matchedCount,
-      modifiedCount: updateResult.modifiedCount,
-      status: isSuccessful ? "paid" : "failed",
-    });
 
     if (isSuccessful) {
       const userId = String(paymentIntent.userId || "");
