@@ -239,7 +239,7 @@ export async function POST(req: NextRequest) {
       const userId = String(paymentIntent.userId || "");
       const durationDays = Number(paymentIntent.duration || 0);
 
-      const declinedResult = await db.collection("payment_intents").updateMany(
+      await db.collection("payment_intents").updateMany(
         {
           userId: paymentIntent.userId,
           _id: { $ne: paymentIntent._id },
@@ -253,11 +253,6 @@ export async function POST(req: NextRequest) {
           },
         },
       );
-
-      console.log("[CALLBACK] Declined other pending intents:", {
-        userId: paymentIntent.userId,
-        declinedCount: declinedResult.modifiedCount,
-      });
 
       const existingSub = await db.collection("subscriptions").findOne({
         userId: paymentIntent.userId,
