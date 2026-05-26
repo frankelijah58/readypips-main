@@ -2,12 +2,12 @@ export const PLANS = [
   {
     id: "weekly",
     name: "Weekly",
-    price: "KES 1",
-    priceKES: "KES 1",
+    price: "USD 27.99",
+    priceKES: "KES 3613",
     whopPlanId: "plan_uC7s3rdU2lLGh",
     whopCheckoutUrl: "https://whop.com/checkout/plan_uC7s3rdU2lLGh",
-    usd: 0.01,
-    kes: 1,
+    usd:27.99,
+    kes: 3613,
     period: "/week",
     duration: 7,
     features: [
