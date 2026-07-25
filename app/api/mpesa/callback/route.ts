@@ -1,0 +1,411 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getDatabase } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
+import { sendSms } from "@/lib/sms";
+import { convertKesToUsd, getKesToUsdRate } from "@/lib/currency-rates";
+import { normalizePaymentChannel } from "@/lib/payment-provider";
+import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
+
+function extractCallbackItem(items: any[], name: string) {
+  return items?.find((item) => item.Name === name)?.Value ?? null;
+}
+
+function parseAmount(value: any): number | null {
+  return normalizeMoney(value, 2);
+}
+
+function parseMpesaDate(value: any) {
+  if (!value) return null;
+
+  const raw = String(value);
+  if (!/^\d{14}$/.test(raw)) return null;
+
+  const year = Number(raw.slice(0, 4));
+  const month = Number(raw.slice(4, 6)) - 1;
+  const day = Number(raw.slice(6, 8));
+  const hour = Number(raw.slice(8, 10));
+  const minute = Number(raw.slice(10, 12));
+  const second = Number(raw.slice(12, 14));
+
+  return new Date(year, month, day, hour, minute, second);
+}
+
+function buildUserQuery(userId: string): Record<string, any> | null {
+  if (!userId) return null;
+
+  if (ObjectId.isValid(userId)) {
+    return {
+      $or: [{ _id: new ObjectId(userId) }, { _id: userId }, { userId }],
+    };
+  }
+
+  return {
+    $or: [{ _id: userId }, { userId }],
+  };
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const payload = await req.json();
+    console.log("CALLBACK HIT:", JSON.stringify(payload));
+
+    const callback =
+      payload?.Body?.stkCallback || payload?.body?.stkCallback || null;
+
+    if (!callback) {
+      return NextResponse.json({
+        ResultCode: 0,
+        ResultDesc: "Accepted",
+      });
+    }
+
+    const {
+      MerchantRequestID,
+      CheckoutRequestID,
+      ResultCode,
+      ResultDesc,
+      CallbackMetadata,
+    } = callback;
+
+    const items = CallbackMetadata?.Item || [];
+
+    const amountKesRaw = extractCallbackItem(items, "Amount");
+    const mpesaReceiptNumber = extractCallbackItem(items, "MpesaReceiptNumber");
+    const transactionDate = extractCallbackItem(items, "TransactionDate");
+    const callbackPhone = extractCallbackItem(items, "PhoneNumber");
+    const paidAt = parseMpesaDate(transactionDate);
+    const isSuccessful = String(ResultCode) === "0";
+    const now = new Date();
+
+    console.log("[CALLBACK] Parsed fields:", {
+      MerchantRequestID,
+      CheckoutRequestID,
+      ResultCode,
+      ResultDesc,
+      amountKesRaw,
+      mpesaReceiptNumber,
+      transactionDate,
+      callbackPhone,
+      isSuccessful,
+    });
+
+    const db = await getDatabase();
+
+    const paymentIntent = await db.collection("payment_intents").findOne({
+      $or: [
+        { checkoutRequestID: CheckoutRequestID },
+        { merchantRequestID: MerchantRequestID },
+        { checkoutRequestId: CheckoutRequestID },
+        { merchantRequestId: MerchantRequestID },
+      ],
+    });
+
+    if (!paymentIntent) {
+      console.warn("[CALLBACK] No payment_intent found for callback:", {
+        MerchantRequestID,
+        CheckoutRequestID,
+        searchedFields: [
+          "checkoutRequestID",
+          "merchantRequestID",
+          "checkoutRequestId",
+          "merchantRequestId",
+        ],
+      });
+
+      return NextResponse.json({
+        ResultCode: 0,
+        ResultDesc: "Accepted",
+      });
+    }
+
+    console.log("[CALLBACK] Found payment_intent:", {
+      _id: paymentIntent._id,
+      reference: paymentIntent.reference,
+      userId: paymentIntent.userId,
+      currentStatus: paymentIntent.status,
+      expectedAmountKes: paymentIntent.amountKes ?? paymentIntent.amount,
+    });
+
+    const callbackAmountKes = parseAmount(amountKesRaw);
+    const fallbackAmountKes = Number(
+      paymentIntent.amountKes ?? paymentIntent.amount ?? 0,
+    );
+    const finalAmountKes =
+      callbackAmountKes != null && callbackAmountKes > 0
+        ? callbackAmountKes
+        : fallbackAmountKes;
+    const expectedAmountKes = Number(
+      paymentIntent.amountKes ?? paymentIntent.amount ?? 0,
+    );
+    const amountMismatch = computeMismatch(
+      callbackAmountKes,
+      expectedAmountKes,
+      100,
+      2,
+    );
+
+    const finalPhone =
+      callbackPhone ?? paymentIntent.phone ?? paymentIntent.phoneNumber ?? null;
+
+    let fxRateKesToUsd: number | null = null;
+    let amountUsd: number | null = null;
+    let fxSource: string | null = null;
+    let fxFetchedAt: Date | null = null;
+    try {
+      const fx = await getKesToUsdRate(db, { forceRefresh: isSuccessful });
+      fxRateKesToUsd = fx.rate;
+      fxSource = fx.source;
+      fxFetchedAt = fx.fetchedAt;
+      amountUsd = convertKesToUsd(finalAmountKes, fx.rate);
+    } catch (fxError) {
+      console.error("FX conversion failed for M-Pesa callback:", fxError);
+    }
+
+    console.log("[CALLBACK] Updating payment_intent:", {
+      intentId: paymentIntent._id,
+      newStatus: isSuccessful ? "paid" : "failed",
+      finalAmountKes,
+      callbackAmountKes,
+      expectedAmountKes,
+      amountMismatch,
+      mpesaReceiptNumber,
+    });
+
+    await db.collection("payment_intents").updateOne(
+      { _id: paymentIntent._id },
+      {
+        $set: {
+          status: isSuccessful ? "paid" : "failed",
+
+          resultCode: ResultCode != null ? String(ResultCode) : null,
+          resultDesc: ResultDesc || null,
+
+          amount: finalAmountKes,
+          currency: "KES",
+          amountKes: finalAmountKes,
+          currencyKes: "KES",
+          amount_paid_original: finalAmountKes,
+          currency_original: "KES",
+          amount_converted: finalAmountKes,
+          exchange_rate_used: 1,
+          callbackAmountRaw: amountKesRaw,
+          callbackAmountKes,
+          amountSource:
+            callbackAmountKes != null && callbackAmountKes > 0
+              ? "mpesa_callback"
+              : "intent_fallback",
+          expectedAmountKes: Number.isFinite(expectedAmountKes)
+            ? expectedAmountKes
+            : null,
+          amountMismatch,
+          amountUsd,
+          currencyUsd: amountUsd != null ? "USD" : null,
+          fxRateKesToUsd,
+          fxSource,
+          fxFetchedAt,
+
+          transactionId: mpesaReceiptNumber,
+          mpesaReceiptNumber: mpesaReceiptNumber ?? null,
+          transactionDate: transactionDate ? String(transactionDate) : null,
+          paidAt: isSuccessful ? paidAt || now : null,
+
+          phone: finalPhone,
+          phoneNumber: finalPhone,
+
+          merchantRequestID:
+            MerchantRequestID ?? paymentIntent.merchantRequestID ?? null,
+          checkoutRequestID:
+            CheckoutRequestID ?? paymentIntent.checkoutRequestID ?? null,
+          merchantRequestId:
+            MerchantRequestID ?? paymentIntent.merchantRequestId ?? null,
+          checkoutRequestId:
+            CheckoutRequestID ?? paymentIntent.checkoutRequestId ?? null,
+
+          callbackPayload: payload,
+          processedAt: now,
+          updatedAt: now,
+        },
+      },
+    );
+
+    if (isSuccessful) {
+      const userId = String(paymentIntent.userId || "");
+      const durationDays = Number(paymentIntent.duration || 0);
+
+      await db.collection("payment_intents").updateMany(
+        {
+          userId: paymentIntent.userId,
+          _id: { $ne: paymentIntent._id },
+          status: { $in: ["pending", "initiated"] },
+        },
+        {
+          $set: {
+            status: "declined",
+            processedAt: now,
+            updatedAt: now,
+          },
+        },
+      );
+
+      console.log("[CALLBACK] Declined other pending intents:", {
+        userId: paymentIntent.userId,
+      });
+
+      const existingSub = await db.collection("subscriptions").findOne({
+        userId: paymentIntent.userId,
+        status: "active",
+      });
+
+      let startDate = new Date();
+      if (existingSub?.endDate && new Date(existingSub.endDate) > startDate) {
+        startDate = new Date(existingSub.endDate);
+      }
+
+      let endDate: Date | null = null;
+      if (durationDays > 0) {
+        endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + durationDays);
+      }
+
+      await db.collection("subscriptions").updateOne(
+        { userId: paymentIntent.userId },
+        {
+          $set: {
+            userId: paymentIntent.userId,
+            planId: paymentIntent.planId || null,
+            planName: paymentIntent.planName || paymentIntent.planId || null,
+            provider: "mpesa",
+            paymentChannel: normalizePaymentChannel("mpesa"),
+
+            amount: finalAmountKes,
+            currency: "KES",
+            amountKes: finalAmountKes,
+            currencyKes: "KES",
+            amount_paid_original: finalAmountKes,
+            currency_original: "KES",
+            amount_converted: finalAmountKes,
+            exchange_rate_used: 1,
+            amountUsd,
+            currencyUsd: amountUsd != null ? "USD" : null,
+            fxRateKesToUsd,
+            fxSource,
+            fxFetchedAt,
+
+            status: "active",
+            startDate,
+            endDate,
+            mpesaReceiptNumber: mpesaReceiptNumber ?? null,
+            phone: finalPhone,
+            updatedAt: now,
+          },
+        },
+        { upsert: true },
+      );
+
+      console.log("[CALLBACK] Subscription upserted:", {
+        userId: paymentIntent.userId,
+        planId: paymentIntent.planId,
+        startDate,
+        endDate,
+        durationDays,
+        mpesaReceiptNumber,
+      });
+
+      const userQuery = buildUserQuery(userId);
+
+      if (userQuery) {
+        await db.collection("users").updateOne(
+          userQuery as any,
+          {
+            $set: {
+              subscriptionStatus: "active",
+              subscriptionType: paymentIntent.planId || "premium",
+              subscriptionPlanId: paymentIntent.planId || null,
+              subscriptionPlanName:
+                paymentIntent.planName || paymentIntent.planId || null,
+              subscriptionProvider: "mpesa",
+              paymentChannel: normalizePaymentChannel("mpesa"),
+              subscriptionStartedAt: startDate,
+              subscriptionExpiresAt: endDate,
+              subscriptionEndDate: endDate,
+              paymentStatus: "paid",
+              updatedAt: now,
+            },
+            $push: {
+              paymentHistory: {
+                reference: paymentIntent.reference || null,
+                provider: "mpesa",
+                amount: finalAmountKes,
+                currency: "KES",
+                amountKes: finalAmountKes,
+                currencyKes: "KES",
+                amountUsd,
+                currencyUsd: amountUsd != null ? "USD" : null,
+                fxRateKesToUsd,
+                fxSource,
+                fxFetchedAt,
+                mpesaReceiptNumber: mpesaReceiptNumber ?? null,
+                checkoutRequestID: CheckoutRequestID ?? null,
+                merchantRequestID: MerchantRequestID ?? null,
+                phoneNumber: finalPhone,
+                paidAt: paidAt || now,
+              },
+            },
+          } as any,
+        );
+
+        console.log("[CALLBACK] User updated:", { userId, subscriptionStatus: "active", endDate });
+      }
+
+      try {
+        if (finalPhone) {
+          await sendSms({
+            mobile: String(finalPhone),
+            message: `ReadyPips: Payment of KES ${finalAmountKes.toLocaleString()} received successfully. Receipt ${mpesaReceiptNumber || "-"}. Your ${paymentIntent.planName || paymentIntent.planId || "subscription"} access is now active.`,
+          });
+        }
+      } catch (smsError) {
+        console.error("Success SMS error:", smsError);
+      }
+    } else {
+      try {
+        if (finalPhone) {
+          await sendSms({
+            mobile: String(finalPhone),
+            message: `ReadyPips: Your M-Pesa payment was not completed. ${ResultDesc || "Please try again."}`,
+          });
+        }
+      } catch (smsError) {
+        console.error("Failure SMS error:", smsError);
+      }
+    }
+
+    console.log("M-Pesa Callback Processed:", {
+      MerchantRequestID,
+      CheckoutRequestID,
+      ResultCode,
+      ResultDesc,
+      amountKes: finalAmountKes,
+      callbackAmountKes,
+      expectedAmountKes,
+      amountMismatch,
+      mpesaReceiptNumber,
+      transactionDate,
+      phoneNumber: finalPhone,
+      paymentIntentId: paymentIntent._id,
+      finalStatus: isSuccessful ? "paid" : "failed",
+    });
+
+    return NextResponse.json({
+      ResultCode: 0,
+      ResultDesc: "Accepted",
+    });
+  } catch (error) {
+    console.error("Callback error:", error);
+
+    return NextResponse.json({
+      ResultCode: 0,
+      ResultDesc: "Accepted",
+    });
+  }
+}
