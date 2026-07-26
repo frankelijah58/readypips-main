@@ -11,6 +11,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import { toast } from "sonner";
@@ -18,7 +27,6 @@ import {
   Trophy,
   Medal,
   TrendingUp,
-  Users,
   ArrowRight,
   Crown,
   Target,
@@ -29,6 +37,9 @@ import {
   Flame,
   Gift,
   Shield,
+  Info,
+  Smartphone,
+  Loader2,
 } from "lucide-react";
 
 const PRIZES = [
@@ -84,17 +95,42 @@ const CHALLENGES = [
   },
 ];
 
-export default function FundingPage() {
-  const [selectedChallenge, setSelectedChallenge] = useState<string | null>(null);
+interface Challenge {
+  name: string;
+  entry: number;
+  target: string;
+  rules: string;
+  popular: boolean;
+}
 
-  const handleJoinChallenge = async (challenge: typeof CHALLENGES[0]) => {
+export default function FundingPage() {
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleJoinChallenge = (challenge: Challenge) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.info("Please login to join a challenge");
+      return;
+    }
+    setSelectedChallenge(challenge);
+    setPhoneNumber("");
+  };
+
+  const handleMpesaPayment = async () => {
+    if (!selectedChallenge) return;
+    
+    // Validate phone number
+    const cleanedPhone = phoneNumber.replace(/\s+/g, "");
+    if (!cleanedPhone || cleanedPhone.length < 10) {
+      toast.error("Please enter a valid M-Pesa phone number");
+      return;
+    }
+
+    setIsProcessing(true);
     try {
       const token = localStorage.getItem("token");
-      if (!token) {
-        toast.info("Please login to join a challenge");
-        return;
-      }
-
       const res = await fetch("/api/mpesa/stkpush", {
         method: "POST",
         headers: {
@@ -102,22 +138,38 @@ export default function FundingPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          phoneNumber: "", // Will be prompted
-          amount: challenge.entry,
-          planId: `challenge-${challenge.name.toLowerCase().replace(/\s+/g, "-")}`,
-          planName: challenge.name,
+          phoneNumber: cleanedPhone,
+          amount: selectedChallenge.entry,
+          planId: `challenge-${selectedChallenge.name.toLowerCase().replace(/\s+/g, "-")}`,
+          userId: "",
           duration: 30,
+          planName: selectedChallenge.name,
         }),
       });
 
-      const data = await res.json();
-      if (data?.success) {
-        toast.success("M-Pesa prompt sent! Check your phone.");
-      } else {
-        toast.error(data?.message || "Payment failed");
+      const rawText = await res.text();
+      let data: any = null;
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        throw new Error(rawText || "Server returned an invalid response.");
       }
+
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.message || "M-Pesa payment failed");
+      }
+
+      toast.success("M-Pesa Prompt Sent", {
+        description: `Check ${cleanedPhone} and enter your M-Pesa PIN to complete payment for ${selectedChallenge.name}.`,
+        duration: 8000,
+      });
+
+      setSelectedChallenge(null);
+      setPhoneNumber("");
     } catch (err: any) {
-      toast.error(err.message || "Failed to process payment");
+      toast.error(err.message || "Failed to process M-Pesa payment");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -189,7 +241,7 @@ export default function FundingPage() {
               Choose Your <span className="text-green-600 dark:text-green-400">Challenge</span>
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Pick a challenge that matches your skill level. All payments via M-Pesa.
+              Pick a challenge that matches your skill level. All payments via <span className="font-semibold text-green-600 dark:text-green-400">M-Pesa</span>.
             </p>
           </div>
 
@@ -231,8 +283,8 @@ export default function FundingPage() {
                       {challenge.rules}
                     </div>
                     <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                      <DollarSign className="w-4 h-4 text-green-500 mr-2" />
-                      Payout via M-Pesa
+                      <Smartphone className="w-4 h-4 text-green-500 mr-2" />
+                      Pay via M-Pesa
                     </div>
                   </div>
                   <Button
@@ -243,7 +295,7 @@ export default function FundingPage() {
                     }`}
                     onClick={() => handleJoinChallenge(challenge)}
                   >
-                    Join Challenge - ${challenge.entry}
+                    Pay ${challenge.entry} via M-Pesa
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </CardContent>
@@ -310,7 +362,7 @@ export default function FundingPage() {
                 <div className="space-y-3">
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    All winnings are paid via M-Pesa within 24 hours
+                    All winnings paid via M-Pesa within 24 hours
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
@@ -434,9 +486,9 @@ export default function FundingPage() {
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                <DollarSign className="w-8 h-8 text-green-600" />
+                <Smartphone className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-black dark:text-white">1. Pay Entry via M-Pesa</h3>
+              <h3 className="text-lg font-semibold mb-2 text-black dark:text-white">1. Pay via M-Pesa</h3>
               <p className="text-gray-600 dark:text-gray-400">Choose a challenge and pay the entry fee using M-Pesa</p>
             </div>
             <div className="text-center">
@@ -456,6 +508,80 @@ export default function FundingPage() {
           </div>
         </div>
       </section>
+
+      {/* M-Pesa Payment Modal */}
+      <Dialog open={!!selectedChallenge} onOpenChange={(open) => { if (!open) { setSelectedChallenge(null); setPhoneNumber(""); } }}>
+        <DialogContent className="sm:max-w-md bg-white dark:bg-black border-gray-200 dark:border-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-black dark:text-white flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-green-500" />
+              Pay via M-Pesa
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-400">
+              {selectedChallenge && (
+                <>Enter your M-Pesa phone number to pay <span className="font-bold text-green-600 dark:text-green-400">${selectedChallenge.entry}</span> for <span className="font-semibold">{selectedChallenge.name}</span></>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-black dark:text-white">M-Pesa Phone Number</Label>
+              <div className="relative">
+                <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="phone"
+                  placeholder="e.g. 0712345678"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="pl-10 bg-white dark:bg-black border-gray-200 dark:border-gray-800 text-black dark:text-white"
+                />
+              </div>
+              <p className="text-xs text-gray-500">Enter the Safaricom number you use for M-Pesa</p>
+            </div>
+
+            {selectedChallenge && (
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Challenge</span>
+                  <span className="font-semibold text-black dark:text-white">{selectedChallenge.name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Amount</span>
+                  <span className="font-bold text-green-600 dark:text-green-400">${selectedChallenge.entry}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Target</span>
+                  <span className="text-black dark:text-white">{selectedChallenge.target}</span>
+                </div>
+              </div>
+            )}
+
+            <Button
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              size="lg"
+              onClick={handleMpesaPayment}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Smartphone className="w-4 h-4 mr-2" />
+                  Pay ${selectedChallenge?.entry || 0} via M-Pesa
+                </>
+              )}
+            </Button>
+
+            <p className="text-xs text-center text-gray-500">
+              You will receive an M-Pesa prompt on your phone. Enter your PIN to complete payment.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
