@@ -32,7 +32,6 @@ import {
   Target,
   Zap,
   CheckCircle,
-  DollarSign,
   Star,
   Flame,
   Gift,
@@ -40,15 +39,20 @@ import {
   Info,
   Smartphone,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 const PRIZES = [
   { rank: 1, amount: 5000, label: "1st Place", color: "text-yellow-400", icon: Crown },
-  { rank: 2, amount: 1250, label: "2nd Place", color: "text-gray-300", icon: Medal },
-  { rank: 3, amount: 650, label: "3rd Place", color: "text-amber-600", icon: Medal },
-  { rank: 4, amount: 300, label: "4th Place", color: "text-blue-400", icon: Star },
-  { rank: 5, amount: 150, label: "5th Place", color: "text-blue-400", icon: Star },
-  { rank: 6, amount: 75, label: "6th Place", color: "text-blue-400", icon: Star },
+  { rank: 2, amount: 2500, label: "2nd Place", color: "text-gray-300", icon: Medal },
+  { rank: 3, amount: 1250, label: "3rd Place", color: "text-amber-600", icon: Medal },
+  { rank: 4, amount: 650, label: "4th Place", color: "text-blue-400", icon: Star },
+  { rank: 5, amount: 300, label: "5th Place", color: "text-blue-400", icon: Star },
+  { rank: 6, amount: 150, label: "6th Place", color: "text-blue-400", icon: Star },
+  { rank: 7, amount: 75, label: "7th Place", color: "text-blue-400", icon: Star },
+  { rank: 8, amount: 0, label: "8th Place", color: "text-green-400", icon: RefreshCw, isRefund: true },
+  { rank: 9, amount: 0, label: "9th Place", color: "text-green-400", icon: RefreshCw, isRefund: true },
+  { rank: 10, amount: 0, label: "10th Place", color: "text-green-400", icon: RefreshCw, isRefund: true },
 ];
 
 const TOP_TRADERS = [
@@ -64,34 +68,14 @@ const TOP_TRADERS = [
   { rank: 10, name: "DayTrader", profit: "+$900", trades: 22, winRate: "76%" },
 ];
 
+// Only one challenge - Starter at $42.99
 const CHALLENGES = [
   {
     name: "Starter Challenge",
     entry: 42.99,
     target: "$500",
     rules: "10% profit target, 5% max drawdown, 30 days",
-    popular: false,
-  },
-  {
-    name: "Standard Challenge",
-    entry: 99.99,
-    target: "$2,000",
-    rules: "10% profit target, 5% max drawdown, 60 days",
     popular: true,
-  },
-  {
-    name: "Pro Challenge",
-    entry: 249.99,
-    target: "$5,000",
-    rules: "10% profit target, 5% max drawdown, 90 days",
-    popular: false,
-  },
-  {
-    name: "Elite Challenge",
-    entry: 499.99,
-    target: "$10,000",
-    rules: "10% profit target, 5% max drawdown, 120 days",
-    popular: false,
   },
 ];
 
@@ -183,19 +167,19 @@ export default function FundingPage() {
         <div className="container mx-auto text-center relative z-10">
           <Badge className="mb-6 bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800" variant="outline">
             <Trophy className="w-3 h-3 mr-1" />
-            Funded Trading Challenges
+            Funded Trading Challenge
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white leading-tight">
             Get <span className="text-green-400">Funded</span>
           </h1>
           <p className="text-xl text-gray-100 mb-8 max-w-2xl mx-auto leading-relaxed">
             Prove your trading skills, win prizes up to $5,000, and get funded.
-            Start with as little as <span className="text-green-400 font-bold">$42.99</span>
+            Start with just <span className="text-green-400 font-bold">$42.99</span>
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link href="#challenges">
               <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white font-semibold">
-                View Challenges
+                Join the Challenge
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </Link>
@@ -215,58 +199,52 @@ export default function FundingPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600 dark:text-green-400">$42.99</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Min. Entry</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Entry Fee</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600 dark:text-green-400">$5,000</div>
               <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Top Prize</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400">500+</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Active Traders</div>
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">10</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Prize Positions</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400">$25</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Withdrawal Fee</div>
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">$42.99</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Min. Entry</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Challenges Section */}
+      {/* Single Challenge Section */}
       <section id="challenges" className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-black dark:text-white">
-              Choose Your <span className="text-green-600 dark:text-green-400">Challenge</span>
+              The <span className="text-green-600 dark:text-green-400">Challenge</span>
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Pick a challenge that matches your skill level. All payments via <span className="font-semibold text-green-600 dark:text-green-400">M-Pesa</span>.
+              One challenge. One entry fee. Big prizes for top 10 finishers. All payments via <span className="font-semibold text-green-600 dark:text-green-400">M-Pesa</span>.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="max-w-md mx-auto">
             {CHALLENGES.map((challenge) => (
               <Card
                 key={challenge.name}
-                className={`relative bg-white dark:bg-black border-2 transition-all duration-200 hover:shadow-xl ${
-                  challenge.popular
-                    ? "border-green-500 shadow-lg shadow-green-500/20"
-                    : "border-gray-200 dark:border-gray-800"
-                }`}
+                className={`relative bg-white dark:bg-black border-2 border-green-500 shadow-lg shadow-green-500/20 transition-all duration-200 hover:shadow-xl`}
               >
-                {challenge.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-green-600 text-white px-4 py-1">
-                      <Zap className="w-3 h-3 mr-1" />
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-green-600 text-white px-4 py-1">
+                    <Zap className="w-3 h-3 mr-1" />
+                    Only Challenge
+                  </Badge>
+                </div>
                 <CardHeader>
                   <CardTitle className="text-black dark:text-white text-lg">{challenge.name}</CardTitle>
                   <CardDescription>
-                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                    <span className="text-4xl font-bold text-green-600 dark:text-green-400">
                       ${challenge.entry}
                     </span>
                     <span className="text-gray-500 ml-1">entry</span>
@@ -283,19 +261,19 @@ export default function FundingPage() {
                       {challenge.rules}
                     </div>
                     <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                      <Trophy className="w-4 h-4 text-green-500 mr-2" />
+                      Top 10 win prizes
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                       <Smartphone className="w-4 h-4 text-green-500 mr-2" />
                       Pay via M-Pesa
                     </div>
                   </div>
                   <Button
-                    className={`w-full ${
-                      challenge.popular
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "bg-gray-800 hover:bg-gray-700 text-white"
-                    }`}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
                     onClick={() => handleJoinChallenge(challenge)}
                   >
-                    Pay ${challenge.entry} via M-Pesa
+                    Pay $42.99 via M-Pesa
                     <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </CardContent>
@@ -305,7 +283,7 @@ export default function FundingPage() {
         </div>
       </section>
 
-      {/* Prize Pool Section */}
+      {/* Prize Pool Section - 10 Positions */}
       <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto">
           <div className="text-center mb-12">
@@ -313,13 +291,13 @@ export default function FundingPage() {
               Prize <span className="text-green-600 dark:text-green-400">Pool</span>
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Top 6 winners share the prize pool every month
+              Top 10 winners share the prize pool every month
             </p>
           </div>
 
           <div className="max-w-3xl mx-auto">
             <div className="space-y-3">
-              {PRIZES.map((prize) => {
+              {PRIZES.map((prize: any) => {
                 const Icon = prize.icon;
                 return (
                   <div
@@ -333,6 +311,7 @@ export default function FundingPage() {
                         prize.rank === 1 ? "bg-yellow-400/20" :
                         prize.rank === 2 ? "bg-gray-300/20" :
                         prize.rank === 3 ? "bg-amber-600/20" :
+                        prize.isRefund ? "bg-green-400/20" :
                         "bg-blue-400/20"
                       }`}>
                         <Icon className={`w-5 h-5 ${prize.color}`} />
@@ -342,8 +321,8 @@ export default function FundingPage() {
                         <div className="text-sm text-gray-500">Monthly competition</div>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      ${prize.amount.toLocaleString()}
+                    <div className={`text-2xl font-bold ${prize.isRefund ? "text-green-600 dark:text-green-400" : "text-green-600 dark:text-green-400"}`}>
+                      {prize.isRefund ? "Refund" : `$${prize.amount.toLocaleString()}`}
                     </div>
                   </div>
                 );
@@ -370,11 +349,11 @@ export default function FundingPage() {
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Refund available within 7 days of entry (minus $25 processing fee)
+                    Positions 8-10 get entry fee refunded
                   </div>
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Minimum withdrawal: $50 USD
+                    Refund available within 7 days of entry (minus $25 processing fee)
                   </div>
                 </div>
               </CardContent>
@@ -461,12 +440,12 @@ export default function FundingPage() {
 
             <div className="text-center mt-8">
               <p className="text-gray-500 mb-4">
-                Competition resets every month. Join a challenge to appear on the leaderboard.
+                Competition resets every month. Join the challenge to appear on the leaderboard.
               </p>
               <Link href="#challenges">
                 <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white font-semibold">
                   <Target className="mr-2 w-4 h-4" />
-                  Join a Challenge
+                  Join the Challenge
                 </Button>
               </Link>
             </div>
@@ -489,7 +468,7 @@ export default function FundingPage() {
                 <Smartphone className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2 text-black dark:text-white">1. Pay via M-Pesa</h3>
-              <p className="text-gray-600 dark:text-gray-400">Choose a challenge and pay the entry fee using M-Pesa</p>
+              <p className="text-gray-600 dark:text-gray-400">Pay $42.99 entry fee using M-Pesa to join the challenge</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -503,7 +482,7 @@ export default function FundingPage() {
                 <Gift className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2 text-black dark:text-white">3. Win & Withdraw</h3>
-              <p className="text-gray-600 dark:text-gray-400">Top performers win prizes paid via M-Pesa ($25 withdrawal fee)</p>
+              <p className="text-gray-600 dark:text-gray-400">Top 10 performers win prizes - positions 8-10 get refund</p>
             </div>
           </div>
         </div>

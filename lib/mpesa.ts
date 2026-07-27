@@ -93,9 +93,10 @@ export async function initiateStkPush(params: {
 }) {
   const shortcode = process.env.MPESA_SHORTCODE;
   const passkey = process.env.MPESA_PASSKEY;
-  const callbackUrl = process.env.MPESA_CALLBACK_URL;
+  // Hardcoded callback URL for compatibility - Safaricom must whitelist this
+  const callbackUrl = "https://readypips.com/api/mpesa/callback";
 
-  if (!shortcode || !passkey || !callbackUrl) {
+  if (!shortcode || !passkey) {
     throw new Error("Missing M-Pesa config");
   }
 

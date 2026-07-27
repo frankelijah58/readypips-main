@@ -12,8 +12,9 @@ import SubscriptionManagement from './components/subscription-management';
 import PartnersManagement from './components/partners-management';
 import SupportManagement from './components/support-management';
 import TransactionsManagement from './components/transactions-management';
+import FundingParticipants from './components/funding-participants';
 
-type AdminSection = 'dashboard' | 'users' | 'subscriptions' | 'transactions' | 'partners' | 'support';
+type AdminSection = 'dashboard' | 'users' | 'subscriptions' | 'funding' | 'transactions' | 'partners' | 'support';
 const STORAGE_SECTION_KEY = "admin_dashboard_section";
 const STORAGE_SUB_PROVIDER_KEY = "admin_subscription_provider_filter";
 
@@ -51,6 +52,7 @@ export default function AdminDashboard() {
       saved === "dashboard" ||
       saved === "users" ||
       saved === "subscriptions" ||
+      saved === "funding" ||
       saved === "transactions" ||
       saved === "partners" ||
       saved === "support"
@@ -393,6 +395,13 @@ export default function AdminDashboard() {
               onHeaderSearchChange={setHeaderSearch}
             />
           )}
+          {currentSection === 'funding' && (
+            <FundingParticipants
+              admin={admin}
+              headerSearch={headerSearch}
+              onHeaderSearchChange={setHeaderSearch}
+            />
+          )}
           {currentSection === 'support' && <SupportManagement admin={admin} />}
         </div>
       </main>
@@ -405,6 +414,7 @@ function getSectionTitle(section: AdminSection): string {
     dashboard: 'Dashboard Overview',
     users: 'User Management',
     subscriptions: 'Subscription Management',
+    funding: 'Funding Participants',
     partners: 'Partners Management',
     support: 'Support Requests',
     transactions: 'Transactions'

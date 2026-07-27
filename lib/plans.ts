@@ -2,12 +2,12 @@ export const PLANS = [
   {
     id: "weekly",
     name: "Weekly",
-    price: "USD 19",
-    priceKES: "KES 2470",
+    price: "USD 27.99",
+    priceKES: "KES 3640",
     whopPlanId: "plan_zDNVM2Xuxd3vG",
     whopCheckoutUrl: "https://whop.com/checkout/plan_zDNVM2Xuxd3vG",
-    usd: 19,
-    kes: 2470,
+    usd: 27.99,
+    kes: 3640,
     period: "/week",
     duration: 7,
     features: [
@@ -29,12 +29,12 @@ export const PLANS = [
   {
     id: "monthly",
     name: "Monthly",
-    price: "USD 49",
-    priceKES: "KES 6370",
+    price: "USD 57.99",
+    priceKES: "KES 7540",
     whopPlanId: "plan_Q3SBTQdA2p6Nt",
     whopCheckoutUrl: "https://whop.com/checkout/plan_Q3SBTQdA2p6Nt",
-    usd: 49,
-    kes: 6370,
+    usd: 57.99,
+    kes: 7540,
     period: "/month",
     duration: 30,
     features: [
@@ -44,7 +44,6 @@ export const PLANS = [
       "Access to Video Guides",
       "Regular indicator updates",
       "Full support from our team",
-      "Cancel at any time",
     ],
     benefits: [
       "Most popular choice",
@@ -58,12 +57,12 @@ export const PLANS = [
   {
     id: "quarterly",
     name: "Quarterly",
-    price: "USD 129",
-    priceKES: "KES 16770",
+    price: "USD 147.99",
+    priceKES: "KES 19240",
     whopPlanId: "plan_0ekL4yNSd5mRh",
     whopCheckoutUrl: "https://whop.com/checkout/plan_0ekL4yNSd5mRh",
-    usd: 129,
-    kes: 16770,
+    usd: 147.99,
+    kes: 19240,
     period: "/quarterly",
     duration: 90,
     features: [
@@ -73,7 +72,6 @@ export const PLANS = [
       "Access to Video Guides",
       "Regular indicator updates",
       "Priority support from our team",
-      "Cancel at any time",
     ],
     benefits: [
       "Best value for serious traders",

@@ -36,4 +36,11 @@ next-env.d.ts
 # IDE
 .vscode/
 .idea/
+
+# Large assets (not needed in git, served from Vercel)
+public/*.mp4
+public/sounds/
+public/videos/
+readypips/
+logo-light22.png
 .vercel

@@ -392,7 +392,7 @@ export default function HomePage() {
       <section className="relative py-20 px-4 overflow-hidden">
         <video
           autoPlay
-        
+          muted
           loop
           playsInline
           className="absolute inset-0 w-full h-full object-cover"

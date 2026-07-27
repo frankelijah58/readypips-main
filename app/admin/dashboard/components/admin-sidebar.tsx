@@ -16,6 +16,7 @@ import {
   Headphones,
   Receipt,
   Video,
+  Trophy,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -31,6 +32,7 @@ const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, category: 'main' },
   { id: 'users', label: 'Users', icon: Users, category: 'main' },
   { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, category: 'main' },
+  { id: 'funding', label: 'Funding', icon: Trophy, category: 'main' },
   { id: 'transactions', label: 'Transactions', icon: Receipt, category: 'main' },
   { id: 'partners', label: 'Partners', icon: Handshake, category: 'main' },
   { id: 'support', label: 'Support', icon: Headphones, category: 'main' },

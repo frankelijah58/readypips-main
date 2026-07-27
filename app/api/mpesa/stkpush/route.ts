@@ -20,10 +20,7 @@ function convertUsdToKes(usdAmount: number, kesToUsdRate: number): number {
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("STK route hit");
-
     const body = await req.json();
-    console.log("STK request body:", body);
 
     const {
       phone,
@@ -94,6 +91,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const normalizedPhone = normalizePhoneNumber(incomingPhone);
+    const accountReference = generateReference("READYPIPS");
+
+    // Use MongoDB
     let userEmail = decoded.email || "";
     if (!userEmail && decoded.userId) {
       const user = await findUserById(decoded.userId);
@@ -135,14 +136,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const normalizedPhone = normalizePhoneNumber(incomingPhone);
-    const accountReference = generateReference("READYPIPS");
-
     const resolvedPlanName = planName || planConfig.name || null;
     const resolvedDuration =
       typeof duration === "number"
         ? duration
         : Number(duration) || planConfig.duration || null;
+
+    const isChallenge = planId?.includes("challenge") || planId === "challenge-starter-challenge";
 
     await db.collection("payment_intents").insertOne({
       reference: accountReference,
@@ -152,6 +152,7 @@ export async function POST(req: NextRequest) {
       planName: resolvedPlanName,
       duration: resolvedDuration,
       provider: provider || "mpesa",
+      type: isChallenge ? "challenge_payment" : "subscription_payment",
       amount: canonicalPlanAmountKes,
       currency: "KES",
       amountKes: canonicalPlanAmountKes,
@@ -169,13 +170,8 @@ export async function POST(req: NextRequest) {
       fxFetchedAt,
       requestedAmount: Number.isFinite(Number(amount)) ? Number(amount) : null,
       requestedCurrency: currency || "KES",
-
-      // normalized storage field
       phone: normalizedPhone,
-
-      // keep compatibility with older code / old records
       phoneNumber: normalizedPhone,
-
       status: "pending",
       smsPromptSent: typeof smsPromptSent === "boolean" ? smsPromptSent : false,
       createdAt: new Date(),
@@ -191,8 +187,6 @@ export async function POST(req: NextRequest) {
         : `${planConfig.name} subscription`,
     });
 
-    console.log("STK Safaricom response:", stk);
-
     const responseCode = String(stk?.ResponseCode ?? "");
     const isAccepted = responseCode === "0";
 
@@ -200,14 +194,10 @@ export async function POST(req: NextRequest) {
       { reference: accountReference },
       {
         $set: {
-          // normalized camel-case/ID fields
           merchantRequestID: stk?.MerchantRequestID || null,
           checkoutRequestID: stk?.CheckoutRequestID || null,
-
-          // backward compatibility with older records/code
           merchantRequestId: stk?.MerchantRequestID || null,
           checkoutRequestId: stk?.CheckoutRequestID || null,
-
           responseCode: stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
           responseDescription: stk?.ResponseDescription || null,
           customerMessage: stk?.CustomerMessage || null,
@@ -227,34 +217,13 @@ export async function POST(req: NextRequest) {
             stk?.CustomerMessage ||
             "M-Pesa STK request was not accepted.",
           reference: accountReference,
-
-          MerchantRequestID: stk?.MerchantRequestID || null,
-          CheckoutRequestID: stk?.CheckoutRequestID || null,
-          ResponseCode: stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
-          ResponseDescription: stk?.ResponseDescription || null,
-          CustomerMessage: stk?.CustomerMessage || null,
-
-          merchantRequestID: stk?.MerchantRequestID || null,
-          checkoutRequestID: stk?.CheckoutRequestID || null,
-          responseCode: stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
-          responseDescription: stk?.ResponseDescription || null,
-          customerMessage: stk?.CustomerMessage || null,
-
           data: {
             reference: accountReference,
             MerchantRequestID: stk?.MerchantRequestID || null,
             CheckoutRequestID: stk?.CheckoutRequestID || null,
-            ResponseCode:
-              stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
+            ResponseCode: stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
             ResponseDescription: stk?.ResponseDescription || null,
             CustomerMessage: stk?.CustomerMessage || null,
-
-            merchantRequestID: stk?.MerchantRequestID || null,
-            checkoutRequestID: stk?.CheckoutRequestID || null,
-            responseCode:
-              stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
-            responseDescription: stk?.ResponseDescription || null,
-            customerMessage: stk?.CustomerMessage || null,
           },
         },
         { status: 400 }
@@ -284,7 +253,6 @@ export async function POST(req: NextRequest) {
       );
     } catch (smsError: any) {
       console.error("Prompt SMS error:", smsError);
-
       await db.collection("payment_intents").updateOne(
         { reference: accountReference },
         {
@@ -301,22 +269,11 @@ export async function POST(req: NextRequest) {
       success: true,
       message: stk?.CustomerMessage || "STK Push sent successfully.",
       reference: accountReference,
-
-      // top-level fields for frontend compatibility
       MerchantRequestID: stk?.MerchantRequestID || null,
       CheckoutRequestID: stk?.CheckoutRequestID || null,
       ResponseCode: stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
       ResponseDescription: stk?.ResponseDescription || null,
       CustomerMessage: stk?.CustomerMessage || null,
-
-      // normalized lower camel case too
-      merchantRequestID: stk?.MerchantRequestID || null,
-      checkoutRequestID: stk?.CheckoutRequestID || null,
-      responseCode: stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
-      responseDescription: stk?.ResponseDescription || null,
-      customerMessage: stk?.CustomerMessage || null,
-
-      // nested data kept too
       data: {
         reference: accountReference,
         MerchantRequestID: stk?.MerchantRequestID || null,
@@ -324,17 +281,10 @@ export async function POST(req: NextRequest) {
         ResponseCode: stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
         ResponseDescription: stk?.ResponseDescription || null,
         CustomerMessage: stk?.CustomerMessage || null,
-
-        merchantRequestID: stk?.MerchantRequestID || null,
-        checkoutRequestID: stk?.CheckoutRequestID || null,
-        responseCode: stk?.ResponseCode != null ? String(stk.ResponseCode) : null,
-        responseDescription: stk?.ResponseDescription || null,
-        customerMessage: stk?.CustomerMessage || null,
       },
     });
   } catch (error: any) {
     console.error("STK Push route error:", error);
-
     return NextResponse.json(
       {
         success: false,
