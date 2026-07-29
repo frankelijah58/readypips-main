@@ -35,6 +35,12 @@ export default function FundingParticipants({ admin, headerSearch, onHeaderSearc
 
   useEffect(() => { fetchParticipants(); }, [fetchParticipants]);
 
+  // Auto-refresh every 10 seconds for real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => { fetchParticipants(); }, 10000);
+    return () => clearInterval(interval);
+  }, [fetchParticipants]);
+
   return (
     <div className="space-y-6">
       {/* Stats */}
@@ -51,7 +57,7 @@ export default function FundingParticipants({ admin, headerSearch, onHeaderSearc
             <DollarSign className="w-5 h-5 text-green-400" />
             <p className="text-white/60 text-sm font-medium">Total Revenue (KES)</p>
           </div>
-          <h3 className="text-3xl font-bold text-white">KES {stats.totalRevenue.toLocaleString()}</h3>
+          <h3 className="text-3xl font-bold text-white">KES {stats.totalRevenue?.toLocaleString() || 0}</h3>
         </div>
         <div className="bg-[#18181b] border border-white/[0.04] rounded-xl p-5">
           <div className="flex items-center gap-3 mb-2">
@@ -94,27 +100,45 @@ export default function FundingParticipants({ admin, headerSearch, onHeaderSearc
               <tr className="border-b border-white/10 bg-white/[0.02]">
                 <th className="text-left p-4 text-sm font-semibold text-white/60">Email</th>
                 <th className="text-left p-4 text-sm font-semibold text-white/60">Phone</th>
-                <th className="text-left p-4 text-sm font-semibold text-white/60">Plan</th>
-                <th className="text-right p-4 text-sm font-semibold text-white/60">Amount (KES)</th>
-                <th className="text-center p-4 text-sm font-semibold text-white/60">Status</th>
+                <th className="text-left p-4 text-sm font-semibold text-white/60">MT5 Login</th>
+                <th className="text-left p-4 text-sm font-semibold text-white/60">MT5 Password</th>
+                <th className="text-left p-4 text-sm font-semibold text-white/60">Investor Pass</th>
+                <th className="text-left p-4 text-sm font-semibold text-white/60">Server</th>
+                <th className="text-left p-4 text-sm font-semibold text-white/60">Balance</th>
+                <th className="text-left p-4 text-sm font-semibold text-white/60">Leverage</th>
+                <th className="text-center p-4 text-sm font-semibold text-white/60">Pay Status</th>
+                <th className="text-center p-4 text-sm font-semibold text-white/60">MT5 Status</th>
                 <th className="text-right p-4 text-sm font-semibold text-white/60">Date</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-white/40">Loading...</td></tr>
+                <tr><td colSpan={11} className="p-8 text-center text-white/40">Loading...</td></tr>
               ) : participants.length === 0 ? (
-                <tr><td colSpan={6} className="p-8 text-center text-white/40">No participants yet</td></tr>
+                <tr><td colSpan={11} className="p-8 text-center text-white/40">No participants yet</td></tr>
               ) : participants.map((p: any) => (
                 <tr key={p._id} className="hover:bg-white/5 transition-colors">
                   <td className="p-4 text-white/80 text-sm">{p.email || '—'}</td>
                   <td className="p-4 text-white/80 text-sm">{p.phone || p.phoneNumber || '—'}</td>
-                  <td className="p-4 text-white/80 text-sm">{p.planName || 'Starter Challenge'}</td>
-                  <td className="p-4 text-right text-white/80 text-sm">KES {p.amountKes?.toLocaleString() || p.amount?.toLocaleString() || '—'}</td>
+                  <td className="p-4 text-white/80 text-sm font-mono">{p.mt5_login || '—'}</td>
+                  <td className="p-4 text-white/80 text-sm font-mono">{p.mt5_password || '—'}</td>
+                  <td className="p-4 text-white/80 text-sm font-mono">{p.investor_password || '—'}</td>
+                  <td className="p-4 text-white/80 text-sm">{p.mt5_server || '—'}</td>
+                  <td className="p-4 text-white/80 text-sm">${p.mt5_balance || '—'}</td>
+                  <td className="p-4 text-white/80 text-sm">{p.mt5_leverage || '—'}</td>
                   <td className="p-4 text-center">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${String(p.status || 'pending').includes('paid') || String(p.status || '').includes('success') ? 'bg-emerald-500/10 text-emerald-300' : String(p.status || '').includes('failed') ? 'bg-rose-500/10 text-rose-300' : 'bg-yellow-500/10 text-yellow-300'}`}>
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${String(p.status || 'pending').includes('paid') || String(p.status || '').includes('success') ? 'bg-emerald-500/10 text-emerald-300' : String(p.status || '').includes('failed') || String(p.status || '').includes('cancel') ? 'bg-rose-500/10 text-rose-300' : 'bg-yellow-500/10 text-yellow-300'}`}>
                       {p.status || 'pending'}
                     </span>
+                  </td>
+                  <td className="p-4 text-center">
+                    {p.hasMt5 ? (
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${String(p.mt5_status || 'active').includes('active') ? 'bg-emerald-500/10 text-emerald-300' : String(p.mt5_status || '').includes('disqual') ? 'bg-rose-500/10 text-rose-300' : 'bg-yellow-500/10 text-yellow-300'}`}>
+                        {p.mt5_status || 'active'}
+                      </span>
+                    ) : (
+                      <span className="text-white/30 text-xs">Not submitted</span>
+                    )}
                   </td>
                   <td className="p-4 text-right text-white/60 text-sm">{new Date(p.createdAt).toLocaleDateString()}</td>
                 </tr>
