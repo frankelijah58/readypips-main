@@ -414,7 +414,7 @@ function getSectionTitle(section: AdminSection): string {
     dashboard: 'Dashboard Overview',
     users: 'User Management',
     subscriptions: 'Subscription Management',
-    funding: 'Funding Participants',
+    funding: 'Challenge Participants & Leaderboard',
     partners: 'Partners Management',
     support: 'Support Requests',
     transactions: 'Transactions'
