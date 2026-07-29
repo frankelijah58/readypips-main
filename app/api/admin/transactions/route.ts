@@ -11,6 +11,13 @@ export async function GET(req: Request) {
 
     const db = await getDatabase();
 
+    // Auto-cancel pending payments older than 1 minute (STK push expires after 1 min)
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    await db.collection("payment_intents").updateMany(
+      { status: "pending", createdAt: { $lt: oneMinuteAgo } },
+      { $set: { status: "cancelled", updatedAt: new Date() } }
+    );
+
     const match: Record<string, any> = {};
     if (search) {
       match.$or = [

@@ -60,6 +60,14 @@ export default function TransactionsManagement({
         setPage(1);
     }, [headerSearch]);
 
+    // Auto-refresh every 10 seconds for real-time updates
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchPayments();
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [fetchPayments]);
+
     const formatDate = (value: string | Date | undefined) => {
         if (!value) return '—';
         const date = new Date(value);
