@@ -4,7 +4,7 @@ import {
   initiateStkPush,
   normalizePhoneNumber,
 } from "@/lib/mpesa";
-import { PLANS } from "@/lib/plans";
+import { PLANS, CHALLENGE_PLANS } from "@/lib/plans";
 import { getDatabase } from "@/lib/mongodb";
 import { verifyToken, findUserById } from "@/lib/auth";
 import { sendSms } from "@/lib/sms";
@@ -73,8 +73,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const allPlans = [...PLANS, ...CHALLENGE_PLANS];
+
     const planConfig =
-      PLANS.find(
+      allPlans.find(
         (p: any) =>
           p.id === planId ||
           p.planId === planId ||
@@ -142,7 +144,10 @@ export async function POST(req: NextRequest) {
         ? duration
         : Number(duration) || planConfig.duration || null;
 
-    const isChallenge = planId?.includes("challenge") || planId === "challenge-starter-challenge";
+    const isChallenge =
+      planId?.includes("challenge") ||
+      planId === "challenge-starter-challenge" ||
+      Boolean((planConfig as any)?.isChallenge);
 
     await db.collection("payment_intents").insertOne({
       reference: accountReference,

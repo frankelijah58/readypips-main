@@ -83,3 +83,35 @@ export const PLANS = [
     popular: false,
   },
 ];
+
+// Challenge / funding plans are kept separate from subscription PLANS so they
+// do not appear in the subscription pricing UI, but can still be resolved by
+// the M-Pesa STK push route. The funding page sends planId
+// "challenge-starter-challenge" which must match `id` below.
+export const CHALLENGE_PLANS = [
+  {
+    id: "challenge-starter-challenge",
+    name: "Starter Challenge",
+    price: "USD 42.99",
+    priceKES: "KES 5589",
+    usd: 42.99,
+    kes: 5589,
+    period: "/challenge",
+    duration: 30,
+    isChallenge: true,
+    features: [
+      "Funded trading challenge entry",
+      "10% profit target",
+      "5% max drawdown",
+      "30 days access",
+      "Top 10 win prizes",
+      "Positions 8-10 get refund",
+    ],
+    benefits: [
+      "Prove your trading skills",
+      "Win up to $5,000",
+      "Get funded",
+    ],
+    popular: true,
+  },
+];
