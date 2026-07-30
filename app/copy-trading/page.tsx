@@ -65,7 +65,7 @@ const brokers = [
     ],
     minDeposit: "$100",
     leverage: "Up to 1:1000",
-    copyTradingLink: "https://justmarkets.com/spa/copytrading/leaderboard/66116",
+    copyTradingLink: "https://justmarkets.com/spa/copytrading/trader-area/69360",
     signupLink: "https://one.justmarkets.link/a/f2fxc0kmhk",
     recommended: false,
   },
