@@ -397,7 +397,7 @@ export default function HomePage() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src="/trading.mp4" type="video/mp4" />
+          <source src="/videos/trading.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
 
@@ -540,7 +540,7 @@ export default function HomePage() {
                 className="w-full h-full object-cover"
                 poster="/video-poster.jpg"
               >
-                <source src="/ready-pips-demo.mp4" type="video/mp4" />
+                <source src="/videos/ready-pips-demo.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>
