@@ -27,6 +27,7 @@ import {
   Info,
   Lock,
   Activity,
+  Trophy,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-context";
 import { useRequireSubscription } from "@/hooks/use-subscription-access";
@@ -189,20 +190,16 @@ export default function CopyTradingPage() {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="py-16 px-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto text-center">
-          <div className="inline-block mb-6">
-            <div className="h-1 w-16 bg-green-600 rounded-full mx-auto"></div>
-          </div>
-          <h1 className="text-5xl font-bold mb-6 text-gray-900 dark:text-white">
-            Copy Trading
-          </h1>
-          <p className="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            Automatically copy trades from our professional traders directly to your broker account. 
-            Start earning passive income with minimal effort.
-          </p>
-        </div>
-      </section>
+     
+        <section className="relative py-20 px-4 overflow-hidden bg-gradient-to-br from-green-900 via-black to-green-900">
+              <div className="absolute inset-0 bg-[url('/trading2.jpg')] bg-cover bg-center opacity-20"></div>
+              <div className="container mx-auto text-center relative z-10">
+                <Badge className="mb-6 bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-800" variant="outline"><Trophy className="w-3 h-3 mr-1" />Try Our Copy Trading Today</Badge>
+                <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white leading-tight">Copy <span className="text-green-400">Trading</span></h1>
+                <p className="text-xl text-gray-100 mb-8 max-w-2xl mx-auto leading-relaxed">Automatically copy trades from our professional traders directly to your broker account. Start earning passive income with minimal effort.</p>
+               
+              </div>
+            </section>
 
       {/* Info Alert */}
       <section className="py-8 px-4 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
@@ -253,7 +250,7 @@ Explore the platforms below and see how copy trading works.
             <div className="p-6 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
               <div className="text-3xl font-bold text-green-600 mb-2">92%</div>
               <div className="text-sm text-gray-700 dark:text-gray-300">
-                Profitable Months
+                Profitable Trades
               </div>
             </div>
           </div>
