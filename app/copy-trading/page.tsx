@@ -48,7 +48,7 @@ const brokers = [
     ],
     minDeposit: "$100",
     leverage: "Up to 1:1000",
-    copyTradingLink: "https://my.hfm.com/en/copy-trading/provider-details?provider=147026543",
+    copyTradingLink: "https://my.hfm.com/en/copy-trading/provider-details.html?provider=147049000",
     signupLink: "https://www.hfm.com/ke/en/?refid=30374049",
     recommended: true,
   },
