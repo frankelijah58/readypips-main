@@ -70,23 +70,6 @@ const brokers = [
     signupLink: "https://one.justmarkets.link/a/f2fxc0kmhk",
     recommended: false,
   },
-  {
-    id: "fxpro",
-    name: "FxPro",
-    logo: "/fxpro.png",
-    description: "Global leader in online trading with Social Trading platform (Copy Coming Soon)",
-    features: [
-      "Social Trading platform",
-      "Instant withdrawals",
-      "Tight spreads from 0.0",
-      "No commissions on Standard accounts",
-    ],
-    minDeposit: "$10",
-    leverage: "Up to 1:2000",
-    copyTradingLink: "https://direct-fxpro.com/en/partner/FKBP99Jk",
-    signupLink: "https://www.readypips.com/trade",
-    recommended: false,
-  },
 ];
 
 export default function CopyTradingPage() {
@@ -268,14 +251,13 @@ Explore the platforms below and see how copy trading works.
               Choose Your Broker
             </h2>
             <p className="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
-              <b>We primarily recommend Just Markets for copy trading. </b> 
+              <b>We primarily recommend Just Markets and HFM for copy trading. </b> 
               <br></br>Select from our partner brokers below. 
               Don't have an account? Create one using our referral links for exclusive benefits.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {brokers.map((broker) => (
+          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">            {brokers.map((broker) => (
               <Card
                 key={broker.id}
                 className={`bg-white dark:bg-black border shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col ${
