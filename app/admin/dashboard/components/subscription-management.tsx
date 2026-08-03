@@ -356,7 +356,7 @@ export default function SubscriptionManagement({
         {isQueueOpen && (
           <div className="animate-in fade-in slide-in-from-top-2 duration-300">
             {pendingPayments.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {pendingPayments.map((pay) => (
                   <PendingCard key={pay._id} pay={pay} onAction={handlePaymentAction} processingId={processingId} />
                 ))}
@@ -613,16 +613,16 @@ function PendingCard({ pay, onAction, processingId }: any) {
   const notes = pay.notes || pay.note || pay.rawBinanceResponse?.note || '';
 
   return (
-    <div className={`border rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all bg-[#18181b] ${statusColorClass} hover:border-white/10`}>
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#18181b]/5 flex items-center justify-center font-bold text-xs text-white">{pay.userName?.charAt(0)}</div>
-          <div>
-            <h4 className="font-bold text-sm text-white">{pay.userName}</h4>
-            <p className="text-[10px] text-white/40 font-bold uppercase">{pay.provider}</p>
+    <div className={`border rounded-2xl p-4 shadow-sm hover:shadow-lg transition-all bg-[#18181b] min-w-0 overflow-hidden ${statusColorClass} hover:border-white/10`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-8 h-8 shrink-0 rounded-lg bg-[#18181b]/5 flex items-center justify-center font-bold text-xs text-white">{pay.userName?.charAt(0)}</div>
+          <div className="min-w-0">
+            <h4 className="font-bold text-sm text-white truncate">{pay.userName}</h4>
+            <p className="text-[10px] text-white/40 font-bold uppercase truncate">{pay.provider}</p>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-left sm:text-right shrink-0">
           {convertedKes != null ? (
             <div className="text-xs font-black text-white/80">
               KES {Number(convertedKes).toLocaleString()}
@@ -641,27 +641,27 @@ function PendingCard({ pay, onAction, processingId }: any) {
           )}
         </div>
       </div>
-      <div className="text-[11px] text-white/60 mb-4 bg-black/20 p-2 rounded-lg truncate">
+      <div className="text-[11px] text-white/60 mb-4 bg-black/20 p-2 rounded-lg break-all">
         {pay.email}
       </div>
       {pay.provider === 'binance' && (transactionId || walletAddress || notes) && (
-        <div className="mb-4 space-y-2 bg-black/20 p-2.5 rounded-lg">
+        <div className="mb-4 space-y-2 bg-black/20 p-2.5 rounded-lg min-w-0 overflow-hidden">
           {transactionId && (
-            <div>
+            <div className="min-w-0">
               <p className="text-[9px] font-bold uppercase text-white/40 mb-0.5">Transaction ID</p>
-              <p className="text-[10px] text-white/80 break-all font-mono">{transactionId}</p>
+              <p className="text-[10px] text-white/80 break-all font-mono leading-relaxed">{transactionId}</p>
             </div>
           )}
           {walletAddress && (
-            <div>
+            <div className="min-w-0">
               <p className="text-[9px] font-bold uppercase text-white/40 mb-0.5">Wallet Address</p>
-              <p className="text-[10px] text-white/80 break-all font-mono">{walletAddress}</p>
+              <p className="text-[10px] text-white/80 break-all font-mono leading-relaxed">{walletAddress}</p>
             </div>
           )}
           {notes && (
-            <div>
+            <div className="min-w-0">
               <p className="text-[9px] font-bold uppercase text-white/40 mb-0.5">Notes</p>
-              <p className="text-[10px] text-white/70 line-clamp-2">{notes}</p>
+              <p className="text-[10px] text-white/70 break-words line-clamp-3">{notes}</p>
             </div>
           )}
         </div>
