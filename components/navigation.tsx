@@ -147,6 +147,11 @@ export function Navigation() {
       icon: BookOpen,
     },
     {
+      name: "Telegram Bot",
+      href: "/telegram-bot",
+      icon: MessageSquare,
+    },
+    {
       name: "Support",
       href: "/support",
       icon: HelpCircle,
