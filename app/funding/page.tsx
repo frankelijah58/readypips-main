@@ -1471,7 +1471,7 @@ export default function FundingPage() {
   onClick={handleOpenBinance}
   className="w-full border-yellow-500 bg-yellow-500 text-black hover:bg-yellow-400 hover:text-black dark:border-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-400"
 >
-  Pay via Binance
+  Pay via Binance today
 </Button>
 
             {/* M-PESA FORM */}
