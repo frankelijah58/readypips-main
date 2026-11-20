@@ -12,9 +12,9 @@ A comprehensive trading signals platform with AI-powered analysis, M-Pesa paymen
 - Market news and calendar
 
 ### Subscription Plans
-- **Weekly** - $27.99 USD / KES 3,640
-- **Monthly** - $57.99 USD / KES 7,540 (Most Popular)
-- **Quarterly** - $147.99 USD / KES 19,240
+- **Weekly** - $37.99 USD / KES 4,942
+- **Monthly** - $67.99 USD / KES 8,838 (Most Popular)
+- **Lifetime** - $299 USD / KES 38,880
 
 ### Payment Methods
 - **M-Pesa** (Safaricom STK Push) - Primary payment method for Kenyan users
