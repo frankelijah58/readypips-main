@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import { requireAdminDashboardAccess } from "@/lib/admin-dashboard-auth";
+import { usdToKesRate } from "@/lib/dashboard-revenue";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export async function GET(request: NextRequest) {
     if (!auth.ok) return auth.response;
 
     const db = await getDatabase();
+    const rate = usdToKesRate();
 
     const subscriptions = await db
       .collection("subscriptions")
@@ -58,7 +60,20 @@ export async function GET(request: NextRequest) {
             },
             userEmail: { $ifNull: ["$user.email", ""] },
             plan: { $ifNull: ["$plan", "$planId"] },
-            price: { $ifNull: ["$price", "$amount", 0] },
+            currency: { $ifNull: ["$currency", "KES"] },
+            price: {
+              $cond: [
+                { $gt: [{ $ifNull: ["$amountKes", 0] }, 0] },
+                "$amountKes",
+                {
+                  $cond: [
+                    { $eq: [{ $toUpper: { $ifNull: ["$currency", ""] } }, "KES"] },
+                    { $ifNull: ["$price", "$amount", 0] },
+                    { $multiply: [{ $ifNull: ["$price", "$amount", 0] }, rate] },
+                  ],
+                },
+              ],
+            },
             status: 1,
             startDate: 1,
             endDate: 1,

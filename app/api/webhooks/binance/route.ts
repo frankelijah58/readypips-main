@@ -5,6 +5,7 @@ import { PLANS } from "@/lib/plans";
 import crypto from "crypto";
 import { normalizePaymentChannel } from "@/lib/payment-provider";
 import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
+import { PAID_INTENT_STATUSES } from "@/lib/dashboard-revenue";
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
       const db = await getDatabase();
       const intent = await db.collection("payment_intents").findOne({
         reference,
-        status: { $in: ["pending", "initiated"] },
+        status: { $nin: [...PAID_INTENT_STATUSES] },
       });
 
       if (intent) {

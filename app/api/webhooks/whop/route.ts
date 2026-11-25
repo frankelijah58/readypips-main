@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import { PLANS } from "@/lib/plans";
 import { normalizePaymentChannel } from "@/lib/payment-provider";
 import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
+import { PAID_INTENT_STATUSES } from "@/lib/dashboard-revenue";
 // import { grantTradingViewAccess } from "@/lib/tradingview-private";
 
 // import { grantTradingViewAccess } from "@/lib/tradingview-service";
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
     ------------------------------------ */
     const intent = await db.collection("payment_intents").findOne({
       reference,
-      status: { $in: ["pending", "initiated", "submitted_waiting_admin_approval"] },
+      status: { $nin: [...PAID_INTENT_STATUSES] },
     });
 
     if (!intent) {
@@ -151,7 +152,19 @@ export async function POST(req: NextRequest) {
     /* ------------------------------------
        6️⃣ Resolve plan
     ------------------------------------ */
-    const plan = PLANS.find((p) => p.id === intent.planId);
+    const normalizedIntentPlanId = String(intent.planId || "")
+      .toLowerCase()
+      .replace(/\s+/g, "");
+    const plan = PLANS.find((p: any) => {
+      const pid = String(p.id || "").toLowerCase().replace(/\s+/g, "");
+      const ppid = String(p.planId || "").toLowerCase().replace(/\s+/g, "");
+      const pname = String(p.name || "").toLowerCase().replace(/\s+/g, "");
+      return (
+        pid === normalizedIntentPlanId ||
+        ppid === normalizedIntentPlanId ||
+        pname === normalizedIntentPlanId
+      );
+    });
     if (!plan) {
       throw new Error("Invalid plan configuration");
     }

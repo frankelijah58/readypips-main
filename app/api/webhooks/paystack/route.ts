@@ -5,6 +5,7 @@ import { ObjectId } from "mongodb";
 import { PLANS } from "@/lib/plans";
 import { normalizePaymentChannel } from "@/lib/payment-provider";
 import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
+import { PAID_INTENT_STATUSES } from "@/lib/dashboard-revenue";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       const db = await getDatabase();
       const intent = await db.collection("payment_intents").findOne({
         reference,
-        status: { $in: ["pending", "initiated", "submitted_waiting_admin_approval"] },
+        status: { $nin: [...PAID_INTENT_STATUSES] },
       });
       if (!intent) return NextResponse.json({ received: true });
 

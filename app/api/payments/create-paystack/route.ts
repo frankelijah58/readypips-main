@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
-import { initializePaystack, subscriptionPlans } from "@/lib/payments";
+import { generateReference } from "@/lib/payments";
+import { PLANS } from "@/lib/plans";
+import { normalizePaymentChannel } from "@/lib/payment-provider";
 
 export async function POST(request: NextRequest) {
   try {
-    const { plan, successUrl, cancelUrl } = await request.json();
+    const { plan } = await request.json();
 
-    // Get user from authorization header
     const authHeader = request.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const token = authHeader.substring(7);
-
-    // Verify token and get user
     const { verifyToken } = await import("@/lib/auth");
     const decoded = await verifyToken(token);
 
@@ -23,29 +22,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
-    const db = await getDatabase();
-    const userId = new ObjectId(decoded.userId);
+    const normalizedPlan = String(plan || "")
+      .toLowerCase()
+      .replace(/\s+/g, "");
+    const planConfig = PLANS.find((p: any) => {
+      const pid = String(p.id || "").toLowerCase().replace(/\s+/g, "");
+      const pname = String(p.name || "").toLowerCase().replace(/\s+/g, "");
+      return pid === normalizedPlan || pname === normalizedPlan;
+    });
 
-    // Map plan names to subscription plan IDs
-    const planMapping: Record<string, string> = {
-      weekly: "weekly",
-      monthly: "monthly",
-      "3 months": "3months",
-      "3months": "3months",
-    };
-
-    const planId = planMapping[plan.toLowerCase()];
-    if (!planId) {
+    if (!planConfig) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
-    // Get the subscription plan details
-    const subscriptionPlan = subscriptionPlans.find((p) => p.id === planId);
-    if (!subscriptionPlan) {
-      return NextResponse.json({ error: "Plan not found" }, { status: 400 });
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      return NextResponse.json(
+        { error: "Paystack secret key not configured" },
+        { status: 500 }
+      );
     }
 
-    // Get user email for Paystack
+    const db = await getDatabase();
+    const userId = new ObjectId(decoded.userId);
     const user = await db.collection("users").findOne({ _id: userId });
     if (!user?.email) {
       return NextResponse.json(
@@ -54,51 +52,76 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get exact KES amounts for each plan (in kobo - smallest unit for Paystack)
-    const kesAmounts: Record<string, number> = {
-      weekly: 70000,       // KES 700 * 100 (in kobo)
-      monthly: 100000,     // KES 1,000 * 100 (in kobo)
-      "3months": 150000,   // KES 1,500 * 100 (in kobo)
-    };
-
-    const amountInKes = kesAmounts[planId] || Math.round(subscriptionPlan.price * 100);
-
-    try {
-      // Initialize Paystack transaction
-      const paystackResponse = await initializePaystack(
-        planId,
-        user.email,
-        amountInKes
-      );
-
-      // Store payment record in database
-      const paymentRecord = {
-        userId: decoded.userId,
-        sessionId: paystackResponse.reference,
-        provider: "paystack",
-        planId: planId,
-        planName: subscriptionPlan.name,
-        amount: subscriptionPlan.price,
-        currency: "USD",
-        status: "pending",
-        paymentData: paystackResponse,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      await db.collection("payments").insertOne(paymentRecord);
-
-      return NextResponse.json({
-        url: paystackResponse.authorization_url,
-        reference: paystackResponse.reference,
-      });
-    } catch (error) {
-      console.error("Paystack initialization error:", error);
+    const amountKes = Math.round(Number(planConfig.kes || 0));
+    const amountUsd = Number(planConfig.usd || 0);
+    if (!Number.isFinite(amountKes) || amountKes <= 0) {
       return NextResponse.json(
-        { error: "Failed to initialize Paystack payment" },
+        { error: "Plan KES amount is not configured" },
+        { status: 400 }
+      );
+    }
+
+    const reference = generateReference("paystack");
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+    const response = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: user.email,
+        amount: amountKes * 100,
+        currency: "KES",
+        reference,
+        callback_url: `${appUrl}/subscription/success`,
+        metadata: {
+          provider: "paystack",
+          planId: planConfig.id,
+          planName: planConfig.name,
+          userId: decoded.userId,
+          reference,
+        },
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.status || !data.data?.authorization_url) {
+      return NextResponse.json(
+        { error: data?.message || "Failed to initialize Paystack payment" },
         { status: 500 }
       );
     }
+
+    const now = new Date();
+    await db.collection("payment_intents").insertOne({
+      reference: data.data.reference || reference,
+      userId: decoded.userId,
+      email: user.email,
+      planId: planConfig.id,
+      planName: planConfig.name,
+      duration: planConfig.duration,
+      provider: "paystack",
+      paymentChannel: normalizePaymentChannel("paystack"),
+      amount: amountKes,
+      currency: "KES",
+      amountKes,
+      currencyKes: "KES",
+      amountUsd: amountUsd > 0 ? amountUsd : null,
+      currencyUsd: amountUsd > 0 ? "USD" : null,
+      expectedAmountKes: amountKes,
+      expectedAmountUsd: amountUsd > 0 ? amountUsd : null,
+      status: "pending",
+      checkoutUrl: data.data.authorization_url,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return NextResponse.json({
+      url: data.data.authorization_url,
+      reference: data.data.reference || reference,
+    });
   } catch (error) {
     console.error("Error creating Paystack session:", error);
     return NextResponse.json(

@@ -36,10 +36,11 @@ export async function GET(req: Request) {
         {
           $addFields: {
             convertedUserId: {
-              $cond: {
-                if: { $ne: ["$userId", null] },
-                then: { $toObjectId: "$userId" },
-                else: null,
+              $convert: {
+                input: "$userId",
+                to: "objectId",
+                onError: null,
+                onNull: null,
               },
             },
           },

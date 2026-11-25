@@ -4,6 +4,7 @@ import { getDatabase } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import { normalizePaymentChannel } from "@/lib/payment-provider";
 import { computeMismatch, normalizeMoney } from "@/lib/payment-amounts";
+import { PAID_INTENT_STATUSES } from "@/lib/dashboard-revenue";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
@@ -62,9 +63,9 @@ export async function POST(request: NextRequest) {
 
         const intent = reference
           ? await db.collection("payment_intents").findOne({
-              reference,
-              status: { $in: ["pending", "initiated"] },
-            })
+            reference,
+            status: { $nin: [...PAID_INTENT_STATUSES] },
+          })
           : null;
         const expectedAmountUsd =
           normalizeMoney(intent?.expectedAmountUsd ?? intent?.amountUsd ?? 0, 2) ??

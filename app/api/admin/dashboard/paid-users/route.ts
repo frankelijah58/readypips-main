@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb';
 import { verifyAdminToken } from '@/lib/admin';
+import {
+  PAID_INTENT_STATUSES,
+  addAmountKesFieldStage,
+  usdToKesRate,
+} from '@/lib/dashboard-revenue';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin token
     const token = request.headers.get('Authorization')?.replace('Bearer ', '');
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -16,16 +22,17 @@ export async function GET(request: NextRequest) {
     }
 
     const db = await getDatabase();
-    const paymentsCollection = db.collection('payment_intents');
-    
-    // Get latest payments grouped by user, showing paid users sorted by latest payment
-    const paidUsers = await paymentsCollection
+    const rate = usdToKesRate();
+
+    const paidUsers = await db
+      .collection('payment_intents')
       .aggregate([
         {
           $match: {
-            status: 'completed',
+            status: { $in: [...PAID_INTENT_STATUSES] },
           },
         },
+        addAmountKesFieldStage(rate),
         {
           $sort: { createdAt: -1 },
         },
@@ -33,20 +40,35 @@ export async function GET(request: NextRequest) {
           $group: {
             _id: '$userId',
             latestPayment: { $first: '$$ROOT' },
-            totalPaid: { $sum: { $toDouble: { $replaceAll: { input: { $toString: '$amount' }, find: /[^0-9.]/g, replacement: '' } } } },
+            totalPaidKes: { $sum: '$amountKes' },
             paymentCount: { $sum: 1 },
+          },
+        },
+        {
+          $addFields: {
+            userOid: {
+              $convert: {
+                input: '$_id',
+                to: 'objectId',
+                onError: null,
+                onNull: null,
+              },
+            },
           },
         },
         {
           $lookup: {
             from: 'users',
-            localField: '_id',
+            localField: 'userOid',
             foreignField: '_id',
             as: 'userInfo',
           },
         },
         {
-          $unwind: '$userInfo',
+          $unwind: {
+            path: '$userInfo',
+            preserveNullAndEmptyArrays: true,
+          },
         },
         {
           $project: {
@@ -58,12 +80,16 @@ export async function GET(request: NextRequest) {
                 { $ifNull: ['$userInfo.lastName', ''] },
               ],
             },
-            email: '$userInfo.email',
+            email: { $ifNull: ['$userInfo.email', '$latestPayment.email'] },
             subscriptionType: '$userInfo.subscriptionType',
-            latestPaymentDate: '$latestPayment.createdAt',
-            latestPaymentAmount: '$latestPayment.amount',
-            latestPlanName: '$latestPayment.planName',
-            totalPaid: 1,
+            latestPaymentDate: {
+              $ifNull: ['$latestPayment.paidAt', '$latestPayment.createdAt'],
+            },
+            latestPaymentAmount: '$latestPayment.amountKes',
+            latestPlanName: {
+              $ifNull: ['$latestPayment.planName', '$latestPayment.planId'],
+            },
+            totalPaid: '$totalPaidKes',
             paymentCount: 1,
           },
         },
@@ -76,26 +102,30 @@ export async function GET(request: NextRequest) {
       ])
       .toArray();
 
-    // Map subscription types to display names
-    const planTypeMap: { [key: string]: string } = {
-      'free': 'Free Trial',
-      'basic': 'Weekly',
-      'premium': 'Monthly',
-      'pro': '3 Months',
+    const planTypeMap: Record<string, string> = {
+      free: 'Free Trial',
+      basic: 'Weekly',
+      weekly: 'Weekly',
+      premium: 'Monthly',
+      monthly: 'Monthly',
+      pro: '3 Months',
+      '3months': '3 Months',
+      lifetime: 'Lifetime',
     };
 
     const formattedUsers = paidUsers.map((user: any) => {
-      const subscriptionType = user.subscriptionType?.toLowerCase() || 'free';
-      const planName = planTypeMap[subscriptionType] || user.latestPlanName || 'Unknown';
+      const subscriptionType = String(user.subscriptionType || '').toLowerCase();
+      const planName =
+        planTypeMap[subscriptionType] || user.latestPlanName || 'Unknown';
 
       return {
         userId: user.userId,
-        userName: user.userName.trim() || 'Unknown User',
-        email: user.email,
+        userName: String(user.userName || '').trim() || 'Unknown User',
+        email: user.email || 'Unknown',
         currentPlan: planName,
         latestPaymentDate: user.latestPaymentDate,
-        latestPaymentAmount: user.latestPaymentAmount,
-        totalPaid: user.totalPaid.toFixed(2),
+        latestPaymentAmount: Number(user.latestPaymentAmount || 0),
+        totalPaid: Number(user.totalPaid || 0).toFixed(2),
         paymentCount: user.paymentCount,
       };
     });

@@ -5,7 +5,7 @@ export async function GET(req: Request) {
   try {
     const db = await getDatabase();
     const { searchParams } = new URL(req.url);
-    
+
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
@@ -23,11 +23,12 @@ export async function GET(req: Request) {
     if (search) {
       andConditions.push({
         $or: [
-        { "userDetails.firstName": { $regex: search, $options: "i" } },
-        { "userDetails.lastName": { $regex: search, $options: "i" } },
-        { "userDetails.email": { $regex: search, $options: "i" } },
-        { planId: { $regex: search, $options: "i" } }
-      ]});
+          { "userDetails.firstName": { $regex: search, $options: "i" } },
+          { "userDetails.lastName": { $regex: search, $options: "i" } },
+          { "userDetails.email": { $regex: search, $options: "i" } },
+          { planId: { $regex: search, $options: "i" } }
+        ]
+      });
     }
 
     // Status logic
@@ -40,15 +41,17 @@ export async function GET(req: Request) {
       if (providerFilter === "card") {
         andConditions.push({
           $or: [
-          { paymentChannel: "card" },
-          { provider: { $in: ["whop", "stripe", "paystack", "pesapal", "card"] } },
-        ]});
+            { paymentChannel: "card" },
+            { provider: { $in: ["whop", "stripe", "paystack", "pesapal", "card"] } },
+          ]
+        });
       } else if (providerFilter === "mpesa" || providerFilter === "binance") {
         andConditions.push({
           $or: [
-          { paymentChannel: providerFilter },
-          { provider: providerFilter },
-        ]});
+            { paymentChannel: providerFilter },
+            { provider: providerFilter },
+          ]
+        });
       }
     }
 
@@ -81,7 +84,18 @@ export async function GET(req: Request) {
     }
 
     const pipeline = [
-      { $addFields: { convertedUserId: { $toObjectId: "$userId" } } },
+      {
+        $addFields: {
+          convertedUserId: {
+            $convert: {
+              input: "$userId",
+              to: "objectId",
+              onError: null,
+              onNull: null,
+            },
+          },
+        },
+      },
       {
         $lookup: {
           from: "users",
@@ -91,7 +105,7 @@ export async function GET(req: Request) {
         }
       },
       { $unwind: { path: "$userDetails", preserveNullAndEmptyArrays: true } },
-      { $match: matchStage }, 
+      { $match: matchStage },
       {
         $facet: {
           metadata: [{ $count: "total" }],
@@ -174,16 +188,16 @@ export async function GET(req: Request) {
                 startDate: 1,
                 endDate: 1,
                 updatedDate: "$updatedAt",
-                userName: { 
+                userName: {
                   $concat: [
-                    { $ifNull: ["$userDetails.firstName", "Guest"] }, 
-                    " ", 
+                    { $ifNull: ["$userDetails.firstName", "Guest"] },
+                    " ",
                     { $ifNull: ["$userDetails.lastName", "User"] }
-                  ] 
+                  ]
                 },
-                email: { $ifNull: ["$userDetails.email", "N/A"]},
-                phoneNumber: { $ifNull: ["$userDetails.phoneNumber", "N/A"]},
-                tradingviewUsername: { $ifNull: ["$userDetails.tradingviewUsername", "N/A"]}
+                email: { $ifNull: ["$userDetails.email", "N/A"] },
+                phoneNumber: { $ifNull: ["$userDetails.phoneNumber", "N/A"] },
+                tradingviewUsername: { $ifNull: ["$userDetails.tradingviewUsername", "N/A"] }
               }
             }
           ],
@@ -201,13 +215,13 @@ export async function GET(req: Request) {
     ];
 
     const result = await db.collection("subscriptions").aggregate(pipeline).toArray();
-    
+
     const subscriptions = result[0].data || [];
     const totalCount = result[0].metadata[0]?.total || 0;
     const stats = result[0].stats[0] || { activeCount: 0, expiredCount: 0 };
 
-    return NextResponse.json({ 
-      subscriptions, 
+    return NextResponse.json({
+      subscriptions,
       totalPages: Math.ceil(totalCount / limit),
       totalCount,
       activeCount: stats.activeCount,
