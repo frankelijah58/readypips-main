@@ -202,7 +202,12 @@ export default function PricingPlans({
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("idle");
   const [paymentMessage, setPaymentMessage] = useState("");
   const [paymentPhone, setPaymentPhone] = useState("");
+  const [cancellingPayment, setCancellingPayment] = useState(false);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const activeMpesaIdsRef = useRef<{
+    merchantRequestID?: string;
+    checkoutRequestID?: string;
+  } | null>(null);
 
   const resolveKesAmount = (plan: any) => {
     if (typeof plan?.kesPrice === "number" && Number.isFinite(plan.kesPrice)) {
@@ -289,14 +294,23 @@ export default function PricingPlans({
     checkoutRequestID: string
   ) => {
     clearPolling();
+    activeMpesaIdsRef.current = { merchantRequestID, checkoutRequestID };
 
     let attempts = 0;
-    const maxAttempts = 24;
+    const maxAttempts = 20;
 
     pollIntervalRef.current = setInterval(async () => {
       attempts++;
 
       try {
+        if (checkoutRequestID && [10, 15, 20].includes(attempts)) {
+          fetch("/api/mpesa/query", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ checkoutRequestId: checkoutRequestID }),
+          }).catch(() => null);
+        }
+
         const res = await fetch("/api/payments/mpesa/status", {
           method: "POST",
           headers: {
@@ -362,7 +376,34 @@ export default function PricingPlans({
           setPaymentMessage("Could not confirm payment status.");
         }
       }
-    }, 5000);
+    }, 3000);
+  };
+
+  const handleCancelWaitingPayment = async () => {
+    clearPolling();
+    setCancellingPayment(true);
+    try {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const ids = activeMpesaIdsRef.current;
+      if (token && ids) {
+        await fetch("/api/payments/cancel", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(ids),
+        }).catch(() => null);
+      }
+    } finally {
+      activeMpesaIdsRef.current = null;
+      setCancellingPayment(false);
+      setIsStatusModalOpen(false);
+      setPaymentStatus("idle");
+      setPaymentMessage("");
+      setPaymentPhone("");
+    }
   };
 
   const handleMpesaSubmit = async (phone: string) => {
@@ -393,10 +434,10 @@ export default function PricingPlans({
       if (!success) {
         throw new Error(
           result?.message ||
-            result?.data?.message ||
-            payload?.message ||
-            payload?.ResponseDescription ||
-            "Failed to send M-Pesa prompt."
+          result?.data?.message ||
+          payload?.message ||
+          payload?.ResponseDescription ||
+          "Failed to send M-Pesa prompt."
         );
       }
 
@@ -426,9 +467,9 @@ export default function PricingPlans({
       setPaymentStatus("waiting");
       setPaymentMessage(
         result?.message ||
-          result?.data?.message ||
-          payload?.CustomerMessage ||
-          "Prompt sent. Waiting for payment confirmation."
+        result?.data?.message ||
+        payload?.CustomerMessage ||
+        "Prompt sent. Waiting for payment confirmation."
       );
       setIsMpesaPromptOpen(false);
       setIsModalOpen(false);
@@ -463,11 +504,10 @@ export default function PricingPlans({
         {plans.map((plan, index) => (
           <Card
             key={index}
-            className={`relative hover:shadow-lg transition-all duration-200 bg-white dark:bg-black flex flex-col ${
-              plan.popular
+            className={`relative hover:shadow-lg transition-all duration-200 bg-white dark:bg-black flex flex-col ${plan.popular
                 ? "border-2 border-green-600"
                 : "border-gray-200 dark:border-gray-800"
-            }`}
+              }`}
           >
             {plan.popular && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 transform">
@@ -545,11 +585,10 @@ export default function PricingPlans({
                 </Button>
               ) : (
                 <Button
-                  className={`w-full font-semibold text-white ${
-                    plan.popular
+                  className={`w-full font-semibold text-white ${plan.popular
                       ? "bg-green-600 hover:bg-green-700"
                       : "bg-gray-600 hover:bg-gray-700"
-                  }`}
+                    }`}
                   onClick={() =>
                     handlePlanAction({
                       planId: plan.name.toLowerCase().replace(/\s+/g, ""),
@@ -589,12 +628,12 @@ export default function PricingPlans({
         plan={
           selectedPlanForPayment
             ? {
-                ...selectedPlanForPayment,
-                kesPrice:
-                  typeof selectedPlanForPayment.kesPrice === "number"
-                    ? selectedPlanForPayment.kesPrice
-                    : resolveKesAmount(selectedPlanForPayment),
-              }
+              ...selectedPlanForPayment,
+              kesPrice:
+                typeof selectedPlanForPayment.kesPrice === "number"
+                  ? selectedPlanForPayment.kesPrice
+                  : resolveKesAmount(selectedPlanForPayment),
+            }
             : null
         }
         loading={loadingState}
@@ -614,8 +653,11 @@ export default function PricingPlans({
         }
         planName={selectedPlanForPayment?.name}
         phone={paymentPhone}
+        cancelling={cancellingPayment}
+        onCancel={handleCancelWaitingPayment}
         onClose={() => {
           clearPolling();
+          activeMpesaIdsRef.current = null;
           setIsStatusModalOpen(false);
           setPaymentStatus("idle");
           setPaymentMessage("");
