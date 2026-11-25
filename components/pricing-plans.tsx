@@ -53,6 +53,8 @@ function MpesaPaymentStatusModal({
   amount,
   planName,
   phone,
+  cancelling = false,
+  onCancel,
   onClose,
 }: {
   isOpen: boolean;
@@ -61,15 +63,23 @@ function MpesaPaymentStatusModal({
   amount?: number;
   planName?: string;
   phone?: string;
+  cancelling?: boolean;
+  onCancel?: () => void;
   onClose: () => void;
 }) {
-  const canClose = status === "success" || status === "failed";
+  const canClose = status === "success" || status === "failed" || Boolean(onCancel);
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open && canClose) onClose();
+        if (!open && canClose) {
+          if (status === "waiting" && onCancel) {
+            onCancel();
+          } else {
+            onClose();
+          }
+        }
       }}
     >
       <DialogContent className="sm:max-w-[420px] border bg-white text-gray-900 shadow-2xl dark:bg-gray-900 dark:text-gray-100">
@@ -155,8 +165,20 @@ function MpesaPaymentStatusModal({
               </div>
 
               <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-                Do not close this window before payment confirmation.
+                Enter your M-Pesa PIN on your phone, or cancel below if you want to stop.
               </p>
+
+              {onCancel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={cancelling}
+                  onClick={onCancel}
+                  className="w-full"
+                >
+                  {cancelling ? "Cancelling..." : "Cancel Payment"}
+                </Button>
+              )}
             </div>
           )}
 
